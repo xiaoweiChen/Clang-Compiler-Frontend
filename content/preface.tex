@@ -1,0 +1,89 @@
+Low Level Virtual Machine (LLVM), is a collection of modular and reusable compiler and toolchain technologies used to develop compilers and compiler tools, such as linters and refactoring tools. LLVM is written in C++ and can be considered a good example of a well-structured project that uses interesting techniques aimed at making it reusable and efficient. The project can also be considered an excellent example of compiler architecture; diving into it will give you a sense of how compilers are organized and how they function. This should help to understand usage patterns and apply them accordingly.
+
+One of the key components of LLVM is the C/C++ compiler known as Clang. This compiler is widely used across various companies and has been designated as the default compiler for certain development environments, notably for macOS development. Clang will be the primary focus of our investigation in this book, with particular attention to its frontend—the part that is closest to the C/C++ programming language. Specifically, the book will include examples demonstrating how the C++ standard is implemented within the compiler.
+
+A pivotal aspect of LLVM’s design is its modularity, which facilitates the creation of custom tools that exploit the compiler’s comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project’s needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
+
+LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book’s content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
+
+\mySubsubsection{}{Who this book is for}
+
+The book is written for C++ engineers who don’t have prior knowledge of compilers but wish to gain this knowledge and apply it to their daily activities. It provides an overview of the Clang compiler frontend, an essential yet often underestimated part of LLVM. This section of the compiler, along with a collection of powerful tools, enables programmers to enhance code quality and the overall development process. For example, Clang-Tidy offers more than 500 different lint checks that detect anti-patterns in code (such as use after move) and help maintain code style and standards. Another notable tool is Clang-Format, which allows specifying various formatting rules suitable for your project. These tools can also be considered an integral part of the development process. For instance, the language server (Clangd) is a critical service providing navigation and refactoring support for your IDE.
+
+Understanding compiler internals might be crucial for anyone wanting to create and use such tools. The book provides the necessary foundation to begin this journey, covering basic LLVM architecture and offering a detailed description of Clang internals. It includes examples from LLVM source code and custom tools that extend the basic functionality provided by the compiler. Additionally, the book addresses compilation databases and various performance optimizations that can enhance the build speed of your projects. This knowledge should help C++ developers correctly apply the compiler to their work activities.
+
+\mySubsubsection{}{What this book covers}
+
+Chapter 1, Environment Setup, describes the basic steps required to set up the environment for future experiments with Clang, suitable for Unix-based systems such as Linux and Darwin (macOS). In addition, readers will learn how to download, configure, and build LLVM source code. We will also create a simple Clang Tool to verify the syntax of the provided source code.
+
+Chapter 2, Clang Architecture, examines the internal architecture of the Clang compiler. Starting with the basic concept of a compiler, we will explore how it is implemented in Clang. We will look at various parts of the compiler, including the driver, preprocessor (lexer), and parser. We will also examine examples that show how the C++ standard is implemented in Clang.
+
+Chapter 3, Clang AST, talks about Clang Abstract Syntax Tree (AST), which is the basic data structure produced by the parser. We will explore how the AST is organized in Clang and how it can be traversed. We will also delve into AST Matchers — a powerful tool provided by Clang for locating specific AST nodes.
+
+Chapter 4, Basic Libraries and Tools, explores basic LLVM libraries and tools, including the LLVM Abstract Data Type (ADT) library, used across all LLVM code. We will investigate TableGen, a Domain-Specific Language (DSL) used to generate C++ code in various parts of LLVM. Additionally, we will explore LLVM Integrated Tester (LIT) tool used for creating powerful end-to-end tests. Using the knowledge gained, we will create a simple Clang plugin to estimate source code complexity.
+
+Chapter 5, Clang-Tidy Linter Framework, covers Clang-Tidy, a linter framework based on Clang AST, and creates a simple Clang-Tidy check. We will also discuss how compilation errors affect the AST and the results provided by different Clang Tools, such as Clang-Tidy.
+
+Chapter 6, Advanced Code Analysis, goes further and considers another advanced data structure used for code analysis: Control Flow Graphs (CFG). We will investigate typical cases for its application and create a simple Clang-Tidy check that utilizes this data structure.
+
+Chapter 7, Refactoring Tools, Clang provides advanced tools for code modification and refactoring. We will explore different ways to create a custom refactoring tool, including one based on the Clang-Tidy linter framework. We will also explore Clang-Format, an extremely fast utility for automatic code formatting.
+
+Chapter 8, IDE Support and Clangd, presents Clangd - a Language Server used in various IDEs, such as Visual Studio Code (VS Code), to provide intelligent support, including navigation and code modification. Clangd exemplifies the utility of the powerful modular architecture of LLVM. It utilizes various Clang tools, such as Clang-Tidy and Clang-Format, to enhance the development experience in VS Code. Compiler performance is crucial for this tool, and we will explore several techniques Clangd employs to improve its performance, thereby offering the best experience to developers.
+
+Appendix 1: Compilation Database, describes the Compilation Database—a method for providing complex compilation commands to different Clang Tools. This functionality is crucial for integrating Clang Tools such as Clangd and Clang-Tidy into real C/C++ projects.
+
+Appendix 2: Build Speed Optimizations, covers several compiler performance optimizations that can be used to enhance compiler performance. We will cover Clang precompiled headers and Clang modules, which represent a serialized AST that can be loaded much faster than building it from scratch.
+
+
+\mySubsubsection{}{To get the most out of this book}
+
+You will need to have an understanding of C++, especially C++17, which is used for LLVM and throughout the examples in the book. The provided examples are assumed to be run on a Unix-like operating system, with Linux and Darwin (Mac OS) being considered the operating system requirements for the book. We will use Git to clone the LLVM source tree and start working on it. Some tools also need to be installed, such as CMake and Ninja, which will be actively used to build the examples and the LLVM source code.
+
+If you are using the digital version of this book, we advise you to type the code yourself or access the code from the book’s GitHub repository (a link is available in the next section). Doing so will help you avoid any potential errors related to the copying and pasting of code.
+
+\mySubsubsection{}{Download the example code files}
+
+The code bundle for the book is also hosted on GitHub at \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt}. In case there’s an update to the code, it will be updated on the existing GitHub repository.
+
+We also have other code bundles from our rich catalog of books and videos available at \url{https://github.com/PacktPublishing/}. Check them out!
+
+
+\mySubsubsection{}{Conventions used}
+
+There are a number of text conventions used throughout this book.
+
+CodeInText: Indicates code words in text, database table names, folder names, filenames, file extensions, pathnames, dummy URLs, and user input. Here is an example: ”The first two parameters specify the declaration (clang::Decl) and the statement for the declaration (clang::Stmt).”
+
+A block of code is set as follows:
+
+\begin{cpp}
+int main() {
+  return 0;
+ }
+\end{cpp}
+
+Any command-line input or output is written as follows:
+
+\begin{shell}
+$ ninja clang
+\end{shell}
+
+We use <...> as a placeholder for the folder where the LLVM source code was cloned.
+
+Some code examples will be representing input of shells. You can recognize them by specific prompt characters:
+
+
+\begin{itemize}
+\item
+(lldb) for interactive LLDB shell
+
+\item
+\$ for Bash shell (macOS and Linux)
+
+\item
+> for interactive shell provided by different Clang Tools, such as Clang-Query
+\end{itemize}
+
+
+
+

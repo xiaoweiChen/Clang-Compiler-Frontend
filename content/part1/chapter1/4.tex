@@ -1,0 +1,257 @@
+For our first test project, we will create a simple Clang tool that runs the compiler and checks the syntax for the provided source file. We will create a so-called out-of-tree LLVM project, that is, a project that will use LLVM but will be located outside the main LLVM source tree.
+
+Several actions are required to create the project:
+
+\begin{itemize}
+\item
+The required LLVM libraries and headers have to be built and installed
+
+\item
+We have to create a build configuration file for our test project
+
+\item
+The source code that uses LLVM has to be created
+\end{itemize}
+
+We will start with the first step and install the Clang support libraries and headers. We will use the following configuration command for CMake:
+
+\begin{shell}
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.12: LLVM CMake configuration for a simple syntax checking Clang tool
+\end{center}
+
+As you may have noticed, we enabled only one project: clang. All other options are standard for our debug build. The command has to be run from a created build folder inside the LLVM source tree, as was suggested in Section 1.3.1, Configuration with CMake.
+
+\begin{myNotic}{Important note}
+The configuration specified in Figure 1.12 will be the default build configuration used throughout the book.
+\end{myNotic}
+
+The configuration with shared libraries, in addition to the reduced size, has the advantage of simplifying the specification of dependencies. You only need to specify the shared libraries that your project directly depends on, and the dynamic linker takes care of the rest.
+
+The required libraries and headers can be installed with the following command:
+
+\begin{shell}
+$ ninja install
+\end{shell}
+
+The libraries and headers will be installed into install folder, as was specified by the CMAKE\_INSTALL\_PREFIX option.
+
+We have to create two files for our project:
+
+\begin{itemize}
+\item
+CMakeLists.txt: The project configuration file
+
+\item
+TestProject.cpp: The project source code
+\end{itemize}
+
+The project configuration file, CMakeLists.txt , will accept a path to the LLVM install folder via the LLVM\_HOME environment variable. The file is as follows:
+
+\begin{cmake}
+cmake_minimum_required(VERSION 3.16)
+project("syntax-check")
+
+if ( NOT DEFINED ENV{LLVM_HOME})
+  message(FATAL_ERROR "$LLVM_HOME is not defined")
+else()
+  message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
+  set(LLVM_HOME $ENV{LLVM_HOME} CACHE PATH "Root of LLVM installation")
+  set(LLVM_LIB ${LLVM_HOME}/lib)
+  set(LLVM_DIR ${LLVM_LIB}/cmake/llvm)
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  link_directories(${LLVM_LIBRARY_DIRS})
+  set(SOURCE_FILES SyntaxCheck.cpp)
+  add_executable(syntax-check ${SOURCE_FILES})
+  set_target_properties(syntax-check PROPERTIES COMPILE_FLAGS "-fno-rtti")
+  target_link_libraries(syntax-check
+    LLVMSupport
+    clangBasic
+    clangFrontend
+    clangSerialization
+    clangTooling
+  )
+endif()
+\end{cmake}
+
+\begin{center}
+Figure 1.13: CMake file for simple syntax check Clang Tool
+\end{center}
+
+The most important parts of the file are as follows:
+
+\begin{itemize}
+\item
+Line 2: We specify the project name (syntax-check). That is also the name of our executable.
+
+\item
+Lines 4-7: Test for the LLVM\_HOME environment variable.
+
+\item
+Line 10: We set a path to the LLVM CMake helpers.
+
+\item
+Line 11: We load the LLVM CMake package from the paths specified on Line 10.
+
+\item
+Line 14: We specify our source file that should be compiled.
+
+\item
+Line 16: We set up an additional flag for compilation: -fno-rtti. The flag is required as soon as LLVM is built without RTTI. This is done in an effort to reduce code and executable size [LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}.].
+
+\item
+Lines 18-22 We specify the required libraries to be linked to our program.
+\end{itemize}
+
+The source code for our tool is as follows:
+
+\begin{cpp}
+#include "clang/Frontend/FrontendActions.h" // clang::SyntaxOnlyAction
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/CommandLine.h" // llvm::cl::extrahelp
+
+namespace {
+  llvm::cl::OptionCategory TestCategory("Test project");
+  llvm::cl::extrahelp
+    CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+} // namespace
+
+int main(int argc, const char **argv) {
+  llvm::Expected<clang::tooling::CommonOptionsParser> OptionsParser =
+    clang::tooling::CommonOptionsParser::create(argc, argv, TestCategory);
+  if (!OptionsParser) {
+    llvm::errs() << OptionsParser.takeError();
+    return 1;
+  }
+  clang::tooling::ClangTool Tool(OptionsParser->getCompilations(),
+                                 OptionsParser->getSourcePathList());
+  return Tool.run(
+    clang::tooling::newFrontendActionFactory<clang::SyntaxOnlyAction>()
+            .get());
+}
+\end{cpp}
+
+\begin{center}
+Figure 1.14: SyntaxCheck.cpp
+\end{center}
+
+The most important part of the file are as follows:
+
+\begin{itemize}
+\item
+Lines 7-9: The majority of compiler tools have the same set of command line arguments. The LLVM command-line library [LLVM Community. CommandLine 2.0 Library Manual. 2023. URL \url{https://llvm.org/docs/CommandLine.html}.] provides some APIs to process compiler command options. We set up the library on Line 7. We also set up additional help messages on lines 8-10.
+
+\item
+Lines 13-18: We parse command-line arguments.
+
+\item
+Lines 19-24: We create and run our Clang tool.
+
+\item
+Lines 22-23: We use the clang::SyntaxOnlyAction frontend action, which will run syntax and semantic checks on the input file. You can get more info about frontend actions in Section 2.4.1, Frontend action.
+\end{itemize}
+
+We have to specify a path to the LLVM install folder to build our tool. As was mentioned earlier, the path has to be specified via the LLVM\_HOME environment variable. Our configuration command (see Figure 1.12) specifies the path as the install folder inside the LLVM project source tree. Thus we can build our tool as follows:
+
+\begin{shell}
+export LLVM_HOME=<...>/llvm-project/install
+mkdir build
+cd build
+cmake -G Ninja ..
+ninja
+\end{shell}
+
+\begin{center}
+Figure 1.15: The syntax-check build commands
+\end{center}
+
+We can run the tool as follows:
+
+\begin{shell}
+$ cd build
+$ ./syntax-check --help
+USAGE: syntax-check [options] <source0> [... <sourceN>]
+...
+\end{shell}
+
+\begin{center}
+Figure 1.16: The syntax-check –help output
+\end{center}
+
+The program will successively terminate if we run it on a valid C++ source file, but it will produce an error message if it’s run on a broken C++ file:
+
+\begin{shell}
+$ ./syntax-check mainbroken.cpp -- -std=c++17
+mainbroken.cpp:2:11: error: expected ’;’ after return statement
+  return 0
+          ^
+          ;
+1  error generated.
+Error while processing mainbroken.cpp.
+\end{shell}
+
+\begin{center}
+Figure 1.17: The syntax-check run on a file with a syntax error
+\end{center}
+
+We used ’- -’ to pass additional arguments to the compiler in Figure 1.17, specifically indicating that we want to use C++17 with the option ’-std=c++17’.
+
+We can also run our tool with the LLDB debugger:
+
+\begin{shell}
+$  <...>/llvm-project/install/bin/lldb \
+                  ./syntax-check \
+                  --           \
+                  main.cpp     \
+                  -- -std=c++17
+\end{shell}
+
+\begin{center}
+Figure 1.18: The syntax-check run under debugger
+\end{center}
+
+We run syntax-check as the primary binary and set main.cpp source file as an argument for the tool (Figure 1.18). We also pass additional compilation flags (-std=c++17) to the syntax-check executable.
+
+We can set a breakpoint and run the program as follows:
+
+\begin{shell}
+1  (lldb) b clang::ParseAST
+2  ...
+3  (lldb) r
+4  ...
+5  Running without flags.
+6  Process 608249 stopped
+7  * thread #1, name = ’syntax-check’, stop reason = breakpoint 1.1
+8    frame #0: ... clang::ParseAST(...) at ParseAST.cpp:117:3
+9     114
+10    115  void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
+11    116    // Collect global stats on Decls/Stmts (until we have a module streamer).
+12 -> 117    if (PrintStats) {
+13    118     Decl::EnableStatistics();
+14    119     Stmt::EnableStatistics();
+15    120    }
+16 (lldb) c
+17 Process 608249 resuming
+18 Process 608249 exited with status = 0 (0x00000000)
+19 (lldb)
+\end{shell}
+
+\begin{center}
+Figure 1.19: LLDB session for Clang Tool test project
+\end{center}
+
+
+We set a breakpoint in the clang::ParseAST function (Figure 1.19, line 1). The function is the primary entry point for source code parsing. We run the program on Line 3 and continue the execution after the breakpoint on Line 16.
+
+We will use the same debugging techniques later in the book when we investigate Clang’s source code.
+
+
+
+
+
+

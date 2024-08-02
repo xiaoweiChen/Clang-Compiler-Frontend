@@ -1,0 +1,72 @@
+Downloading and building LLVM code is very easy and does not require any paid tools. You will require the following:
+
+\begin{itemize}
+\item
+Unix-based OS (Linux, Darwin)
+
+\item
+Command line git
+
+\item
+Build tools: CMake and Ninja
+\end{itemize}
+
+We will use the debugger as the source investigation tool. LLVM has its own debugger, LLDB. We will build it as our first tool from LLVM monorepo: \url{https://github.com/llvm/llvm-project.git}.
+
+Any build process consists of two steps. The first one is the project configuration and the last one is the build itself. LLVM uses CMake as a project configuration tool. It also can use a wide range of build tools, such as Unix Makefiles, and Ninja. It can also generate project files for popular IDEs such as Visual Studio and XCode. We are going to use Ninja as the build tool because it speeds up the build process, and most LLVM developers use it. You can find additional information about the tools here: https://llvm.org/docs/GettingStarted.html.
+
+The source code for this chapter is located in the \textbf{chapter1} folder of the book’s GitHub repository: \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt/tree/main/chapter1}
+
+
+\mySubsubsection{1.1.1.}{CMake as project configuration tool}
+
+CMake is an source, cross-platform build system generator. It has been used as the primary build system for LLVM since version 3.3, which was released in 2013.
+
+Before LLVM began using CMake, it used autoconf, a tool that generates a configure script that can be used to build and install software on a wide range of Unix-like systems. However, autoconf has several limitations, such as being difficult to use and maintain and having poor support for cross-platform builds. CMake was chosen as an alternative to autoconf because it addresses these limitations and is easier to use and maintain.
+
+In addition to being used as the build system for LLVM, CMake is also used for many other software projects, including Qt, OpenCV, and Google Test.
+
+
+\mySubsubsection{1.1.2.}{Ninja as build tool}
+
+Ninja is a small build system with a focus on speed. It is designed to be used in conjunction with a build generator, such as CMake, which generates a build file that describes the build rules for a project.
+
+One of the main advantages of Ninja is its speed. It is able to execute builds much faster than other build systems, such as Unix Makefiles, by only rebuilding the minimum set of files necessary to complete the build. This is because it keeps track of the dependencies between build targets and only rebuilds targets that are out of date.
+
+Additionally, Ninja is simple and easy to use. It has a small and straightforward command-line interface, and the build files it uses are simple text files that are easy to read and understand.
+
+Overall, Ninja is a good choice for build systems when speed is a concern, and when a simple and easy-to-use tool is desired.
+
+One of the most useful Ninja option is -j . This option allows you to specify the number of threads to be run in parallel. You may want to specify the number depending on the hardware you are using.
+
+Our next goal is to download the LLVM code and investigate the project structure. We also need to set up the necessary utilities for the build process and establish the environment for our future experiments with LLVM code. This will ensure that we have the tools and dependencies in place to proceed with our work efficiently.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

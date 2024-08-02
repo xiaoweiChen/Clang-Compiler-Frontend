@@ -1,0 +1,15 @@
+*.pdf
+*.aux
+*.log
+*.out
+*.gz
+*.py
+*toc
+*.listing
+*.synctex(busy)
+/latex-test/
+/_minted-Professional-C++-6ed/
+/test-pandoc/
+*.epub
+*.pygtex
+*.pygstyle

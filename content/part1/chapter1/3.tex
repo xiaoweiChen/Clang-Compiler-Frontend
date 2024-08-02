@@ -1,0 +1,307 @@
+
+
+We are compiling our source code in debug mode to make it suitable for future investigations with a debugger. We are using LLDB as the debugger. We will start with an overview of the build process and finish building the LLDB as a concrete example.
+
+
+\mySubsubsection{1.3.1.}{Configuration with CMake}
+
+Create a build folder where the compiler and related tools will be built:
+
+\begin{shell}
+$ mkdir build
+$ cd build
+\end{shell}
+
+The minimal configuration command looks like this:
+
+\begin{shell}
+$ cmake -DCMAKE_BUILD_TYPE=Debug ../llvm
+\end{shell}
+
+The command requires the build type to be specified (e.g. Debug in our case) as well as the primary argument that points to a folder with the build configuration file. The configuration file is stored as CMakeLists.txt and is located in the llvm folder, which explains the ../llvm argument usage. The command generates Makefile located in the build folder, thus you can use the simple make command to start the build process.
+
+We will use more advanced configuration commands in the book. One of the commands looks like this:
+
+\begin{shell}
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_INSTALL_PREFIX=../install \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="lldb;clang;clang-tools-extra" \
+  -DLLVM_USE_SPLIT_DWARF=ON \
+  ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.4: Basic CMake configuration
+\end{center}
+
+The are several LLVM/cmake options specified:
+
+\begin{itemize}
+\item
+-G Ninja specifies Ninja as the build generator, otherwise it will use make (which is slow).
+
+\item
+-DCMAKE\_BUILD\_TYPE=Debug sets the build mode. The build with debug info will be created. There is a primary build configuration for Clang internals investigations.
+
+\item
+-DCMAKE\_INSTALL\_PREFIX=../install specifies the installation folder.
+
+\item
+-DLLVM\_TARGETS\_TO\_BUILD="X86" sets exact targets to be build. It will avoid building unnecessary targets.
+
+\item
+-DLLVM\_ENABLE\_PROJECTS="lldb;clang;clang-tools-extra" specifies the LLVM projects we want to build.
+
+\item
+-DLLVM\_USE\_SPLIT\_DWARF=ON splits debug information into separate files. This option saves disk space as well as memory consumption during the LLVM build.
+\end{itemize}
+
+We used -DLLVM\_USE\_SPLIT\_DWARF=ON to save some space on the disk. For instance, the Clang build (ninja clang build command) with the option enabled takes up 20 GB, but it takes up 27 GB space with the option disabled. Note that the option requires a compiler used for the build to support it. You might also notice that we create the build for one specific architecture: X86 . This option also saved some space for us because otherwise, all supported architecture will be built and the required space will also increase from 20 GB to 27 GB.
+
+\begin{myNotic}{Important note}
+You might want to avoid using the -DLLVM\_TARGETS\_TO\_BUILD="X86" setting if your host platform is different from X86, for instance, ARM. For ARM, you can use the following configuration: -DLLVM\_TARGETS\_TO\_BUILD="ARM;X86;AArch64" [LLVM Community. How To Build On ARM. 2024. URL \url{https://llvm.org/docs/HowToBuildOnARM.html}.]. The full list of supported platforms can be found in [LLVM Community. Building LLVM with CMake. 2023. URL \url{https://llvm.org/docs/CMake.html}.] and includes (as of March 2023) 19 different targets.
+\end{myNotic}
+
+
+You can also use the default settings and not specify the LLVM\_TARGETS\_TO\_BUILD configuration setting. Be prepared for both an increase in build time and the amount of space used.
+
+You can save more space if you use dynamic libraries instead of static ones. The configuration setting -DBUILD\_SHARED\_LIBS=ON will build each LLVM component as a shared library. The space used will be 14 GB, and the overall config command will look like this:
+
+
+\begin{shell}
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_INSTALL_PREFIX=../install \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="lldb;clang;clang-tools-extra" \
+  -DLLVM_USE_SPLIT_DWARF=ON \
+  -DBUILD_SHARED_LIBS=ON \
+  ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.5: CMake configuration that enables shared libraries instead of static ones
+\end{center}
+
+For performance purposes, on Linux, you might want to use the gold linker instead of the default one. The gold linker is an alternative to the GNU Linker, which was developed as part of the GNU Binary Utilities (binutils) package. It is designed to be faster and more efficient than the GNU Linker, especially when linking large projects. One way it achieves this is by using a more efficient algorithm for symbol resolution and a more compact file format for the resulting executable. It can be enabled with the -DLLVM\_USE\_LINKER=gold option. The result configuration command will look like this:
+
+\begin{shell}
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_INSTALL_PREFIX=../install \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="lldb;clang;clang-tools-extra" \
+  -DLLVM_USE_LINKER=gold \
+  -DLLVM_USE_SPLIT_DWARF=ON \
+  -DBUILD_SHARED_LIBS=ON \
+  ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.6: CMake configuration that uses gold linker
+\end{center}
+
+The debug build can be very slow, so you may want to consider an alternative. A good compromise between debuggability and performance is the release build with debug information. To obtain this build, you can change the CMAKE\_BUILD\_TYPE flag to RelWithDebInfo in your overall configuration command. The command will then look like this:
+
+
+\begin{shell}
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_PREFIX=../install \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="lldb;clang;clang-tools-extra" \
+  -DLLVM_USE_SPLIT_DWARF=ON \
+  ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.7: CMake configuration that uses RelWithDebInfo build type
+\end{center}
+
+The following table keeps the list of some popular options (\url{https://llvm.org/docs/CMake.html}).
+
+
+% Please add the following required packages to your document preamble:
+% \usepackage{longtable}
+% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+\begin{longtable}{|l|l|}
+\hline
+\textbf{选项}            & \textbf{描述}                                                       \\ \hline
+\endfirsthead
+%
+\endhead
+%
+CMAKE\_BUILD\_TYPE &
+\begin{tabular}[c]{@{}l@{}}Specifies the build configuration.\\ Possible values are Release|Debug|RelWithDebInfo|MinSizeRel .\\ Release and RelWithDebInfo are optimized for performance, whileMinSizeRel is optimized for size.\end{tabular} \\ \hline
+CMAKE\_INSTALL\_PREFIX & Installation prefix                                               \\ \hline
+CMAKE\_C,CXX\_FLAGS    & Extra C/C++ flags be used for compilation                         \\ \hline
+CMAKE\_C,CXX\_COMPILER &
+\begin{tabular}[c]{@{}l@{}}C/C++ compiler be used for compilation.\\ You might want to specify a non-default compiler to use someoptions that are not available or not supported by the default compiler.\end{tabular} \\ \hline
+LLVM\_ENABLE\_PROJECTS & The projects to be enabled. We will use clang;clang-tools-extra . \\ \hline
+LLVM\_USE\_LINKER &
+\begin{tabular}[c]{@{}l@{}}Specifies the linker to be used. \\ There are several options, including gold and lld .\end{tabular} \\ \hline
+\end{longtable}
+
+\begin{center}
+Table 1.1: Configuration options
+\end{center}
+
+
+\mySubsubsection{1.3.2.}{Build}
+
+We need to call Ninja to build the projects. If you want to build all specified projects, you can run Ninja without arguments:
+
+\begin{shell}
+$ ninja
+\end{shell}
+
+The command for the Clang build will look like this:
+
+\begin{shell}
+$ ninja clang
+\end{shell}
+
+You can also run unit and end-to-end tests for the compiler with the following:
+
+\begin{shell}
+$ ninja check-clang
+\end{shell}
+
+The compiler binary is bin/clang and can be found in the build folder.
+
+You can also install the binaries into the folder specified in the -DCMAKE\_INSTALL\_PREFIX option. It can be done as follows:
+
+\begin{shell}
+$ ninja install
+\end{shell}
+
+The ../install folder (specified as the installation folder in Figure 1.4) will have the following structure:
+
+
+\begin{shell}
+$ ls ../install
+bin  include  lib  libexec  share
+\end{shell}
+
+
+\mySubsubsection{1.3.3.}{The LLVM debugger, its build, and usage}
+
+The LLVM debugger, LLDB , has been created with a look at the GNU debugger (GDB ). Some of its commands repeat the counterparts from GDB . You may ask ”Why do we need a new debugger if we have a good one?” The answer can be found in the different architecture solutions used by GCC and LLVM. LLVM uses a modular architecture, and different parts of the compiler can be reused. For example, the Clang frontend can be reused in the debugger, resulting in support for modern C/C++ features. For example, the print command in lldb can specify any valid language constructions, and you can use some modern C++ features with the lldb print command.
+
+In contrast, GCC uses a monolithic architecture, and it’s hard to separate the C/C++ frontend from other parts. Therefore, GDB has to implement language features separately, which may take some time before modern language features implemented in GCC become available in GDB .
+
+You may find some info about LLDB build and a typical usage scenario in the following example. We are going to create a separate folder for the release build:
+
+\begin{shell}
+$ cd llvm-project
+$ mkdir release
+$ cd release
+\end{shell}
+
+\begin{center}
+Figure 1.8: Release build for LLVM
+\end{center}
+
+We configure our project in release mode and specify the lldb and clang projects only:
+
+\begin{shell}
+cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=../install \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_PROJECTS="lldb;clang" \
+  ../llvm
+\end{shell}
+
+\begin{center}
+Figure 1.9: CMake configuration that uses Release build type
+\end{center}
+
+CMake configuration that uses Release build type
+
+We are going to build both Clang and LLDB using the maximum threads available in the system:
+
+\begin{shell}
+$ ninja clang lldb -j $(nproc)
+\end{shell}
+
+You can install the created executables with the following command:
+
+\begin{shell}
+$ ninja install-clang install-lldb
+\end{shell}
+
+
+The binary will be installed into the folder specified via the -DCMAKE\_INSTALL\_PREFIX config command argument.
+
+We will use the following simple C++ program for the example debugger session:
+
+\begin{cpp}
+int main() {
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 1.10: Test C++ program: main.cpp
+\end{center}
+
+The program can be compiled using the following command (<...> was used to refer the folder where llvm-project was cloned):
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang main.cpp -o main -g -O0
+\end{shell}
+
+As you may have noticed, we don’t use optimization (the -O0 option) and store debug info in the binary (with the -g option).
+
+A typical debug session for the created executable is shown in Figure 1.11.
+
+\begin{shell}
+1  $ <...>/llvm-project/install/bin/lldb main
+2  (lldb) target create "./main"
+3  ...
+4  (lldb) b main
+5  Breakpoint 1: where = main‘main + 11 at main.cpp:2:3,...
+6  (lldb) r
+7  Process 1443051 launched: ...
+8  Process 1443051 stopped
+9  * thread #1, name = ’main’, stop reason = breakpoint 1.1
+10  frame #0: 0x000055555555513b main‘main at main.cpp:2:3
+11    1    int main() {
+12 -> 2     return 0;
+13    3    }
+14 (lldb) q
+\end{shell}
+
+\begin{center}
+Figure 1.11: LLDB session example
+\end{center}
+
+Several actions are taken:
+
+\begin{itemize}
+\item
+Run the debug session with <...>/llvm-project/install/bin/lldb main , where main is the executable we want to debug. See Figure 1.11, Line 1.
+
+\item
+We set a breakpoint in the main function. See Figure 1.11, Line 4.
+
+\item
+Run the session with "r" command. See Figure 1.11, Line 6.
+
+\item
+We can see that the process is interrupted at the breakpoint. See Figure 1.11, Lines 8, 12.
+
+\item
+We finish the session with the "q" command. See Figure 1.11, Line 14.
+\end{itemize}
+
+We are going to use LLDB as one of our tools for the Clang internal investigation. We will use the same sequence of commands that is shown in Figure 1.11. You can also use another debugger, such as GDB , that has a similar set of commands as LLDB .
+
+
+
+
+
+

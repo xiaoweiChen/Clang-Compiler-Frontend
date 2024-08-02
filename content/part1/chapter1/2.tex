@@ -1,0 +1,157 @@
+Let’s begin by covering some foundational information about LLVM, including the project history as well as its structure.
+
+
+\mySubsubsection{1.2.1.}{Short LLVM history}
+
+
+The Clang compiler is a part of the LLVM project. The project was started in 2000 by Chris Lattner and Vikram Adve as their project at the University of Illinois at Urbana–Champaign [26].
+
+LLVM was originally designed to be a next-generation code generation infrastructure that could be used to build optimizing compilers for many programming languages. However, it has since evolved into a full-featured platform that can be used to build a wide variety of tools, including debuggers, profilers, and static analysis tools.
+
+LLVM has been widely adopted in the software industry and is used by many companies and organizations to build a variety of tools and applications. It is also used in academic research and teaching and has inspired the development of similar projects in other fields.
+
+The project received an additional boost when Apple hired Chris Lattner in 2005 and formed a team to work on LLVM. LLVM became an integral part of the development tools created by Apple (XCode).
+
+Initially, GNU Compile Collection (GCC) was used as the C/C++ frontend for LLVM. But that had some problems. One of them was related to GNU General Public License (GPL) that prevented the frontend usage at some proprietary projects. Another disadvantage was the limited support for Objective-C in GCC at the time, which was important for Apple. The Clang project was started by Chris Lattner in 2006 to address the issues.
+
+Clang was originally designed as a unified parser for the C family of languages, including C, Objective-C, C++, and Objective-C++. This unification was intended to simplify maintenance by using a single frontend implementation for multiple languages, rather than maintaining multiple implementations for each language. The project became successful very quickly. One of the primary reasons for the success of Clang and LLVM was their modularity. Everything in LLVM is a library, including Clang . It opened the opportunity to create a lot of amazing tools based on Clang and LLVM, such as clang-tidy and clangd, which will be covered later in the book (Chapter 5, Clang-Tidy Linter Framework and Chapter 8, IDE Support and Clangd).
+
+LLVM and Clang have a very clear architecture and are written in C++. That makes it possible to be investigated and used by any C++ developer. We can see the huge community created around LLVM and the extremely fast growth of its usage.
+
+\mySubsubsection{1.2.2.}{OS support}
+
+
+We are planning to focus on OS for personal computers here, such as Linux, Darwin, and Windows. On the other hand, Clang is not limited by personal computers but can also be used to compile code for mobile platforms such as iOS and different embedded systems.
+
+\textbf{Linux}
+
+The GCC is the default set of dev tools on Linux, especially gcc (for C programs) and g++ (for C++ programs) being the default compilers. Clang can also be used to compile source code on Linux. Moreover, it mimics to gcc and supports most of its options. LLVM support might be limited for some GNU tools, however; for instance, GNU Emacs does not support LLDB as a debugger. But despite this, Linux is the most suitable OS for LLVM development and investigation, thus we will mainly use this OS (Fedora 39) for future examples.
+
+\textbf{Darwin (macOS)}
+
+Clang is considered the main build tool for Darwin. The entire build infrastructure is based on LLVM, and Clang is the default C/C++ compiler. The developer tools, such as the debugger (LLDB ), also come from LLVM. You can get the primary developer utilities from XCode, which are based on LLVM. However, you may need to install additional command-line tools, such as CMake and Ninja, either as separate packages or through package systems such as MacPorts or Homebrew.
+
+For example, you can get CMake using Homebrew as follows:
+
+\begin{shell}
+$ brew install cmake
+\end{shell}
+
+or for MacPorts:
+
+\begin{shell}
+$ sudo port install cmake
+\end{shell}
+
+\textbf{Windows}
+
+On Windows, Clang can be used as a command-line compiler or as part of a larger development environment such as Visual Studio. Clang on Windows includes support for the Microsoft Visual C++ (MSVC) ABI, so you can use Clang to compile programs that use the Microsoft C runtime library (CRT) and the C++ Standard Template Library (STL). Clang also supports many of the same language features as GCC, so it can be used as a drop-in replacement for GCC on Windows in many cases.
+
+It’s worth mentioning clang-cl [LLVM Community. MSVC compatibility. 2023. URL \url{https://clang.llvm.org/docs/MSVCCompatibility.html}.]. It is a command-line compiler driver for Clang that is designed to be used as a drop-in replacement for the MSVC compiler, cl.exe . It was introduced as part of the Clang compiler, and is created to be used with the LLVM toolchain.
+
+Like cl.exe , clang-cl is designed to be used as part of the build process for Windows programs, and it supports many of the same command-line options as the MSVC compiler. It can be used to compile C, C++, and Objective-C code on Windows, and it can also be used to link object files and libraries to create executable programs or dynamic link libraries (DLLs).
+
+The development process for Windows is different from that of Unix-like systems, which require additional specifics that might make the book material quite complicated. To avoid this complexity, our primary goal is to focus on Unix-based systems, such as Linux and Darwin, and we will omit Windows-specific examples in this book.
+
+
+\mySubsubsection{1.2.3.}{LLVM/Clang project structure}
+
+
+The Clang source is a part of the LLVM monolithic repository (monorepo). LLVM started to use the monorepo in 2019 as a part of its transition to Git [LLVM Community. Moving LLVM Projects to GitHub. 2019. URL \url{https://llvm.org/docs/Proposals/GitHubMove.html}.]. The decision was driven by several factors, such as better code reuse, improved efficiency, and collaboration. Thus you can find all the LLVM projects in one place. As mentioned in the Preface, we will be using LLVM version 18.x in this book. The following command will allow you to download it:
+
+\begin{shell}
+$ git clone https://github.com/llvm/llvm-project.git -b release/18.x
+$ cd llvm-project
+\end{shell}
+
+\begin{center}
+Figure 1.1: Getting the LLVM code base
+\end{center}
+
+
+\begin{myNotic}{Important note}
+The release 18 is the latest version of LLVM, expected to be released in March 2024. This book is based on the version from January 23, 2024, when the release branch was created.
+\end{myNotic}
+
+
+The most important parts of the llvm-project that will be used in the book are shown in 图1.2
+
+\myGraphic{0.4}{content/part1/chapter1/images/1.png}{图 1.2}
+
+\begin{center}
+Figure 1.2: LLVM project tree
+\end{center}
+
+There are:
+
+\begin{itemize}
+\item
+lld : The LLVM linker tool. You may want to use it as a replacement for standard linker tools, such as GNU ld
+
+\item
+llvm : Common libraries for LLVM projects
+
+\item
+clang : The clang driver and frontend
+
+\item
+clang-tools-extra : These are different clang tools that will be covered in the second part of the book
+\end{itemize}
+
+Most projects have the structure shown in Figure 1.3.
+
+\myGraphic{0.35}{content/part1/chapter1/images/2.png}{图 1.3}
+
+\begin{center}
+Figure 1.3: Typical LLVM project structure
+\end{center}
+
+LLVM projects, such as clang or llvm , typically contain two primary folders: include and lib . The include folder contains the project interfaces (header files), while the lib folder contains the implementation. Each LLVM project has a variety of different tests, which can be divided into two primary groups: unit tests located in the unittests folder and implemented using the Google Test framework, and end-to-end tests implemented using the LLVM Integrated Tester (LIT ) framework. You can get more info about LLVM/Clang testing in Section 4.5.2, LLVM test framework.
+
+The most important projects for us are clang and clang-tools-extra . The clang folder contains the frontend and driver.
+
+\begin{myNotic}{Important note}
+The compiler driver is used to run different stages of compilation (parsing, optimization, link, and so on.). You can get more info about it at Section 2.3, Clang driver overview.
+\end{myNotic}
+
+
+For instance, the lexer implementation is located in the clang/lib/Lex folder. You can also see the clang/test folder, which contains end-to-end tests, and the clang/unittest folder, which contains unit tests for the frontend and the driver.
+
+Another important folder is clang-tools-extra . It contains some tools based on different Clang libraries. They are as follows:
+
+
+\begin{itemize}
+\item
+clang-tools-extra/clangd : A language server that provides navigation info for IDEs such as VSCode
+
+\item
+clang-tools-extra/clang-tidy : A powerful lint framework with several hundred different checks
+
+\item
+clang-tools-extra/clang-format : A code formatting tool
+\end{itemize}
+
+After obtaining the source code and setting up build tools, we are ready to compile the LLVM source code.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

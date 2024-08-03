@@ -1,0 +1,459 @@
+It’s evident that the Clang compiler toolchain conforms to the pattern widely described in various compiler books [1, 18]. However, Clang’s frontend part diverges significantly from a typical compiler frontend. The primary reason for this distinction is the complexity of the C++ language. Some features, such as macros, can modify the source code itself, while others, such as typedef, can influence the kind of token. Clang can also generate output in a variety of formats. For instance, the following command generates an aesthetically pleasing HTML view of the program shown in Figure 2.5:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1 -emit-html max.cpp
+\end{shell}
+
+Take note that we pass the argument to emit the HTML form of the source program to the Clang frontend, specified with the -cc1 option. Alternatively, you can pass an option to the frontend via the -Xclang option, which requires an additional argument representing the option itself, for example:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -Xclang -emit-html max.cpp \
+                                       -fsyntax-only
+\end{shell}
+
+You may notice that, in the preceding command, we utilized the -fsyntax-only option, instructing Clang to only execute the preprocessor, parser, and semantic analysis stages.
+
+Accordingly, we can instruct the Clang frontend to perform different actions and produce varying types of output based on the provided compilation options. The base class for these actions is termed FrontendAction .
+
+\mySubsubsection{2.4.1.}{Frontend action}
+
+The Clang frontend is capable of executing only one frontend action at a time. A frontend action is a specific task or process that the frontend performs based on the provided compiler option. The following is a list of some possible frontend actions (the table only includes a subset of the available frontend actions):
+
+% Please add the following required packages to your document preamble:
+% \usepackage{longtable}
+% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+\begin{longtable}{|l|l|l|}
+\hline
+\textbf{FrontendAction} & \textbf{Compiler option} & \textbf{Description}                   \\ \hline
+\endfirsthead
+%
+\endhead
+%
+EmitObjAction           & -emit-obj (default)      & Compile to an object file              \\ \hline
+EmitBCAction            & -emit-llvm-bc            & Compile to LLVM bytecode               \\ \hline
+EmitLLVMAction          & -emit-llvm               & Compile to LLVM readable form          \\ \hline
+ASTPrintAction          & -ast-print               & Build ASTs and then pretty-print them. \\ \hline
+HTMLPrintAction         & -emit-html               & Prints the program source in HTML form \\ \hline
+DumpTokensAction        & -dump-tokens             & Prints preprocessor tokens             \\ \hline
+\end{longtable}
+
+\begin{center}
+Table 2.1: Frontend actions
+\end{center}
+
+\myGraphic{0.4}{content/part1/chapter2/images/28.png}{Figure 2.28: Clang frontend components}
+
+The diagram shown in Figure 2.28 illustrates the basic frontend architecture, which is similar to the architecture shown in Figure 2.4. However, there are notable differences specific to Clang.
+
+One significant change is the naming of the lexer. In Clang, the lexer is referred to as the preprocessor. This naming convention reflects the fact that the lexer implementation is encapsulated within the Preprocessor class. This alteration was inspired by the unique aspects of the C/C++ language, which includes special types of tokens (macros) that require specialized preprocessing.
+
+Another noteworthy deviation is found in the parser component. While conventional compilers typically perform both syntax and semantic analysis within the parser, Clang distributes these tasks across different components. The Parser component focuses solely on syntax analysis, while the Sema component handles semantic analysis.
+
+Furthermore, Clang offers the ability to produce output in different forms or formats. For example, the CodeGenAction class serves as the base class for various code generation actions, such as EmitObjAction or EmitLLVMAction.
+
+We will use the code for the max function from Figure 2.5 for our future exploration of the Clang frontend’s internals:
+
+\begin{cpp}
+int max(int a, int b) {
+  if (a > b)
+    return a;
+  return b;
+}
+\end{cpp}
+
+\begin{center}
+Figure 2.29: Source code for max function: max.cpp
+\end{center}
+
+By utilizing the -cc1 option, we can directly invoke the Clang frontend, bypassing the driver. This approach allows us to examine and analyze the inner workings of the Clang frontend in greater detail.
+
+\mySubsubsection{2.4.2.}{Preprocessor}
+
+The first part is the Lexer , which is called the preprocessor in Clang. Its primary goal is to convert the input program into a stream of tokens. You can print the token stream using the -dump-tokens options as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1 -dump-tokens max.cpp
+\end{shell}
+
+The output of the command is as shown:
+
+\begin{shell}
+int ’int’        [StartOfLine]  Loc=<max.cpp:1:1>
+identifier ’max’         [LeadingSpace] Loc=<max.cpp:1:5>
+l_paren ’(’             Loc=<max.cpp:1:8>
+int ’int’               Loc=<max.cpp:1:9>
+identifier ’a’   [LeadingSpace] Loc=<max.cpp:1:13>
+comma ’,’               Loc=<max.cpp:1:14>
+int ’int’        [LeadingSpace] Loc=<max.cpp:1:16>
+identifier ’b’   [LeadingSpace] Loc=<max.cpp:1:20>
+r_paren ’)’             Loc=<max.cpp:1:21>
+l_brace ’{’      [LeadingSpace] Loc=<max.cpp:1:23>
+if ’if’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:2:3>
+l_paren ’(’      [LeadingSpace] Loc=<max.cpp:2:6>
+identifier ’a’          Loc=<max.cpp:2:7>
+greater ’>’      [LeadingSpace] Loc=<max.cpp:2:9>
+identifier ’b’   [LeadingSpace] Loc=<max.cpp:2:11>
+r_paren ’)’             Loc=<max.cpp:2:12>
+return ’return’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:3:5>
+identifier ’a’   [LeadingSpace] Loc=<max.cpp:3:12>
+semi ’;’                Loc=<max.cpp:3:13>
+return ’return’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:4:3>
+identifier ’b’   [LeadingSpace] Loc=<max.cpp:4:10>
+semi ’;’                Loc=<max.cpp:4:11>
+r_brace ’}’      [StartOfLine]  Loc=<max.cpp:5:1>
+eof ’’          Loc=<max.cpp:5:2>
+\end{shell}
+
+\begin{center}
+Figure 2.30: Clang dump token output
+\end{center}
+
+As we can see, there are different types of tokens, such as language keywords (e.g., int, return), identifiers (e.g., max, a, b, etc.), and special symbols (e.g., semicolon, comma, etc.). The tokens for our small program are called normal tokens, which are returned by the lexer.
+
+In addition to normal tokens, Clang has an additional type of token called annotation tokens. The primary difference is that these tokens also store additional semantic
+information. For instance, a sequence of normal tokens can be replaced by the parser with a single annotation token that contains information about the type or C++ scope. The primary reason for using such tokens is performance, as it allows for the prevention of reparsing when the parser needs to backtrack.
+
+Since annotation tokens are used in the internal implementation of the parser, it would be good to consider an example of their usage with LLDB. Suppose we have the following C++ code:
+
+\begin{cpp}
+namespace clangbook {
+template <typename T> class A {};
+} // namespace clangbook
+clangbook::A<int> a;
+\end{cpp}
+
+\begin{center}
+Figure 2.31: Source code that uses annotation tokens, annotation.cpp
+\end{center}
+
+The last line of the code declares the variable a with the following type:
+clangbook::A<int>. The type is represented as an annotation token, as shown in the following LLDB session:
+
+\begin{shell}
+1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 annotation.cpp
+2  ...
+3  (lldb) b clang::Parser::ConsumeAnnotationToken
+4  ...
+5  (lldb) r
+6  ...
+7     608    }
+8     609
+9     610    SourceLocation ConsumeAnnotationToken() {
+10 -> 611      assert(Tok.isAnnotation() && "wrong consume method");
+11    612      SourceLocation Loc = Tok.getLocation();
+12    613      PrevTokLocation = Tok.getAnnotationEndLoc();
+13    614      PP.Lex(Tok);
+14 (lldb) p Tok.getAnnotationRange().printToString(PP.getSourceManager())
+15 (std::string) "<annotation.cpp:4:1, col:17>"
+\end{shell}
+
+\begin{center}
+Figure 2.32: LLDB session for annotation.cpp
+\end{center}
+
+As we can see, Clang consumes an annotation token from Line 4 of the program shown in Figure 2.31. The token is located between columns 1 and 7. See Figure 2.32. This corresponds to the following text used as the token: clangbook::A<int>. The token consists of other tokens, such as ’clangbook’, ’::’, and so on. Combining all the tokens into one will significantly simplify the parsing and boost the overall parsing performance.
+
+\myGraphic{0.4}{content/part1/chapter2/images/33.png}{Figure 2.33: Preprocessor (clang lexer) class internals}
+
+C/C++ language has some specifics that influence the internal implementation of the Preprocessor class. The first one is about macros. The Preprocessor class has two different helper classes to retrieve tokens:
+
+\begin{itemize}
+\item
+The Lexer class is used to convert a text buffer into a stream of tokens.
+
+\item
+The TokenLexer class is used to retrieve tokens from macro expansions.
+\end{itemize}
+
+It should be noted that only one of these helpers can be active at a time.
+
+Another specific aspect of C/C++ is the \#include directive (which is also applicable to the import directive). In this case, we need to maintain a stack of includes, where each include can have its own TokenLexer or Lexer, depending on whether there is a macro expansion within it. As a result, the Preprocessor class keeps a stack of lexers (IncludeMacroStack class) for each \#include directive, as shown in Figure 2.33.
+
+\mySubsubsection{2.4.2.}{Parser and sema}
+
+The parser and sema are crucial components of the Clang compiler frontend. They handle the syntax and semantic analysis of the source code, producing an AST as output. This tree can be visualized for our test program using the following command:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1 -ast-dump max.cpp
+\end{shell}
+
+The output of this command is shown here:
+
+\begin{shell}
+TranslationUnitDecl 0xa9cb38 <<invalid sloc>> <invalid sloc>
+|-TypedefDecl 0xa9d3a8 <<invalid sloc>> <invalid sloc>
+implicit __int128_t ’__int128’
+| ‘-BuiltinType 0xa9d100 ’__int128’
+...
+‘-FunctionDecl 0xae6a98 <max.cpp:1:1, line:5:1> line:1:5 max
+’int (int, int)’
+  |-ParmVarDecl 0xae6930 <col:9, col:13> col:13 used a ’int’
+  |-ParmVarDecl 0xae69b0 <col:16, col:20> col:20 used b ’int’
+  ‘-CompoundStmt 0xae6cd8 <col:23, line:5:1>
+    |-IfStmt 0xae6c70 <line:2:3, line:3:12>
+    | |-BinaryOperator 0xae6c08 <line:2:7, col:11> ’bool’ ’>’
+    | | |-ImplicitCastExpr 0xae6bd8 <col:7> ’int’ <LValueToRValue>
+    | | | ‘-DeclRefExpr 0xae6b98 <col:7> ’int’ lvalue ParmVar 0xae6930
+            ’a’ ’int’
+    | | ‘-ImplicitCastExpr 0xae6bf0 <col:11> ’int’ <LValueToRValue>
+    | |   ‘-DeclRefExpr 0xae6bb8 <col:11> ’int’ lvalue ParmVar 0xae69b0
+            ’b’ ’int’
+    | ‘-ReturnStmt 0xae6c60 <line:3:5, col:12>
+    |   ‘-ImplicitCastExpr 0xae6c48 <col:12> ’int’ <LValueToRValue>
+    |     ‘-DeclRefExpr 0xae6c28 <col:12> ’int’ lvalue ParmVar 0xae6930
+            ’a’ ’int’
+    ‘-ReturnStmt 0xae6cc8 <line:4:3, col:10>
+      ‘-ImplicitCastExpr 0xae6cb0 <col:10> ’int’ <LValueToRValue>
+        ‘-DeclRefExpr 0xae6c90 <col:10> ’int’ lvalue ParmVar 0xae69b0
+            ’b’ ’int’
+\end{shell}
+
+\begin{center}
+Figure 2.34: Clang AST dump output
+\end{center}
+
+Clang utilizes a hand-written recursive-descent parser [LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}.]. This parser can be considered simple, and this simplicity was one key reason for its selection. Additionally, the complex rules specified for the C/C++ languages necessitated an ad hoc parser with easily adaptable rules.
+
+Let’s explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate]:
+
+A source file together with all the headers (16.5.1.2) and source files included (15.3) via the preprocessing directive \#include, less any source lines skipped by any of the conditional inclusion (15.2) preprocessing directives, is called a translation unit.
+
+The parser first recognizes that the initial tokens from the source code correspond to a function definition, as defined in the C++ standard [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general]:
+
+\begin{shell}
+function-definition :
+    ... declarator ... function-body
+    ...
+\end{shell}
+
+\begin{center}
+Figure 2.35: Function definition for C++ standard
+\end{center}
+
+The corresponding code follows:
+
+\begin{cpp}
+int max(...) {
+  ...
+}
+\end{cpp}
+
+\begin{center}
+Figure 2.36: Part of the example code corresponding to function definition from C++ standard
+\end{center}
+
+The function definition necessitates a declarator and function body. We’ll start with the declarator, defined in the C++ standard as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general]:
+
+\begin{shell}
+declarator:
+        ...
+        ... parameters-and-qualifiers ...
+...
+parameters-and-qualifiers:
+        ( parameter-declaration-clause ) ...
+...
+parameter-declaration-clause:
+        parameter-declaration-list ...
+parameter-declaration-list:
+        parameter-declaration
+        parameter-declaration-list , parameter-declaration
+\end{shell}
+
+\begin{center}
+Figure 2.37: Declarator definition for C++ standard
+\end{center}
+
+In other words, the declarator specifies a list of parameter declarations within brackets. The corresponding piece of code from the source is as follows:
+
+\begin{cpp}
+... (int a, int b)
+...
+\end{cpp}
+
+\begin{center}
+Figure 2.38: Part of the example code corresponding to declarator from C++ standard
+\end{center}
+
+The function definition, as stated above, also requires a function body. The C++ standard specifies the function body as follows: [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general]
+
+\begin{shell}
+function-body:
+    ... compound-statement
+    ...
+\end{shell}
+
+\begin{center}
+Figure 2.39: Function body definition for C++ standard
+\end{center}
+
+Thus the function body consists of a compound statement, which is defined as follows in the C++ standard [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block]:
+
+\begin{shell}
+compound-statement:
+    { statement-seq ... }
+statement-seq:
+    statement
+    statement-seq statement
+\end{shell}
+
+\begin{center}
+Figure 2.40: Compound statement definition for C++ standard
+\end{center}
+
+Therefore, it describes a sequence of statements enclosed within \{... brackets.
+
+Our program has two types of statements: the conditional (if ) statement and the return statement. These are represented in the C++ grammar definition as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre]:
+
+\begin{shell}
+statement:
+    ...
+    selection-statement
+    ...
+    jump-statement
+    ...
+\end{shell}
+
+\begin{center}
+Figure 2.41: Statement definition for C++ standard
+\end{center}
+
+In this context, the selection statement corresponds to the if condition in our program, while the jump statement corresponds to the return operator.
+
+Let’s examine the jum statement in more detail [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general]:
+
+\begin{shell}
+jump-statement:
+    ...
+    return expr-or-braced-init-list;
+    ...
+\end{shell}
+
+\begin{center}
+Figure 2.42: jump statement definition for C++ standard
+\end{center}
+
+where expr-or-braced-init-list is defined as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general]:
+
+\begin{shell}
+expr-or-braced-init-list:
+    expression
+    ...
+\end{shell}
+
+\begin{center}
+Figure 2.43: Return expression definition for C++ standard
+\end{center}
+
+In this context, the return keyword is followed by an expression and a semicolon. In our case, there’s an implicit cast expression that automatically converts the variable into the required type (int ).
+
+It can be enlightening to examine the parser’s operation through the LLDB debugger:
+
+\begin{shell}
+$ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
+\end{shell}
+
+The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we’ve set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the ’bt’ command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate].
+
+\begin{shell}
+1  (lldb) b clang::Parser::ParseReturnStatement
+2  (lldb) r
+3  ...
+4  (lldb) c
+5  ...
+6  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+7     frame #0: ... clang::Parser::ParseReturnStatement(...) ...
+8     2421 StmtResult Parser::ParseReturnStatement() {
+9  -> 2422   assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
+10    2423         "Not a return stmt!");
+11    2424   bool IsCoreturn = Tok.is(tok::kw_co_return);
+12    2425   SourceLocation ReturnLoc = ConsumeToken();  // eat the ’return’.
+13 (lldb) bt
+14   * frame #0: ... clang::Parser::ParseReturnStatement( ...
+15    ...
+16    frame #2: ... clang::Parser::ParseStatementOrDeclaration( ...
+17    frame #3: ... clang::Parser::ParseCompoundStatementBody( ...
+18    frame #4: ... clang::Parser::ParseFunctionStatementBody( ...
+19    frame #5: ... clang::Parser::ParseFunctionDefinition( ...
+20    ...
+\end{shell}
+
+\begin{center}
+Figure 2.44: Second return statement parsing at max.cpp example program
+\end{center}
+
+The parsing results in the generation of AST. We can also inspect the process of AST creation using the debugger. To do this, we need to set a corresponding breakpoint at the clang::ReturnStmt::Create method:
+
+\begin{shell}
+1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
+2  ...
+3  (lldb) b clang::ReturnStmt::Create
+4  (lldb) r
+5  ...
+6  (lldb) c
+7  ...
+8  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+9     frame #0: ... clang::ReturnStmt::Create(...) at Stmt.cpp:1205:8
+10    1202
+11    1203 ReturnStmt *ReturnStmt::Create(const ASTContext &Ctx, SourceLocation RL,
+12    1204                              Expr *E, const VarDecl *NRVOCandidate) {
+13 -> 1205   bool HasNRVOCandidate = NRVOCandidate != nullptr;
+14    1206   ...
+15    1207   ...
+16    1208   return new (Mem) ReturnStmt(RL, E, NRVOCandidate);
+17 (lldb) bt
+18 * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+19  * frame #0: ... clang::ReturnStmt::Create( ...
+20    frame #1: ... clang::Sema::BuildReturnStmt( ...
+21    frame #2: ... clang::Sema::ActOnReturnStmt( ...
+22    frame #3: ... clang::Parser::ParseReturnStatement( ...
+23    frame #4: ... clang::Parser::ParseStatementOrDeclarationAfterAttributes( ...
+24    ...
+\end{shell}
+
+\begin{center}
+Figure 2.45: Breakpoint at clang::ReturnStmt::Create
+\end{center}
+
+As can be seen, the AST node for the return statement is created by the Sema component.
+
+The beginning of the return statement parser can be located in frame 4:
+
+\begin{shell}
+1  (lldb) f 4
+2  frame #4: ... clang::Parser::ParseStatementOrDeclarationAfterAttributes( ...
+3     323     SemiError = "break";
+4     324     break;
+5     325    case tok::kw_return:             // C99 6.8.6.4: return-statement
+6  -> 326     Res = ParseReturnStatement();
+7     327     SemiError = "return";
+8     328     break;
+9     329    case tok::kw_co_return:           // C++ Coroutines: ...
+10  (lldb)
+\end{shell}
+
+\begin{center}
+Figure 2.46: Return statement parsing at debugger
+\end{center}
+
+As we can observe, there is a reference to the C99 standard for the corresponding statement. The standard [International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.] provides a detailed description of the statement and the process for handling it.
+
+The code assumes that the current token is of type tok::kw\_return, and in this case, the parser invokes the relevant clang::Parser::ParseReturnStatement method.
+
+While the process of AST node creation can vary across different C++ constructs, it generally follows the pattern displayed in Figure 2.47.
+
+\myGraphic{0.4}{content/part1/chapter2/images/47.png}{Figure 2.47: C++ parsing in Clang frontend}
+
+In Figure 2.47, the square boxes represent the corresponding classes, and the function calls are represented as edges with the called function shown as the edge label. As can be seen, the Parser invokes the Preprocessor::Lex method to retrieve a token from the lexer. It then calls a method corresponding to the token, for example, Parser:ParseXXX for the token XXX. This method then calls Sema::ActOnXXX, which creates the corresponding object using XXX::Create. The process is then repeated with a new token.
+
+With this, we have now fully explored how the typical compiler frontend flow is implemented in Clang. We can see how the lexer component (the preprocessor) works in tandem with the parser (which comprises the parser and sema components) to produce the primary data structure for future code generation: the Abstract Syntax Tree (AST). The AST is not only essential for code generation but also for code analysis and modification. Clang provides easy access to the AST, thereby enabling the development of a diverse range of compiler tools.
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,306 @@
+When discussing compilers, we typically refer to a command-line utility that initiates and manages the compilation process. For example, to use the GNU Compiler Collection, one must call gcc to start the compilation process. Similarly, to compile a C++ program using Clang, one must call clang as the compiler. The program that controls the compilation process is known as the driver. The driver coordinates different stages of compilation and connects them together. In the book, we will be focusing on LLVM and using Clang as the driver for the compilation process.
+
+It may be confusing for readers that the same word, ”Clang,” is used to refer to both the compiler frontend and the compilation driver. In contrast, with other compilers, where the driver and C++ compiler can be separate executables, ”Clang” is a single executable that functions as both the driver and the compiler frontend. To use Clang as the compiler frontend only, the special option -cc1 must be passed to it.
+
+\mySubsubsection{2.3.1.}{Example program}
+
+We will use the simple “Hello world!” example program for our experiments with the Clang driver. The main source file is called hello.cpp . The file implements a trivial C++ program that prints “Hello world!” to the standard output:
+
+\begin{cpp}
+#include <iostream>
+
+int main() {
+  std::cout << "Hello world!" << std::endl;
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 2.13: Example program: hello.cpp
+\end{center}
+
+You can compile the source with the following:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++
+\end{shell}
+
+\begin{center}
+Figure 2.14: Compilation for hello.cpp
+\end{center}
+
+As you can see, we used the clang executable as the compiler and specified the -lstdc++ library option because we used the <iostream> header from the standard C++ library. We also specified the output for the executable (/tmp/hello ) with the -o option.
+
+\mySubsubsection{2.3.2.}{Compilation phases}
+
+We used two inputs for our example program. The first one is our source code and the second one is a shared library for the standard C++ library. The Clang driver should combine the inputs together, pass them via different phases of the compilation process, and finally, provide the executable file on the target platform.
+
+Clang uses the same typical compiler workflow as shown in Figure 2.2. You can ask Clang to show the phases using the -ccc-print-phases additional argument:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++ \
+  -ccc-print-phases
+\end{shell}
+
+\begin{center}
+Figure 2.15: Command to print compilation phases for hello.cpp
+\end{center}
+
+The output for the command is the following:
+
+\begin{shell}
+            +- 0: input, "hello.cpp", c++
+         +- 1: preprocessor, {0}, c++-cpp-output
+      +- 2: compiler, {1}, ir
+   +- 3: backend, {2}, assembler
++- 4: assembler, {3}, object
+|- 5: input, "1%dM", object
+6 : linker, {4, 5}, im
+\end{shell}
+
+\begin{center}
+Figure 2.16: Compilation phases for hello.cpp
+\end{center}
+
+We can visualize the output as shown in Figure 2.17.
+
+\myGraphic{0.4}{content/part1/chapter2/images/17.png}{Figure 2.17: Clang driver phases}
+
+As we can see in Figure 2.17, the driver receives an input file, hello.cpp , which is a C++ file. The file is processed by the preprocessor and we obtain the preprocessor output (marked as c++-cpp-output ). The result is compiled into IR form by the compiler, and then the backend converts it into assembly form. This form is later transformed into an object file. The final object file is combined with another object (libstdc++ ) to produce the final binary (image ).
+
+\mySubsubsection{2.3.3.}{Tool execution}
+
+The phases are combined into several tool executions. The Clang driver invokes different programs to produce the final executable. Specifically, for our example, it calls the clang compiler and the ld linker. Both programs require additional arguments that are set up by the driver.
+
+For instance, our example program (hello.cpp ) includes the following header:
+
+\begin{cpp}
+#include <iostream>
+...
+\end{cpp}
+
+\begin{center}
+Figure 2.18: iostream header at hello.cpp
+\end{center}
+
+We did not specify any additional arguments (such as search paths, for example, -I ) when we invoked the compilation. However, different architectures and operating systems might have different paths for locating headers.
+
+On Fedora 39, the header is located in the /usr/include/c++/13/iostream folder. We can examine a detailed description of the process executed by the driver and the arguments used with the -\#\#\# option:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++ -###
+\end{shell}
+
+\begin{center}
+Figure 2.19: Command to print tools execution for hello.cpp
+\end{center}
+
+The output for this command is quite extensive, and certain parts have been omitted here. Please refer to Figure 2.20.
+
+\begin{shell}
+1   clang version 18.1.0rc (https://github.com/llvm/llvm-project.git ...)
+2   "<...>/llvm-project/install/bin/clang-18"
+3     "-cc1" ... \
+4     "-internal-isystem" \
+5     "/usr/include/c++/13" ... \
+6     "-internal-isystem" \
+7     "/usr/include/c++/13/x86_64-redhat-linux" ... \
+8     "-internal-isystem" ... \
+9     "<...>/llvm-project/install/lib/clang/18/include" ... \
+10    "-internal-externc-isystem" \
+11    "/usr/include" ... \
+12    "-o" "/tmp/hello-XXX.o" "-x" "c++" "hello.cpp"
+13  ".../bin/ld" ... \
+14    "-o" "/tmp/hello" ... \
+15    "/tmp/hello-XXX.o" \
+16    "-lstdc++" ...
+\end{shell}
+
+\begin{center}
+Figure 2.20: Clang driver tool execution. The host system is Fedora 39.
+\end{center}
+
+As we can see in Figure 2.20, the driver initiates two processes: clang-18 with the -cc1 flag (see Lines 2-12) and the linker ld (see Lines 13-16). The Clang compiler implicitly receives several search paths, as seen in Lines 5, 7, 9, and 11. These paths are necessary for the inclusion of the iostream header in the test program.
+
+The output of the first executable (/tmp/hello-XXX.o ) serves as input for the second one (see Lines 12 and 15). The arguments -lstdc++ and -o /tmp/hello are set for the linker, while the first argument (hello.cpp) is provided for the compiler invocation (first executable).
+
+\myGraphic{0.4}{content/part1/chapter2/images/21.png}{Figure 2.21: Clang driver tool execution. The Clang driver runs two executables: the clang executable with the -cc1 flag and the linker - ld executable}
+
+The process can be visualized as shown in Figure 2.21, where we can see that two executables are executed as part of the compilation process. The first one is clang-18 with a special flag (-cc1 ). The second one is the linker: ld .
+
+\mySubsubsection{2.3.4.}{Combining it all together}
+
+We can summarize the knowledge we have acquired so far using Figure 2.22. The figure illustrates two different processes started by the Clang driver. The first one is clang -cc1 (compiler), and the second one is ld (linker). The compiler process is the same executable as the Clang driver (clang ), but it is run with a special argument: -cc1 . The compiler produces an object file that is then processed by the linker (ld ) to generate the final binary.
+
+\myGraphic{0.4}{content/part1/chapter2/images/22.png}{Figure 2.22: Clang driver: The driver got the input file hello.cpp, which is a C++ file. It starts two processes: clang and ld. The first one does real compilation and starts the integrated assembler. The last one is the linker (ld) that produces the final binary (image) from the result received from the compiler and the external library (libstdc++)}
+
+In Figure 2.22, we can observe similar components of the compiler mentioned earlier (see Section 2.2, Getting started with compilers). However, the main difference is that the preprocessor (part of the lexer) is shown separately, while the frontend and middle-end are combined into the compiler. Additionally, the figure depicts an assembler that is executed by the driver to generate the object code. It is important to note that the assembler can be integrated, as shown in Figure 2.22, or it may require a separate process to be executed.
+
+\begin{myNotic}{Important note}
+Here is an example of specifying an external assembler using the -c (compile only) and -o (output file) options, along with the appropriate flags for your platform:
+
+\begin{shell}
+$<...>/llvm-project/install/bin/clang -c hello.cpp \
+                                      -o /tmp/hello.o
+as -o /tmp/hello.o /tmp/hello.s
+\end{shell}
+\end{myNotic}
+
+\mySubsubsection{2.3.5.}{Debugging Clang}
+
+We’re going to step through a debugging session for our compilation process, illustrated in Figure 2.14.
+
+\begin{myNotic}{Important note}
+We will use the LLDB build created previously in Section 1.3.3, The LLVM debugger, its build, and usage for this and other debug sessions throughout the book. You can also use the LLDB that comes as part of your host system.
+\end{myNotic}
+
+Our chosen point of interest, or breakpoint, is the clang::ParseAST function. In a typical debug session, which resembles the one outlined in Figure 1.11, you would feed command-line arguments following the "- -" symbol. The command should look like this:
+
+\begin{shell}
+$ lldb <...>/llvm-project/install/bin/clang -- hello.cpp -o /tmp/hello \
+                                               -lstdc++
+\end{shell}
+
+\begin{center}
+Figure 2.23: Running debugger for hello.cpp file compilation
+\end{center}
+
+In this case, <...> represents the directory path used to clone the LLVM project.
+
+Unfortunately, this approach doesn’t work with the Clang compiler:
+
+\begin{shell}
+1  $ lldb <...>/llvm-project/install/bin/clang -- hello.cpp -o /tmp/hello.o -lstdc++
+2  ...
+3  (lldb) b clang::ParseAST
+4  ...
+5  (lldb) r
+6  ...
+7  2  locations added to breakpoint 1
+8  ...
+9  Process 247135 stopped and restarted: thread 1 received signal: SIGCHLD
+10 Process 247135 stopped and restarted: thread 1 received signal: SIGCHLD
+11 Process 247135 exited with status = 0 (0x00000000)
+12 (lldb)
+\end{shell}
+
+\begin{center}
+Figure 2.24: Debugger session with failed interruption
+\end{center}
+
+As we can see from Line 7, the breakpoint was set but the process finished successfully (Line 11) without any interruptions. In other words, our breakpoint didn’t trigger in this instance.
+
+Understanding the internals of the Clang driver can help us identify the problem at hand. As mentioned earlier, the clang executable acts as a driver in this context, running two separate processes (refer to Figure 2.21). Therefore, if we wish to debug the compiler, we need to run it using the -cc1 option.
+
+\begin{myNotic}{Important note}
+It’s worth mentioning a certain optimization implemented in Clang in 2019 [Alexandre Ganea. [Clang][Driver] Re-use the calling process instead of creating a new process for the cc1 invocation. 2019. URL \url{https://reviews.llvm.org/D69825}.]. When using the -c option, the Clang driver doesn’t spawn a new process for the compiler:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -c hello.cpp  \
+                                       -o /tmp/hello.o \
+                                       -###
+clang version 18.1.0rc ...
+InstalledDir: <...>/llvm-project/install/bin
+(in-process)
+"<...>/llvm-project/install/bin/clang-18" "-cc1"..."hello.cpp"
+...
+\end{shell}
+
+As shown above, the Clang driver does not spawn a new process and instead calls the ”cc1” tool within the same process. This feature not only improves the compiler’s performance but can also be leveraged for Clang debugging.
+\end{myNotic}
+
+Upon using the -cc1 option and excluding the -lstdc++ option (which is specific to the second process, the ld linker), the debugger will generate the following output:
+
+\begin{shell}
+1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 hello.cpp -o /tmp/hello.o
+2  ...
+3  (lldb) b clang::ParseAST
+4  ...
+5  (lldb) r
+6  ...
+7  2  locations added to breakpoint 1
+8  Process 249890 stopped
+9  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+10     frame #0: ... at ParseAST.cpp:117:3
+11    114
+12    115  void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
+13    116    // Collect global stats on Decls/Stmts (until we have a module streamer).
+14 -> 117    if (PrintStats) {
+15    118      Decl::EnableStatistics();
+16    119      Stmt::EnableStatistics();
+17    120    }
+18 (lldb) c
+19 Process 249890 resuming
+20 hello.cpp:1:10: fatal error: ’iostream’ file not found
+21 #include <iostream>
+22          ^~~~~~~~~~
+23 1  error generated.
+24 Process 249890 exited with status = 1 (0x00000001)
+25 (lldb)
+\end{shell}
+
+\begin{center}
+Figure 2.25: Debugger session with missing search paths
+\end{center}
+
+Thus, we can see that we were able to successfully set the breakpoint, but the process ended with an error (see Lines 20-24). This error arose because we omitted certain search paths, which are typically appended implicitly by the Clang driver, necessary to find all the includes required for successful compilation.
+
+We can successfully execute the process if we explicitly include all necessary arguments in the compiler invocation. Here’s how to do that:
+
+\begin{shell}
+lldb <...>/llvm-project/install/bin/clang -- -cc1                    \
+     -internal-isystem /usr/include/c++/13                           \
+     -internal-isystem /usr/include/c++/13/x86_64-redhat-linux       \
+     -internal-isystem <...>/llvm-project/install/lib/clang/18/include \
+     -internal-externc-isystem /usr/include                          \
+     hello.cpp                                                       \
+     -o /tmp/hello.o
+\end{shell}
+
+\begin{center}
+Figure 2.26: Running the debugger with specified search paths. Host system is Fedora 39
+\end{center}
+
+Then we can set the breakpoint for clang::ParseAST and run the debugger. The execution will complete without errors, as shown below:
+
+\begin{shell}
+1  (lldb) b clang::ParseAST
+2  ...
+3  (lldb) r
+4  ...
+5  2  locations added to breakpoint 1
+6  Process 251736 stopped
+7  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+8     frame #0: 0x00007fffe803eae0 ... at ParseAST.cpp:117:3
+9     114
+10    115  void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
+11    116    // Collect global stats on Decls/Stmts (until we have a module streamer).
+12 -> 117    if (PrintStats) {
+13    118     Decl::EnableStatistics();
+14    119     Stmt::EnableStatistics();
+15    120    }
+16 (lldb) c
+17 Process 251736 resuming
+18 Process 251736 exited with status = 0 (0x00000000)
+19 (lldb)
+\end{shell}
+
+\begin{center}
+Figure 2.27: Successful debugger session for compiler
+\end{center}
+
+In conclusion, we have successfully demonstrated the debugging of a Clang compiler invocation. The techniques presented can be effectively employed for exploring the internals of a compiler and addressing compiler-related bugs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

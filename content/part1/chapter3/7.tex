@@ -1,0 +1,159 @@
+One of the most interesting aspects of Clang pertains to error processing. Error processing encompasses error detection, the display of corresponding error messages, and potential error recovery. The latter is particularly intriguing in terms of the Clang AST. Error recovery occurs when Clang doesn’t halt upon encountering a compilation error but continues to compile in order to detect additional issues.
+
+Such behavior is beneficial for various reasons. The most evident one is user convenience. When programmers compile a program, they typically prefer to be informed about as many errors as possible in a single compilation run. If the compiler were to stop at the first error, the programmer would have to correct that error, recompile, then address the subsequent error, and recompile again, and so forth. This iterative process can be tedious and frustrating, especially with larger code bases or intricate errors. While this behavior is particularly useful for compiled languages such as C/C++, it’s worth noting that interpreted languages also exhibit this behavior, which can assist users in handling errors step by step.
+
+Another compelling reason centers on IDE integration, which will be discussed in more detail in Chapter 8, IDE Support and Clangd. IDEs offer navigation support coupled with an integrated compiler. We will explore clangd as one such tool. Editing code in IDEs often leads to compilation errors. Most errors are confined to specific sections of the code, and it might be suboptimal to cease navigation in such cases.
+
+Clang employs various techniques for error recovery. For the syntax stage of parsing, it utilizes heuristics; for instance, if a user forgets to insert a semicolon, Clang may attempt to add it as part of the recovery process. The Recovery Phase can be abbreviated as DIRT where D stands for Delete a character (for example, an extra semicolon), I stands for Insert a character (as in the example presented), R stands for Replace (which replaces a character to match a particular token), and T stands for Transpose (rearranging two characters to match a token).
+
+Clang performs full recovery if it’s possible and produces an AST that corresponds to the modified file with all compilation errors fixed. The most interesting case is when full recovery is not possible, and Clang implements unique techniques to manage recovery while AST is created.
+
+Consider a program (maxerr.cpp) that is syntactically correct but has a semantic error. For example, it might use an undeclared variable. In this program, refer to Line 3 where the undeclared variable ab is used:
+
+\begin{cpp}
+int max(int a, int b) {
+  if (a > b) {
+    return ab;
+  }
+  return b;
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.33: The maxerr.cpp test program with a semantic error – undeclared variable
+\end{center}
+
+We are interested in the AST result produced by Clang, and we will use clang-query to examine it, which can be run as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-query maxerr.cpp
+...
+maxerr.cpp:3:12: error: use of undeclared identifier ’ab’
+  return ab;
+         ^
+\end{shell}
+
+\begin{center}
+Figure 3.34: Compilation error example
+\end{center}
+
+From the output, we can see that clang-query displayed a compilation error detected by the compiler. It’s worth noting that, despite this, an AST was produced for the program, and we can examine it. We are particularly interested in the return statements and can use the corresponding matcher to highlight the relevant parts of the AST.
+
+We will also set up the output to produce the AST and search for return statements that are of interest to us:
+
+\begin{shell}
+clang-query> set output dump
+clang-query> match returnStmt()
+\end{shell}
+
+\begin{center}
+Figure 3.35: Setting the matcher for return statement
+\end{center}
+
+The resulting output identifies two return statements in our program: the first match on Line 5 and the second match on Line 3:
+
+\begin{shell}
+Match #1:
+Binding for "root":
+ReturnStmt 0x6b63230 <maxerr.cpp:5:3, col:10>
+‘-ImplicitCastExpr 0x6b63218 <col:10> ’int’ <LValueToRValue>
+‘-DeclRefExpr 0x6b631f8 <col:10> ’int’ lvalue ParmVar 0x6b62ec8 ’b’ ’int’
+
+
+Match #2:
+Binding for "root":
+ReturnStmt 0x6b631b0 <maxerr.cpp:3:5, col:12>
+‘-RecoveryExpr 0x6b63190 <col:12> ’<dependent type>’ contains-errors lvalue
+
+2  matches.
+\end{shell}
+
+\begin{center}
+Figure 3.36: ReturnStmt node matches at maxerr.cpp test program
+\end{center}
+
+As we can see, the first match corresponds to semantically correct code on Line 5 and contains a reference to the a parameter. The second match is for Line 3, which has a compilation error. Notably, Clang has inserted a special type of AST node: RecoveryExpr. It’s worth noting that, in certain situations, Clang might produce an incomplete AST. This can cause issues with Clang tools, such as lint checks. In instances of compilation errors, lint checks might yield unexpected results because Clang couldn’t recover accurately from the compilation errors. We will revisit the problem when exploring the clang-tidy lint check framework in Chapter 5, Clang-Tidy Linter Framework.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,194 @@
+AST matchers [LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.] provide another approach for locating specific AST nodes. They can be particularly useful in linters when searching for improper pattern usage or in refactoring tools when identifying AST nodes for modification.
+
+We will create a simple program to test AST matches. The program will identify a function definition with the name max. We will use a slightly modified CMakeLists.txt file from the previous examples to include the libraries required to support AST matches:
+
+\begin{cmake}
+cmake_minimum_required(VERSION 3.16)
+project("matchvisitor")
+
+if ( NOT DEFINED ENV{LLVM_HOME})
+  message(FATAL_ERROR "$LLVM_HOME is not defined")
+else()
+  message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
+  set(LLVM_HOME $ENV{LLVM_HOME} CACHE PATH "Root of LLVM installation")
+  set(LLVM_LIB ${LLVM_HOME}/lib)
+  set(LLVM_DIR ${LLVM_LIB}/cmake/llvm)
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  link_directories(${LLVM_LIBRARY_DIRS})
+  set(SOURCE_FILE MatchVisitor.cpp)
+  add_executable(matchvisitor ${SOURCE_FILE})
+  set_target_properties(matchvisitor PROPERTIES COMPILE_FLAGS "-fno-rtti")
+  target_link_libraries(matchvisitor
+    LLVMFrontendOpenMP
+    LLVMSupport
+    clangAST
+    clangASTMatchers
+    clangBasic
+    clangFrontend
+    clangSerialization
+    clangTooling
+  )
+endif()
+\end{cmake}
+
+\begin{center}
+Figure 3.24: CMakeLists.txt for AST matchers test tool
+\end{center}
+
+There are two additional libraries added: LLVMFrontendOpenMP and clangASTMatchers (see Lines 18 and 21 in Figure 3.24). The main function for our tool looks like this:
+
+\begin{cpp}
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/CommandLine.h" // llvm::cl::extrahelp
+#include "MatchCallback.hpp"
+
+namespace {
+llvm::cl::OptionCategory TestCategory("Test project");
+llvm::cl::extrahelp
+  CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+} // namespace
+
+int main(int argc, const char **argv) {
+  llvm::Expected<clang::tooling::CommonOptionsParser> OptionsParser =
+    clang::tooling::CommonOptionsParser::create(argc, argv, TestCategory);
+  if (!OptionsParser) {
+    llvm::errs() << OptionsParser.takeError();
+    return 1;
+  }
+  clang::tooling::ClangTool Tool(OptionsParser->getCompilations(),
+                                 OptionsParser->getSourcePathList());
+  clangbook::matchvisitor::MatchCallback MC;
+  clang::ast_matchers::MatchFinder Finder;
+  Finder.addMatcher(clangbook::matchvisitor::M, &MC);
+  return Tool.run(clang::tooling::newFrontendActionFactory(&Finder).get());
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.25: The main function for AST matchers test tool
+\end{center}
+
+As you can observe (Lines 21-23), we employ the MatchFinder class and define a custom callback (included via the header in Line 4) that outlines the specific AST node we intend to match. The callback is implemented as follows:
+
+\begin{cpp}
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
+
+namespace clangbook {
+namespace matchvisitor {
+using namespace clang::ast_matchers;
+static const char *MatchID = "match-id";
+clang::ast_matchers::DeclarationMatcher M =
+  functionDecl(decl().bind(MatchID), matchesName("max"));
+
+class MatchCallback : public clang::ast_matchers::MatchFinder::MatchCallback {
+public:
+  virtual void
+  run(const clang::ast_matchers::MatchFinder::MatchResult &Result) final {
+    if (const auto *FD = Result.Nodes.getNodeAs<clang::FunctionDecl>(MatchID)) {
+       const auto &SM = *Result.SourceManager;
+       const auto &Loc = FD->getLocation();
+       llvm::outs() << "Found ’max’ function at " << SM.getFilename(Loc) << ":"
+                    << SM.getSpellingLineNumber(Loc) << ":"
+                    << SM.getSpellingColumnNumber(Loc) << "\n";
+    }
+   }
+};
+
+
+} // namespace matchvisitor
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 3.26: The match callback for the AST matchers test tool
+\end{center}
+
+The most crucial section of the code is located at lines 7-9. Each matcher is identified by an ID, which, in our case, is ’match-id’. The matcher itself is defined in Lines 8-9:
+
+\begin{cpp}
+clang::ast_matchers::DeclarationMatcher M =
+  functionDecl(decl().bind(MatchID), matchesName("max"));
+\end{cpp}
+
+This matcher seeks a function declaration that has a specific name, using functionDecl(), as seen in matchesName(). We utilized a specialized Domain-Specific Language (DSL) to specify the matcher. The DSL is implemented using C++ macros. We can also create our own matchers, as will be shown in Section 7.3.3, Check implementation. It’s worth noting that the recursive AST visitor serves as the backbone for AST traversal inside the matcher’s implementation.
+
+The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
+
+We will utilize a slightly modified version of the example shown in Figure 2.5, with an additional function added:
+
+\begin{cpp}
+int max(int a, int b) {
+  if (a > b) return a;
+    return b;
+}
+
+int min(int a, int b) {
+  if (a > b) return b;
+    return a;
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.27: Test program minmax.cpp for AST matchers
+\end{center}
+
+When we run our test tool on the example, we will obtain the following output:
+
+\begin{shell}
+./matchvisitor minmax.cpp -- -std=c++17
+...
+Found the ’max’ function at minmax.cpp:1:5
+\end{shell}
+
+\begin{center}
+Figure 3.28: The result of running the matchvisitor utility on a test file
+\end{center}
+
+As we can see, it has located only one function declaration with the name specified for the matcher.
+
+The DSL for matchers is typically employed in custom Clang tools, such as clang-tidy (as discussed in Chapter 5, Clang-Tidy Linter Framework), but it can also be used as a standalone tool. A specialized program called clang-query enables the execution of different match queries, which can be used to search for specific AST nodes in analyzed C++ code. Let’s see how the tool works.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

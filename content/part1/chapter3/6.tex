@@ -1,0 +1,76 @@
+AST matchers are incredibly useful, and there’s a utility that facilitates checking various matchers and analyzing the AST of your source code. This utility is known as clang-query tool. You can build and install this utility using the following command:
+
+\begin{shell}
+$ ninja install-clang-query
+\end{shell}
+
+\begin{center}
+Figure 3.29: The clang-query installation
+\end{center}
+
+You can run the tool as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-query minmax.cpp
+\end{shell}
+
+\begin{center}
+Figure 3.30: Running clang-query on a test file
+\end{center}
+
+We can use the match command as follows:
+
+\begin{shell}
+clang-query> match functionDecl(decl().bind("match-id"), matchesName("max"))
+Match #1:
+minmax.cpp:1:1: note: "match-id" binds here
+int max(int a, int b) {
+    ^~~~~~~~~~~~~~~~~~~~~~~
+minmax.cpp:1:1: note: "root" binds here
+int max(int a, int b) {
+    ^~~~~~~~~~~~~~~~~~~~~~~
+1  match.
+clang-query>
+\end{shell}
+
+\begin{center}
+Figure 3.31: Working with clang-query
+\end{center}
+
+Figure 3.31 demonstrates the default output, referred to as ’diag’ . Among several potential outputs, the most relevant one for us is ’dump’ . When the output is set to ’dump’ , clang-query will display the located AST node. For example, the following demonstrates how to match a function parameter named a :
+
+\begin{shell}
+clang-query> set output dump
+clang-query> match parmVarDecl(hasName("a"))
+Match #1:
+Binding for "root":
+ParmVarDecl 0x6775e48 <minmax.cpp:1:9, col:13> col:13 used a ’int’
+Match #2:
+Binding for "root":
+ParmVarDecl 0x6776218 <minmax.cpp:6:9, col:13> col:13 used a ’int’
+2  matches.
+clang-query>
+\end{shell}
+
+\begin{center}
+Figure 3.32: Working with clang-query using dump output
+\end{center}
+
+This tool proves useful when you wish to test a particular matcher or investigate a portion of the AST tree. We will utilize this tool to explore how Clang handles compilation errors.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

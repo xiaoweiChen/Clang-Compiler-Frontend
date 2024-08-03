@@ -1,0 +1,273 @@
+Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let’s explore the basic classes that Clang provides for these operations.
+
+\mySubsubsection{4.4.1.}{SourceManager and SourceLocation}
+
+Clang, as a compiler, operates with text files (programs), and locating a specific place in the program is one of the most frequently requested operations. Let’s look at a typical Clang error report. Consider a program from Chapter 3, Clang AST, as seen in Figure 3.33. Clang produces the following error message for the program:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -fsyntax-only maxerr.cpp
+maxerr.cpp:3:12: error: use of undeclared identifier ’ab’
+  return ab;
+         ^
+1  error generated.
+\end{shell}
+
+\begin{center}
+Figure 4.12: Error reported in maxerr.cpp
+\end{center}
+
+As we can see in Figure 4.12, the following information is required to display the message:
+
+\begin{itemize}
+\item
+Filename: In our case, it’s maxerr.cpp
+
+\item
+Line in the file: In our case, it’s 3
+
+\item
+Column in the file: In our case, it’s 12
+\end{itemize}
+
+The data structure that stores this information should be as compact as possible because the compiler uses it frequently. Clang stores the required information in the clang::SourceLocation object.
+
+This object is used often, so it should be small in size and quick to copy. We can check the size of the object using lldb. For instance, if we run Clang under the debugger, we can determine the size as follows:
+
+\begin{shell}
+$ lldb <...>/llvm-project/install/clang
+...
+(lldb) p sizeof(clang::SourceLocation)
+(unsigned long) 4
+(lldb)
+\end{shell}
+
+\begin{center}
+Figure 4.13: clang::SourceLocation size determination under debugger
+\end{center}
+
+That is, the information is encoded using a single unsigned long number. How is this possible? The number merely serves as an identifier for a position in the text file. An additional class is required to correctly extract and represent this information, which is clang::SourceManager. The SourceManager object contains all the details about a specific location. In Clang, managing source locations can be challenging due to the presence of macros, includes, and other preprocessing directives. Consequently, there are several ways to interpret a given source location. The primary ones are as follows:
+
+\begin{itemize}
+\item
+Spelling location: Refers to the location where something was actually spelled out in the source. If you have a source location pointing inside a macro body, the spelling location will give you the location in the source code where the contents of the macro are defined.
+
+\item
+Expansion location: Refers to where a macro gets expanded. If you have a source location pointing inside a macro body, the expansion location will give you the location in the source code where the macro was used (expanded).
+\end{itemize}
+
+Let’s look at a specific example:
+
+\begin{cpp}
+#define BAR void bar()
+int foo(int x);
+BAR;
+\end{cpp}
+
+\begin{center}
+Figure 4.14: Example program to test different types of source locations: functions.hpp
+\end{center}
+
+In Figure 4.14, we define two functions: int foo() at Line 2 and void bar() at Line 3. For the first function, both the spelling and expansion locations point to Line 2. However, for the second function, the spelling location is at Line 1, while the expansion location is at Line 3.
+
+Let’s examine this with a test Clang tool. We will use the test project from Section 3.4, Recursive AST visitor and replace some parts of the code here. First of all, we have to pass clang::ASTContext to our Visitor implementation. This is required because clang::ASTContext provides access to clang::SourceManager. We will replace Line 11 in Figure 3.8 and pass ASTContext as follows:
+
+\begin{cpp}
+CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef File) {
+  return std::make_unique<Consumer>(&CI.getASTContext());
+\end{cpp}
+
+The Consumer class (see Figure 3.9) will accept the argument and use it as a parameter for Visitor:
+
+\begin{cpp}
+Consumer(clang::ASTContext *Context)
+  : V(std::make_unique<Visitor>(Context)) {}
+\end{cpp}
+
+The main changes are for the Visitor class, which is mostly rewritten. First of all, we pass clang::ASTContext to the class constructor as follows:
+
+\begin{cpp}
+class Visitor : public clang::RecursiveASTVisitor<Visitor> {
+public:
+  explicit Visitor(clang::ASTContext *C) : Context(C) {}
+\end{cpp}
+
+\begin{center}
+Figure 4.15: Visitor class implementation: constructor
+\end{center}
+
+The AST Context class is stored as a private member of our class, as shown below:
+
+\begin{cpp}
+private:
+  clang::ASTContext *Context;
+\end{cpp}
+
+\begin{center}
+Figure 4.16: Visitor class implementation: private section
+\end{center}
+
+The main processing logic is in Visitor::VisitFunctionDecl method, which you can see next
+
+\begin{cpp}
+bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
+  clang::SourceManager &SM = Context->getSourceManager();
+  clang::SourceLocation Loc = FD->getLocation();
+  clang::SourceLocation ExpLoc = SM.getExpansionLoc(Loc);
+  clang::SourceLocation SpellLoc = SM.getSpellingLoc(Loc);
+  llvm::StringRef ExpFileName = SM.getFilename(ExpLoc);
+  llvm::StringRef SpellFileName = SM.getFilename(SpellLoc);
+  unsigned SpellLine = SM.getSpellingLineNumber(SpellLoc);
+  unsigned ExpLine = SM.getExpansionLineNumber(ExpLoc);
+  llvm::outs() << "Spelling : " << FD->getName() << " at " << SpellFileName
+               << ":" << SpellLine << "\n";
+  llvm::outs() << "Expansion : " << FD->getName() << " at " << ExpFileName
+               << ":" << ExpLine << "\n";
+  return true;
+}
+\end{cpp}
+
+\begin{center}
+Figure 4.17: Visitor class implementation: VisitFunctionDecl method
+\end{center}
+
+If we compile and run the code on the test file from Figure 4.14, the following output will be generated::
+
+\begin{shell}
+Spelling : foo at functions.hpp:2
+Expansion : foo at functions.hpp:2
+Spelling : bar at functions.hpp:1
+Expansion : bar at functions.hpp:3
+\end{shell}
+
+\begin{center}
+Figure 4.18: Output from the recursivevisitor executable on the functions.hpp test file
+\end{center}
+
+clang::SourceLocation and clang::SourceManager are very powerful classes. In combination with other classes such as clang::SourceRange (a pair of two source locations that specify the beginning and end of a source range), they provide a great foundation for diagnostics used in Clang.
+
+\mySubsubsection{4.4.2.}{Diagnostics support}
+
+Clang’s diagnostics subsystem is responsible for generating and reporting warnings, errors, and other messages [8]. The main classes involved are:
+
+\begin{itemize}
+\item
+DiagnosticsEngine: Manages diagnostic IDs and options
+
+\item
+DiagnosticConsumer: Abstract base class for diagnostic consumers
+
+\item
+DiagnosticIDs: Handles the mapping between diagnostic flags and internal IDs
+
+\item
+DiagnosticInfo: Represents a single diagnostic
+\end{itemize}
+
+Here is a simple example illustrating how you might emit a warning in Clang:
+
+\begin{cpp}
+// Emit a warning
+DiagnosticsEngine.Report(DiagnosticsEngine.getCustomDiagID(
+  clang::DiagnosticsEngine::Warning, "This is a custom warning."));
+\end{cpp}
+
+\begin{center}
+Figure 4.19: Emit warning with clang::DiagnosticsEngine
+\end{center}
+
+In our example, we will use a simple DiagnosticConsumer, clang::TextDiagnosticPrinter, which formats and prints the processed diagnostic messages.
+
+The full code for the main function of our example is shown in Figure 4.20:
+
+\begin{cpp}
+int main() {
+  llvm::IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagnosticOptions =
+    new clang::DiagnosticOptions();
+  clang::TextDiagnosticPrinter TextDiagnosticPrinter(
+    llvm::errs(), DiagnosticOptions.get(), false);
+
+  llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagIDs =
+    new clang::DiagnosticIDs();
+  clang::DiagnosticsEngine DiagnosticsEngine(DiagIDs, DiagnosticOptions,
+                                             &TextDiagnosticPrinter, false);
+
+  // Emit a warning
+  DiagnosticsEngine.Report(DiagnosticsEngine.getCustomDiagID(
+    clang::DiagnosticsEngine::Warning, "This is a custom warning."));
+
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 4.20: Clang diagnostics example
+\end{center}
+
+The code will produce the following output
+
+\begin{shell}
+warning: This is a custom warning.
+\end{shell}
+
+\begin{center}
+Figure 4.21: Printed diagnostics
+\end{center}
+
+In this example, we first set up DiagnosticsEngine with TextDiagnosticPrinter as its DiagnosticConsumer. We then use the Report method of DiagnosticsEngine to emit a custom warning. We will add a more realistic example later when we create our test project for the Clang plugin in Section 4.6, Clang plugin project.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,145 @@
+The AST is usually depicted as a tree, with its leaf nodes corresponding to various objects, such as function declarations and loop bodies. Typically, the AST represents the result of syntax analysis, i.e., parsing. Clang's AST nodes were designed to be immutable. This design requires that the Clang AST stores results from semantic analysis, meaning the Clang AST represents the outcomes of both syntax and semantic analyses.
+
+\begin{myNotic}{Important note}
+Although Clang also employs an AST, it's worth noting that the Clang AST is not a true tree. The presence of backward edges makes ”graph” a more appropriate term for describing Clang's AST.
+\end{myNotic}
+
+Typical tree structure implemented in C++ has all nodes derived from a base class. Clang uses a different approach. It splits different C++ constructions into separate groups with basic classes for each of them:
+
+\begin{itemize}
+\item
+Statements: clang::Stmt is the basic class for all statements. That includes ordinary statements such as if statements (clang::IfStmt class) as well as expressions and other C++ constructions.
+
+\item
+Declarations: clang::Decl is the base class for declarations. This includes a variable, typedef, function, struct, and more. There is also a separate base class for declarations with context, that is, declarations that might contain other declarations. The class is called clang::DeclContext. The declarations contained in clang::DeclContext can be accessed using the clang::DeclContext::decls method. Translation units (clang::TranslationUnitDecl class) and namespaces (clang::NamespaceDecl class) are typical examples of declarations with context.
+
+\item
+Types: C++ has a rich type system. It includes basic types such as int for integers as well as custom defined types and type redefinition via typedef or using. Types in C++ can have qualifiers such as const and can represent different memory addressing modes, aka pointers, references, and so on. Clang uses clang::Type as the basic class for type representations in AST.
+\end{itemize}
+
+It's worth noting that there are additional relations between the groups. For example, the clang::DeclStmt class, which inherits from clang::Stmt, has methods to retrieve corresponding declarations. Additionally, expressions (represented by the clang::Expr class), which inherit from clang::Stmt have methods to work with types. Let's look at all the groups in detail.
+
+\mySubsubsection{3.2.1.}{Statements}
+
+Stmt is the basic class for all statements. The statements can be combined into two sets (see Figure 3.1). The first one contains statements with values and the opposite group is for statements without values.
+
+\myGraphic{0.7}{content/part1/chapter3/images/1.png}{Figure 3.1: Clang AST: statements}
+
+The group of statements without a value consist of different C++ constructions such as if statements (clang::IfStmt class) or compound statements (clang::CompoundStmt class). The majority of all statements fall into the group.
+
+The group of statements with a value consists of one base class clang::ValueStmt that has several children, such as clang::LabelStmt (for label representation) or clang::ExprStmt (for expression representation), see Figure 3.2.
+
+\myGraphic{0.7}{content/part1/chapter3/images/2.png}{Figure 3.2: Clang AST: statements with a value}
+
+\mySubsubsection{3.2.2.}{Declarations}
+
+Declarations can also be combined into two primary groups: declarations with context and without. Declarations with context can be considered as placeholders for other declarations. For example, a C++ namespace as well as a translation unit or function declaration might contain other declarations. A declaration of a friend entity (clang::DeclFriend) can be considered an example of a declaration without context.
+
+It has to be noted that classes that are inherited from DeclContext also have clang::Decl as their top parent.
+
+Some declarations can be redeclared, as in the following example:
+
+\begin{cpp}
+extern int a;
+int a = 1;
+\end{cpp}
+
+\begin{center}
+Figure 3.3: Declarations example: redeclaration.cpp
+\end{center}
+
+Such declarations have an additional parent that is implemented via a clang::Redeclarable<...> template.
+
+\mySubsubsection{3.2.3.}{Types}
+
+C++ is a statically typed language, which means that the types of variables must be declared at compile time. The types allow the compiler to make a reasonable conclusion about the program's meaning, which makes types an important part of semantic analysis. clang::Type is the basic class for types in Clang.
+
+Types in C/C++ might have qualifiers that are called CV-qualifiers, as specified in the standard [21, basic.type.qualifier]. CV here stands for two keywords const and volatile that can be used as the qualifier for a type.
+
+\begin{myNotic}{Important note}
+The C99 standard has an additional type qualifier, restrict, which is also supported by Clang [25, 6.7.3]. The type qualifier indicates to the compiler that, for the lifetime of the pointer, no other pointer will be used to access the object it points to. This allows the compiler to perform optimizations such as vectorization that wouldn't be possible otherwise. restrict helps limit pointer aliasing effects, which occur when multiple pointers reference the same memory location, thereby aiding optimizations. However, if the programmer's declaration of intent is not followed, and the object is accessed by an independent pointer, it results in undefined behavior.
+\end{myNotic}
+
+Clang has a special class to support a type with a qualifier, clang::QualType, which is a pair of a pointer to clang::Type and a bit mask with information about the type qualifier. The class has a method to retrieve a pointer to the clang::Type and check different qualifiers. The following code (LLVM 18.x, clang/lib/AST/ExprConstant.cpp, Line 3918) shows how we can check a type for a const qualifier:
+
+\begin{cpp}
+bool checkConst(QualType QT) {
+  // Assigning to a const object has undefined behavior.
+  if (QT.isConstQualified()) {
+    Info.FFDiag(E, diag::note_constexpr_modify_const_type) << QT;
+    return false;
+  }
+  return true;
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.4: checkConst implementation from clang/lib/AST/ExprConstant.cpp
+\end{center}
+
+It's worth mentioning that clang::QualType has operator->() and operator*() implemented, that is, it can be considered as a smart pointer for the underlying clang::Type class.
+
+In addition to qualifiers, the type can have additional information that represents different memory address models. For instance, there can be a pointer to an object or reference. clang::Type has the following helper methods to check different address models:
+
+\begin{itemize}
+\item
+clang::Type::isPointerType() for pointer type check
+
+\item
+clang::Type::isReferenceType() for reference type check
+\end{itemize}
+
+Types in C/C++ can also use aliases, which are introduced by using the typedef or using keywords. The following code defines foo and bar as aliases for the int type.
+
+\begin{cpp}
+using foo = int;
+typedef int bar;
+\end{cpp}
+
+\begin{center}
+Figure 3.5: Type alias declarations
+\end{center}
+
+Original types, int in our case, are called canonical. You can test whether the type is canonical or not using the clang::QualType::isCanonical() method. clang::QualType also provides a method to retrieve the canonical type from an alias: clang::QualType::getCanonicalType().
+
+After gaining knowledge of the basic blocks used for the AST in Clang, it's time to investigate how these blocks can be used for AST traversal. This is the basic operation used by the compiler and compiler tools, and we will use it extensively throughout the book.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

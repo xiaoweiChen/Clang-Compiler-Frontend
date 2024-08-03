@@ -1,0 +1,22 @@
+LLVM is written in the C++ language and, as of July 2022, it uses the C++17 version of the C++ standard [6]. LLVM actively utilizes functionality provided by the Standard Template Library (STL). On the other hand, LLVM contains numerous internal implementations [13] for fundamental containers, primarily aimed at optimizing performance. For example, llvm::SmallVector has an interface similar to std::vector but features an internally optimized implementation. Hence, familiarity with these extensions is essential for anyone wishing to work with LLVM and Clang.
+
+Additionally, LLVM has introduced other development tools such as TableGen, a domain specific language (DSL) designed for structural data processing, and LIT (LLVM Integrated Tester), the LLVM test framework. More details about these tools are discussed later in this chapter. We’ll cover the following topics in this chapter:
+
+\begin{itemize}
+\item
+LLVM coding style
+
+\item
+LLVM basic libraries
+
+\item
+Clang basic libraries
+
+\item
+LLVM supporting tools
+
+\item
+Clang plugin project
+\end{itemize}
+
+We plan to use a simple example project to demonstrate these tools. This project will be a Clang plugin that estimates the complexity of C++ classes. A class is considered complex if the number of methods exceeds a threshold specified as a parameter. While this definition of complexity may be considered trivial, we will explore more advanced definitions of complexity later in Chapter 6, Advanced Code Analysis.

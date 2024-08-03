@@ -1,0 +1,365 @@
+The compiler requires traversal of the AST to generate IR code. Thus, having a well-structured data structure for tree traversal is paramount for AST design. To put it another way, the design of the AST should prioritize facilitating easy tree traversal. A standard approach in many systems is to have a common base class for all AST nodes. This class typically provides a method to retrieve the node’s children, allowing for tree traversal using popular algorithms such as Breadth-First Search (BFS) [19]. Clang, however, takes a different approach: its AST nodes don’t share a common ancestor. This poses the question: how is tree traversal organized in Clang?
+
+Clang employs three unique techniques:
+
+\begin{itemize}
+\item
+The Curiously Recurring Template Pattern (CRTP) for visitor class definition
+
+\item
+Ad hoc methods tailored specifically for different nodes
+
+\item
+Macros, which can be perceived as the connecting layer between the ad hoc methods and CRTP
+\end{itemize}
+
+We will explore these techniques through a simple program designed to identify function definitions and display the function names together with their parameters.
+
+\mySubsubsection{3.3.1.}{DeclVisitor test tool}
+
+Our test tool will build upon the clang::DeclVisitor class, which is defined as a straightforward visitor class aiding in the creation of visitors for C/C++ declarations.
+
+We will use the same CMake file as was created for our first Clang tool (see Figure 1.13). The sole addition to the new tool is the clangAST library. The resultant CMakeLists.txt is shown in Figure 3.6:
+
+
+\begin{cmake}
+cmake_minimum_required(VERSION 3.16)
+project("declvisitor")
+
+if ( NOT DEFINED ENV{LLVM_HOME})
+  message(FATAL_ERROR "$LLVM_HOME is not defined")
+else()
+  message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
+  set(LLVM_HOME $ENV{LLVM_HOME} CACHE PATH "Root of LLVM installation")
+  set(LLVM_LIB ${LLVM_HOME}/lib)
+  set(LLVM_DIR ${LLVM_LIB}/cmake/llvm)
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  link_directories(${LLVM_LIBRARY_DIRS})
+  set(SOURCE_FILE DeclVisitor.cpp)
+  add_executable(declvisitor ${SOURCE_FILE})
+  set_target_properties(declvisitor PROPERTIES COMPILE_FLAGS "-fno-rtti")
+  target_link_libraries(declvisitor
+    LLVMSupport
+    clangAST
+    clangBasic
+    clangFrontend
+    clangSerialization
+    clangTooling
+   )
+\end{cmake}
+
+\begin{center}
+Figure 3.6: CMakeLists.txt file for DeclVisitor test tool
+\end{center}
+
+The main function of our tool is presented below:
+
+\begin{cpp}
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/CommandLine.h" // llvm::cl::extrahelp
+
+#include "FrontendAction.hpp"
+
+namespace {
+  llvm::cl::OptionCategory TestCategory("Test project");
+  llvm::cl::extrahelp
+    CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+} // namespace
+
+int main(int argc, const char **argv) {
+  llvm::Expected<clang::tooling::CommonOptionsParser> OptionsParser =
+    clang::tooling::CommonOptionsParser::create(argc, argv, TestCategory);
+  if (!OptionsParser) {
+    llvm::errs() << OptionsParser.takeError();
+    return 1;
+  }
+  clang::tooling::ClangTool Tool(OptionsParser->getCompilations(),
+                                 OptionsParser->getSourcePathList());
+  return Tool.run(clang::tooling::newFrontendActionFactory<
+                       clangbook::declvisitor::FrontendAction>()
+                       .get());
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.7: The main function of the DeclVisitor test tool
+\end{center}
+
+From Lines 5 and 23, it’s evident that we employ a custom frontend action specific to our project: clangbook::declvisitor::FrontendAction.
+
+The following is the code for this class:
+
+\begin{cpp}
+#include "Consumer.hpp"
+#include "clang/Frontend/FrontendActions.h"
+
+namespace clangbook {
+namespace declvisitor {
+class FrontendAction : public clang::ASTFrontendAction {
+public:
+  virtual std::unique_ptr<clang::ASTConsumer>
+  CreateASTConsumer(clang::CompilerInstance &CI,
+                    llvm::StringRef File) override {
+    return std::make_unique<Consumer>();
+  }
+};
+} // namespace declvisitor
+}// namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 3.8: Custom FrontendAction class for the DeclVisitor test tool
+\end{center}
+
+You’ll notice that we have overridden the CreateASTConsumer function from clang::ASTFrontendAction class to instantiate an object of our custom AST consumer class Consumer, defined in clangbook::declvisitor namespace, as highlighted in Figure 3.8, Lines 9-12.
+
+The implementation for the class is as follows:
+
+\begin{cpp}
+#include "Visitor.hpp"
+#include "clang/Frontend/ASTConsumers.h"
+
+namespace clangbook {
+namespace declvisitor {
+class Consumer : public clang::ASTConsumer {
+public:
+  Consumer() : V(std::make_unique<Visitor>()) {}
+
+  virtual void HandleTranslationUnit(clang::ASTContext &Context) override {
+    V->Visit(Context.getTranslationUnitDecl());
+  }
+
+private:
+  std::unique_ptr<Visitor> V;
+};
+} // namespace declvisitor
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 3.9: Consumer class for the DeclVisitor test tool
+\end{center}
+
+Here, we can see that we’ve created a sample visitor and invoked it using an overridden method HandleTranslationUnit from the clang::ASTConsumer class (see Figure 3.9, Line 11).
+
+However, the most intriguing portion is the code for the visitor:
+
+\begin{cpp}
+#include "clang/AST/DeclVisitor.h"
+
+namespace clangbook {
+namespace declvisitor {
+class Visitor : public clang::DeclVisitor<Visitor> {
+public:
+  void VisitFunctionDecl(const clang::FunctionDecl *FD) {
+    llvm::outs() << "Function: ’" << FD->getName() << "’\n";
+    for (auto Param : FD->parameters()) {
+      Visit(Param);
+    }
+  }
+  void VisitParmVarDecl(const clang::ParmVarDecl *PVD) {
+    llvm::outs() << "\tParameter: ’" << PVD->getName() << "’\n";
+  }
+  void VisitTranslationUnitDecl(const clang::TranslationUnitDecl *TU) {
+    for (auto Decl : TU->decls()) {
+      Visit(Decl);
+    }
+  }
+};
+} // namespace declvisitor
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 3.10: Visitor class implementation
+\end{center}
+
+We will explore the code in more depth later. For now, we observe that it prints the function name at Line 8 and the parameter name at Line 14.
+
+We can compile our program using the same sequence of commands as we did for our test project, as detailed in Section 1.4, Test project – syntax check with a Clang tool.
+
+\begin{shell}
+export LLVM_HOME=<...>/llvm-project/install
+mkdir build
+cd build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ...
+ninja
+\end{shell}
+
+\begin{center}
+Figure 3.11: Configure and build commands for the DeclVisitor test tool
+\end{center}
+
+As you may notice, we used the -DCMAKE\_BUILD\_TYPE=Debug option for CMake. The option we are using will slow down the overall performance, but we use it because we might want to investigate the resulting program under debugger.
+
+\begin{myNotic}{Important note}
+The build command we used for our tool assumes that the required libraries are installed under the <...>/llvm-project/install folder, which was specified with the-DCMAKE\_INSTALL\_PREFIX option during the CMake configure command, as described in Section 1.4, Test project – syntax check with a Clang tool. See Figure 1.12:
+
+\begin{shell}
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
+\end{shell}
+
+The required build artifacts must be installed using the ninja install command.
+\end{myNotic}
+
+We will use the same program we referenced in our previous investigations (see Figure 2.5) to also study AST traversal:
+
+\begin{cpp}
+int max(int a, int b) {
+  if (a > b)
+    return a;
+  return b;
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.12: Test program max.cpp
+\end{center}
+
+This program consists of a single function, max, which takes two parameters, a and b, and returns the maximum of the two.
+
+We can run our program as follows:
+
+\begin{shell}
+$ ./declvisitor max.cpp -- -std=c++17
+...
+Function: ’max’
+        Parameter: ’a’
+        Parameter: ’b’
+\end{shell}
+
+Figure 3.13: The result of running the declvisitor utility on a test file
+
+\begin{myNotic}{Important note}
+
+We used ’- -’ to pass additional arguments to the compiler in Figure 3.13, specifically indicating that we want to use C++17 with the option ’-std=c++17’. We can also pass other compiler arguments. An alternative is to specify the compilation database path with the ’-p’ option, as shown below:
+
+\begin{shell}
+$ ./declvisitor max.cpp -p <path>
+\end{shell}
+
+Here, <path> is the path to the folder containing the compilation database. You can find more information about the compilation database in Chapter 9, Appendix 1: Compilation Database.
+
+\end{myNotic}
+
+Let’s investigate the Visitor class implementation in detail.
+
+\mySubsubsection{3.3.2.}{Visitor implementation}
+
+Let’s delve into the Visitor code (see Figure 3.10). Firstly, you’ll notice an unusual construct where our class is derived from a base class parameterized by our own class:
+
+\begin{cpp}
+class Visitor : public clang::DeclVisitor<Visitor> {
+\end{cpp}
+
+\begin{center}
+Figure 3.14: Visitor class declaration
+\end{center}
+
+This construct is known as the Curiously Recurring Template Pattern, or CRTP.
+
+The Visitor class has several callbacks that are triggered when a corresponding AST node is encountered. The first callback targets the AST node representing a function declaration:
+
+\begin{cpp}
+void VisitFunctionDecl(const clang::FunctionDecl *FD) {
+  llvm::outs() << "Function: ’" << FD->getName() << "’\n";
+  for (auto Param : FD->parameters()) {
+    Visit(Param);
+  }
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.15: FunctionDecl callback
+\end{center}
+
+As shown in Figure 3.15, the function name is printed on Line 8. Our subsequent step involves printing the names of the parameters. To retrieve the function parameters, we can utilize the parameters() method from the clang::FunctionDecl class. This method was previously mentioned as an ad hoc approach for AST traversal. Each AST node provides its own methods to access child nodes. Since we have an AST node of a specific type (i.e., clang::FunctionDecl*) as an argument, we can employ these methods.
+
+The function parameter is passed to the Visit(...) method of the base class clang::DeclVisitor<>, as shown in Line 12 of Figure 3.15. This call is subsequently transformed into another callback, specifically for the clang::ParmVarDecl AST node:
+
+\begin{cpp}
+void VisitParmVarDecl(const clang::ParmVarDecl *PVD) {
+  llvm::outs() << "\tParameter: ’" << PVD->getName() << "’\n";
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.16: ParmVarDecl callback
+\end{center}
+
+You might be wondering how this conversion is achieved. The answer lies in a combination of the CRTP and C/C++ macros. To understand this, we need to dive into the Visit() method implementation of the clang::DeclVisitor<> class. This implementation heavily relies on C/C++ macros, so to get a glimpse of the actual code, we must expand these macros. This can be done using the shell-E compiler option. Let’s make some modifications to CMakeLists.txt and introduce a new custom target.
+
+\begin{cmake}
+add_custom_command(
+  OUTPUT ${SOURCE_FILE}.preprocessed
+  COMMAND ${CMAKE_CXX_COMPILER} -E -I ${LLVM_HOME}/include ${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE} > ${SOURCE_FILE}.preprocessed
+  DEPENDS ${SOURCE_FILE}
+  COMMENT "Preprocessing ${SOURCE_FILE}"
+)
+add_custom_target(preprocess ALL DEPENDS ${SOURCE_FILE}.preprocessed)
+\end{cmake}
+
+\begin{center}
+Figure 3.17: Custom target to expand macros
+\end{center}
+
+We can run the target as follows:
+
+\begin{shell}
+$ ninja preprocess
+\end{shell}
+
+The resulting file can be located in the build folder specified earlier, named DeclVisitor.cpp.preprocessed . The build folder containig the file was specified by us earlier when executing the cmake command (see Figure 3.11). Within this file, the generated code for the Visit() method appears as follows:
+
+\begin{cpp}
+RetTy Visit(typename Ptr<Decl>::type D) {
+  switch (D->getKind()) {
+  ...
+  case Decl::ParmVar: return static_cast<ImplClass*>(this)->VisitParmVarDecl(static_cast<typename Ptr<ParmVarDecl>::type>(D));
+  ...
+  }
+}
+\end{cpp}
+
+\begin{center}
+igure 3.18: Generated code for Visit() method
+\end{center}
+
+This code showcases the use of the CRTP in Clang. In this context, CRTP is employed to redirect back to our Visitor class, which is referenced as ImplClass. CRTP allows the base class to call a method from an inherited class. This pattern can serve as an alternative to virtual functions and offers several advantages, the most notable being performance-related. Specifically, the method call is resolved at compile time, eliminating the need for a vtable lookup associated with virtual method calls.
+
+The code was generated using C/C++ macros, as demonstrated here. This particular code was sourced from the clang/include/clang/AST/DeclVisitor.h header:
+
+\begin{cpp}
+#define DISPATCH(NAME, CLASS) \
+  return static_cast<ImplClass*>(this)->Visit##NAME(static_cast<PTR(CLASS)>(D))
+\end{cpp}
+
+\begin{center}
+Figure 3.19: DISPATCH macro definition from clang/include/clang/AST/DeclVisitor.h
+\end{center}
+
+NAME from Figure 3.19 is replaced with the node name; in our case, it’s ParmVarDecl.
+
+DeclVisitor is used to traverse C++ declarations. Clang also has StmtVisitor and TypeVisitor to traverse statements and types, respectively. These are built on the same principles as we considered in our example with the declaration visitor. However, these visitors come with several issues. They can only be used with specific groups of AST nodes. For instance, DeclVisitor can only be used with descendants of the Decl class. Another limitation is that we are required to implement recursion. For example, we set up recursion to traverse the function declaration in lines 9-11 (Figure 3.10). The same recursion was employed to traverse declarations within the translation unit (see Figure 3.10, Lines 17-19). This brings up another concern: it’s possible to miss some parts of the recursion. For instance, our code will not function correctly if the max function declaration is specified inside a namespace. To address such scenarios, we would need to implement an additional visit method specifically for namespace declarations.
+
+These challenges are addressed by the recursive visitor, which we will discuss shortly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

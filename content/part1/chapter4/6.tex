@@ -1,0 +1,419 @@
+The goal of the test project is to create a clang plugin that will estimate class complexity. Specifically, a class is deemed complex if the number of its methods exceeds a certain threshold. We will leverage all the knowledge we have acquired thus far for this project. This will include the use of a recursive visitor and Clang diagnostics. Additionally, we will create a LIT test for our project. Developing the plugin will necessitate a unique build configuration for LLVM, which will be our initial step.
+
+
+\mySubsubsection{4.6.1.}{Environment setup}
+
+The plugin will be created as a shared object, and our LLVM installation should be built with support for shared libraries (see Section 1.3.1, Configuration with CMake):
+
+\begin{shell}
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
+\end{shell}
+
+\begin{center}
+Figure 4.31: CMake configuration used for the Clang plugin project
+\end{center}
+
+As can be seen, we use the build configuration from Section 1.4, Test project – syntax check with a Clang tool, as shown in Figure 1.12. In the configuration, we set up a folder for installing artifacts into ../install, limit our build targets to the X86 platform, and enable only the clang project. Additionally, we enable size optimization for debug symbols and use shared libraries instead of static linkage.
+
+The next step involves building and installing clang. This can be achieved with the following command:
+
+\begin{shell}
+$ ninja install
+\end{shell}
+
+As soon as we are done with the clang build and installation, we can proceed with the CMakeLists.txt file for our project.
+
+\mySubsubsection{4.6.2.}{CMake build configuration for plugin}
+
+We will use Figure 3.20 as the foundation for our plugin build configuration. We will change the project name to classchecker , and ClassComplexityChecker.cpp will serve as our primary source file. The main portion of the file is displayed in Figure 4.32. As can be observed, we will construct a shared library (Lines 18-20) rather than an executable, as in our previous test projects. Another modification is in Line 12, where we set up a config parameter for the LLVM build folder. This parameter is necessary to locate the LIT executable, which is not included in the standard installation process, as mentioned earlier in Section 4.5.2, LLVM test framework. Some additional modifications need to be made to support LIT test invocations, but we will discuss the details later in Section 4.6.8, LIT tests for clang plugin (see Figure 4.44).
+
+\begin{cmake}
+message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
+set(LLVM_HOME $ENV{LLVM_HOME} CACHE PATH "Root of LLVM installation")
+set(LLVM_LIB ${LLVM_HOME}/lib)
+set(LLVM_DIR ${LLVM_LIB}/cmake/llvm)
+set(LLVM_BUILD $ENV{LLVM_BUILD} CACHE PATH "Root of LLVM build")
+find_package(LLVM REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+
+# Add the plugin's shared library target
+add_library(classchecker MODULE
+  ClassChecker.cpp
+)
+set_target_properties(classchecker PROPERTIES COMPILE_FLAGS "-fno-rtti")
+target_link_libraries(classchecker
+  LLVMSupport
+  clangAST
+  clangBasic
+  clangFrontend
+  clangTooling
+)
+\end{cmake}
+
+\begin{center}
+Figure 4.32: CMakeLists.txt file for class complexity plugin
+\end{center}
+
+After completing the build configuration, we can start writing the primary code for the plugin. The first component we'll create is a recursive visitor class named ClassVisitor.
+
+\mySubsubsection{4.6.3.}{Recursive visitor class}
+
+Our visitor class is located in the ClassVisitor.hpp file (see Figure 4.33). This is a recursive visitor that handles clang::CXXRecordDecl, which are the AST nodes for C++ class declarations. We calculate the number of methods in Lines 13-16 and emit diagnostics in Lines 19-25 if the threshold is exceeded.
+
+\begin{cpp}
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+
+namespace clangbook {
+namespace classchecker {
+class ClassVisitor : public clang::RecursiveASTVisitor<ClassVisitor> {
+public:
+  explicit ClassVisitor(clang::ASTContext *C, int T)
+    : Context(C), Threshold(T) {}
+
+  bool VisitCXXRecordDecl(clang::CXXRecordDecl *Declaration) {
+    if (Declaration->isThisDeclarationADefinition()) {
+      int MethodCount = 0;
+      for (const auto *M : Declaration->methods()) {
+        MethodCount++;
+      }
+      if (MethodCount > Threshold) {
+        clang::DiagnosticsEngine &D = Context->getDiagnostics();
+        unsigned DiagID =
+          D.getCustomDiagID(clang::DiagnosticsEngine::Warning,
+                            "class %0 is too complex: method count = %1");
+        clang::DiagnosticBuilder DiagBuilder =
+               D.Report(Declaration->getLocation(), DiagID);
+        DiagBuilder << Declaration->getName() << MethodCount;
+      }
+    }
+    return true;
+  }
+
+private:
+  clang::ASTContext *Context;
+  int Threshold;
+};
+} // namespace classchecker
+} // namespace clangbook
+\end{cpp}
+
+
+\begin{center}
+Figure 4.33: Source code for ClassVisitor.hpp
+\end{center}
+
+It's worth noting the diagnostic calls. The diagnostic message is constructed in Lines 20-22. Our diagnostic message accepts two parameters: the class name and the number of methods for the class. These parameters are encoded with the '\%1' and '\%2' placeholders in Line 22. The actual values for these parameters are passed in Line 25, where the diagnostic message is constructed using the DiagBuild object. This object is an instance of the clang::DiagnosticBuilder class, which implements the Resource Acquisition Is Initialization (RAII) pattern. It emits the actual diagnostics upon its destruction.
+
+\begin{myNotic}{Important note}
+In C++, the RAII principle is a common idiom used to manage resource lifetimes by tying them to the lifetime of an object. When an object goes out of scope, its destructor is automatically called, and this provides an opportunity to release the resource that the object holds.
+\end{myNotic}
+
+ClassVisitor is created within an AST consumer class, which will be our next topic.
+
+\mySubsubsection{4.6.4.}{Plugin AST consumer class}
+
+The AST consumer class is implemented in ClassConsumer.hpp and represents the standard AST consumer, as seen in our AST visitor test projects (refer to Figure 3.9). The code is presented in Figure 4.35.
+
+\begin{cpp}
+namespace clangbook {
+namespace classchecker {
+class ClassConsumer : public clang::ASTConsumer {
+public:
+  explicit ClassConsumer(clang::ASTContext *Context, int Threshold)
+    : Visitor(Context, Threshold) {}
+
+  virtual void HandleTranslationUnit(clang::ASTContext &Context) {
+    Visitor.TraverseDecl(Context.getTranslationUnitDecl());
+  }
+
+private:
+  ClassVisitor Visitor;
+};
+} // namespace classchecker
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 4.34: Source code for ClassConsumer.hpp
+\end{center}
+
+The code initializes Visitor at Line 10 and utilizes the Visitor class at Line 13 to traverse the declarations, starting with the top one (translation unit declaration). The consumer must be created from a special AST action class, which we will discuss next.
+
+\mySubsubsection{4.6.5.}{Plugin AST action class}
+
+The code for the AST action is shown in Figure 4.35. Several important parts can be observed:
+
+\begin{itemize}
+\item
+Line 7: We inherit our ClassAction from clang::PluginASTAction
+
+\item
+Lines 10-13: We instantiate ClassConsumer and utilize MethodCountThreshold, which is derived from an optional plugin argument
+
+\item
+Lines 15-25: We process the optional threshold argument for our plugin
+\end{itemize}
+
+\begin{cpp}
+namespace clangbook {
+namespace classchecker {
+class ClassAction : public clang::PluginASTAction {
+protected:
+  std::unique_ptr<clang::ASTConsumer>
+  CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef) {
+    return std::make_unique<ClassConsumer>(&CI.getASTContext(),
+                                           MethodCountThreshold);
+  }
+
+  bool ParseArgs(const clang::CompilerInstance &CI,
+    const std::vector<std::string> &args) {
+      for (const auto &arg : args) {
+        if (arg.substr(0, 9) == "threshold") {
+          auto valueStr = arg.substr(10); // Get the substring after "threshold="
+          MethodCountThreshold = std::stoi(valueStr);
+          return true;
+        }
+      }
+    return true;
+  }
+  ActionType getActionType() { return AddAfterMainAction; }
+
+private:
+  int MethodCountThreshold = 5; // default value
+};
+} // namespace classchecker
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 4.35: Source code for ClassAction.hpp
+\end{center}
+
+We are almost done and ready to initialize our plugin.
+
+\mySubsubsection{4.6.6.}{Plugin code}
+
+Our plugin registration is carried out in the ClassChecker.cpp file, shown in Figure 4.36.
+
+\begin{cpp}
+#include "clang/Frontend/FrontendPluginRegistry.h"
+
+#include "ClassAction.hpp"
+
+static clang::FrontendPluginRegistry::Add<clangbook::classchecker::ClassAction>
+X("classchecker", "Checks the complexity of C++ classes");
+\end{cpp}
+
+
+\begin{center}
+Figure 4.36: Source code for ClassChecker.cpp
+\end{center}
+
+As we can observe, the majority of the initialization is hidden by helper classes, and we only need to pass our implementation to lang::FrontendPluginRegistry::Add.
+
+Now we are ready to build and test our clang plugin.
+
+\mySubsubsection{4.6.7.}{Building and running plugin code}
+
+We need to specify a path to the installation folder for our LLVM project. The rest of the procedure is the standard one that we have previously used, see Figure 3.11:
+
+\begin{shell}
+export LLVM_HOME=<...>/llvm-project/install
+mkdir build
+cd build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
+ninja classchecker
+\end{shell}
+
+\begin{center}
+Figure 4.37: Configure and build commands for the Clang plugin
+\end{center}
+
+The build artifacts will be located in the build folder. We can then run our plugin on a test file as follows, where <filepath> is the file we want to compile:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -fsyntax-only \
+                 -fplugin=./build/libclasschecker.so \
+                 <filepath>
+\end{shell}
+
+\begin{center}
+Figure 4.38: How to run the Clang plugin on a test file
+\end{center}
+
+For example, if we use a test file named test.cpp that defines a class with three methods (see Figure 4.39), we will not receive any warnings.
+
+\begin{cpp}
+class Simple {
+public:
+  void func1() {}
+  void func2() {}
+  void func3() {}
+};
+\end{cpp}
+
+\begin{center}
+Figure 4.39: Test for the clang plugin: test.cpp
+\end{center}
+
+However, if we specify a smaller threshold, we will receive a warning for the file:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -fsyntax-only \
+                  -fplugin-arg-classchecker-threshold=2 \
+                  -fplugin=./build/libclasschecker.so \
+                  test.cpp
+test.cpp:1:7: warning: class Simple is too complex: method count = 3
+  1 | class Simple {
+    |       ^
+1  warning generated.
+\end{shell}
+
+
+\begin{center}
+Figure 4.40: Clang plugin run on test.cpp
+\end{center}
+
+It's now time to create a LIT test for our plugin.
+
+\mySubsubsection{4.6.8.}{LIT tests for clang plugin}
+
+We'll begin with a description of the project organization. We'll adopt the common pattern used in the clang source code and place our tests in the test folder. This folder will contain the following files:
+
+\begin{itemize}
+\item
+lit.site.cfg.py.in : This is the main configuration file, a CMake config file. It replaces patterns marked as '@...@' with corresponding values defined during the CMake configuration. Additionally, this file loads lit.cfg.py .
+
+\item
+lit.cfg.py : This serves as the primary configuration file for LIT tests.
+
+\item
+simple\_test.cpp : This is our LIT test file.
+\end{itemize}
+
+The basic workflow is as follows: CMake takes lit.site.cfg.py.in as a template and generates the corresponding lit.site.cfg.py in the build/test folder. This file is then utilized by LIT tests as a seed to execute the tests.
+
+\mySamllsection{LIT config files}
+
+There are two configuration files for LIT tests. The first one is shown in Figure 4.41.
+
+\begin{python}
+config.ClassComplexityChecker_obj_root = "@CMAKE_CURRENT_BINARY_DIR@"
+config.ClassComplexityChecker_src_root = "@CMAKE_CURRENT_SOURCE_DIR@"
+config.ClangBinary = "@LLVM_HOME@/bin/clang"
+config.FileCheck = "@FILECHECK_COMMAND@"
+
+lit_config.load_config(
+  config, os.path.join(config.ClassComplexityChecker_src_root, "test/lit.cfg.py"))
+\end{python}
+
+\begin{center}
+Figure 4.41: lit.site.cfg.py.in file
+\end{center}
+
+This file is a CMake template that will be converted into a Python script. The most crucial part is shown in Lines 6-7, where the main LIT config is loaded. It is sourced from the main source tree and is not copied to the build folder.
+
+The subsequent configuration is displayed in Figure 4.42. It is a Python script containing the primary configuration for LIT tests.
+
+\begin{python}
+# lit.cfg.py
+import lit.formats
+
+config.name = 'classchecker'
+config.test_format = lit.formats.ShTest(True)
+config.suffixes = ['.cpp']
+config.test_source_root = os.path.dirname(__file__)
+
+config.substitutions.append(('%clang-binary', config.ClangBinary))
+config.substitutions.append(('%path-to-plugin', os.path.join(config.ClassComplexityChecker_obj_root, 'libclasschecker.so')))
+config.substitutions.append(('%file-check-binary', config.FileCheck))
+\end{python}
+
+\begin{center}
+Figure 4.42: lit.cfg.py file
+\end{center}
+
+Lines 4-7 define the fundamental configuration; for example, Line 6 determines which files should be utilized for tests. All files with the '.cpp' extension in the test folder will be employed as LIT tests.
+
+Lines 9-11 detail the substitutions that will be employed in the LIT tests. These include the path to the clang binary (Line 9), the path to the shared library with the plugin (Line 10), and the path to the FileCheck utility (Line 11).
+
+We have defined only one basic LIT test, simple\_test.cpp , as shown in Figure 4.43.
+
+\begin{cmake}
+find_program(LIT_COMMAND llvm-lit PATH ${LLVM_BUILD}/bin)
+find_program(FILECHECK_COMMAND FileCheck ${LLVM_BUILD}/bin)
+if(LIT_COMMAND AND FILECHECK_COMMAND)
+  message(STATUS "$LIT_COMMAND found: ${LIT_COMMAND}")
+  message(STATUS "$FILECHECK_COMMAND found: ${FILECHECK_COMMAND}")
+
+  # Point to our custom lit.cfg.py
+  set(LIT_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/test/lit.cfg.py")
+
+  # Configure lit.site.cfg.py using current settings
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/test/lit.site.cfg.py.in"
+                 "${CMAKE_CURRENT_BINARY_DIR}/test/lit.site.cfg.py"
+                 @ONLY)
+
+  # Add a custom target to run tests with lit
+  add_custom_target(check-classchecker
+                    COMMAND ${LIT_COMMAND} -v ${CMAKE_CURRENT_BINARY_DIR}/test
+                    COMMENT "Running lit tests for classchecker clang plugin"
+                    USES_TERMINAL)
+else()
+  message(FATAL_ERROR "It was not possible to find the LIT executables at ${LLVM_BUILD}/bin")
+endif()
+\end{cmake}
+
+\begin{center}
+Figure 4.44: LIT tests configuration at CMakeLists.txt
+\end{center}
+
+In Lines 31 and 32, we search for the necessary utilities, llvm-lit and FileCheck . It's worth noting that they rely on the \$LLVM\_BUILD environment variable, which we also verify in Line 12 of the config (see Figure 4.32). The steps in Lines 41-43 are essential for generating lit.site.cfg.py from the provided template file, lit.site.cfg.py.in . Lastly, we establish a custom target to execute the LIT tests in Lines 46-49.
+
+Now we are ready to start the LIT tests.
+
+\mySamllsection{Running LIT tests}
+
+To initiate the LIT tests, we must set an environment variable that points to the build folder, compile the project, and then execute the custom target, check-classchecker. Here's how this can be done:
+
+\begin{shell}
+xport LLVM_BUILD=<...>/llvm-project/build
+export LLVM_HOME=<...>/llvm-project/install
+rm -rf build; mkdir build; cd build
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
+ninja classchecker
+ninja check-classchecker
+\end{shell}
+
+\begin{center}
+Figure 4.45: Configure, build and check commands for the Clang plugin
+\end{center}
+
+Upon executing these commands, you may observe the following output:
+
+\begin{shell}
+...
+[2/2] Linking CXX shared module libclasschecker.so
+[0/1] Running lit tests for classchecker clang plugin
+-- Testing: 1 tests, 1 workers --
+PASS: classchecker :: simple_test.cpp (1 of 1)
+
+Testing Time: 0.12s
+Passed: 1
+\end{shell}
+
+\begin{center}
+Figure 4.46: LIT test execution
+\end{center}
+
+With this, we conclude our first comprehensive project, which encompasses a practical clang plugin that can be tailored via supplemental plugin arguments. Additionally, it includes the respective tests that can be executed to verify its functionality.
+
+
+
+
+
+
+
+

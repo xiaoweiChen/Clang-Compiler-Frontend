@@ -1,0 +1,152 @@
+Recursive AST visitors address the limitations observed with specialized visitors. We will create the same program, which searches for and prints function declarations along with their parameters, but we’ll use a recursive visitor this time.
+
+The CMakeLists.txt for recursive visitor test tool will be used in a similar way as before. Only the project name (Lines 2 and 15-17 in Figure 3.20) and source filename (Line 14 in Figure 3.20 were changed:
+
+\begin{cmake}
+cmake_minimum_required(VERSION 3.16)
+project("recursivevisitor")
+
+if ( NOT DEFINED ENV{LLVM_HOME})
+  message(FATAL_ERROR "$LLVM_HOME is not defined")
+else()
+  message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
+  set(LLVM_HOME $ENV{LLVM_HOME} CACHE PATH "Root of LLVM installation")
+  set(LLVM_LIB ${LLVM_HOME}/lib)
+  set(LLVM_DIR ${LLVM_LIB}/cmake/llvm)
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  link_directories(${LLVM_LIBRARY_DIRS})
+  set(SOURCE_FILE RecursiveVisitor.cpp)
+  add_executable(recursivevisitor ${SOURCE_FILE})
+  set_target_properties(recursivevisitor PROPERTIES COMPILE_FLAGS "-fno-rtti")
+  target_link_libraries(recursivevisitor
+    LLVMSupport
+    clangAST
+    clangBasic
+    clangFrontend
+    clangSerialization
+    clangTooling
+  )
+endif()
+\end{cmake}
+
+\begin{center}
+Figure 3.20: CMakeLists.txt file for the RecursiveVisitor test tool
+\end{center}
+
+The main function for our tool is similar to the ‘DeclVisitor‘ one defined in Figure 3.7.
+
+\begin{cpp}
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/CommandLine.h" // llvm::cl::extrahelp
+
+#include "FrontendAction.hpp"
+
+namespace {
+llvm::cl::OptionCategory TestCategory("Test project");
+llvm::cl::extrahelp
+  CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
+} // namespace
+
+int main(int argc, const char **argv) {
+  llvm::Expected<clang::tooling::CommonOptionsParser> OptionsParser =
+    clang::tooling::CommonOptionsParser::create(argc, argv, TestCategory);
+  if (!OptionsParser) {
+    llvm::errs() << OptionsParser.takeError();
+    return 1;
+  }
+  clang::tooling::ClangTool Tool(OptionsParser->getCompilations(),
+                                 OptionsParser->getSourcePathList());
+  return Tool.run(clang::tooling::newFrontendActionFactory<
+                    clangbook::recursivevisitor::FrontendAction>()
+                    .get());
+}
+\end{cpp}
+
+\begin{center}
+Figure 3.21: The main function for the RecursiveVisitor test tool
+\end{center}
+
+As you can see, we changed only the namespace name for our custom frontend action at Line 23.
+
+The code for the frontend action and consumer is the same as in Figure 3.8 and Figure 3.9, with the only difference being the namespace change from declvisitor to recursivevisitor. The most interesting part of the program is the Visitor class implementation.
+
+\begin{cpp}
+#include "clang/AST/RecursiveASTVisitor.h"
+
+namespace clangbook {
+namespace recursivevisitor {
+class Visitor : public clang::RecursiveASTVisitor<Visitor> {
+public:
+  bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
+    llvm::outs() << "Function: ’" << FD->getName() << "’\n";
+    return true;
+  }
+  bool VisitParmVarDecl(const clang::ParmVarDecl *PVD) {
+    llvm::outs() << "\tParameter: ’" << PVD->getName() << "’\n";
+    return true;
+  }
+};
+} // namespace recursivevisitor
+} // namespace clangbook
+\end{cpp}
+
+\begin{center}
+Figure 3.22: Visitor class implementation
+\end{center}
+
+There are several changes compared to the code for ‘DeclVisitor‘ (see Figure 3.10). The first is that recursion isn’t implemented. We’ve only implemented the callbacks for nodes of interest to us. A reasonable question arises: how is the recursion controlled? The answer lies in another change: our callbacks now return a boolean result. The false value indicates that the recursion should stop, while true signals the visitor to continue the traversal.
+
+The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
+
+We can run our program as follows, see Figure 3.23:
+
+\begin{shell}
+$ ./recursivevisitor max.cpp -- -std=c++17
+...
+Function: ’max’
+        Parameter: ’a’
+        Parameter: ’b’
+\end{shell}
+
+\begin{center}
+Figure 3.23: The result of running the recursivevisitor utility on a test file
+\end{center}
+
+As we can see, it produces the same result as we obtained with the DeclVisitor implementation. The AST traversal techniques considered so far are not the only ways for AST traversal. Most of the tools that we will consider later will use a different approach based on AST matchers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

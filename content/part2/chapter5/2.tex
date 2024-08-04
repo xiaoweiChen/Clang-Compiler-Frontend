@@ -1,0 +1,286 @@
+
+\begin{markdown}
+
+Clang-Tidy is a linter and static analysis tool for C and C++ code. It is a part of the Clang and LLVM project. The tool is built on top of the Clang frontend, which means it understands your code in depth, giving it the ability to catch a wide range of issues.
+
+Here are some key points to understand about Clang-Tidy:
+
+* Checks: Clang-Tidy contains a series of "checks" that identify various issues or suggest enhancements. These checks range from performance improvements and potential bugs to coding style and modern C++ best practices. For instance, it might suggest using `emplace_back` instead of `push_back` for certain cases or identify areas where you might be accidentally using integer overflow.
+
+* Extensibility: New checks can be added to Clang-Tidy, making it a highly extensible tool. If you have specific coding guidelines or practices you want to enforce, you can write a check for it.
+
+* Integration: Clang-Tidy is often used within CI/CD pipelines or integrated with development environments. Many IDEs support Clang-Tidy directly or via plugins, so you can get real-time feedback on your code as you write it.
+
+* Automatic fixes: One of the powerful features of Clang-Tidy is its ability to not only identify issues but also automatically fix many of them. This is done with the -fix option. It is, however, important to review the proposed changes, as automatic fixes might not always be perfect.
+
+* Configuration: You can configure which checks Clang-Tidy performs using a configuration file or command-line options. This allows teams to enforce specific coding standards or prioritize certain types of issues. For example, the -checks='-*,modernize-*' command-line option will disable all checks but not the checks from modernize set.
+
+* Modern C++ best practices: One of the often-appreciated features of Clang-Tidy is its emphasis on modern C++ idioms and best practices. It can guide developers to write safer, more performant, and more idiomatic C++ code.
+
+After acquiring basic knowledge about Clang-Tidy, let's examine how it can be built.
+
+
+#### 5.2.1. Building and testing Clang-Tidy
+
+We will use the basic build configuration specified in Figure 1.4 and build Clang-Tidy with the following Ninja command:
+
+\end{markdown}
+
+\begin{shell}
+$ ninja clang-tidy
+\end{shell}
+
+
+\begin{center}
+Figure 5.1: Using the Ninja command to build Clang-Tidy
+\end{center}
+
+We can install the Clang-Tidy binary to the designated install folder using the following command:
+
+\begin{shell}
+$ ninja install-clang-tidy
+\end{shell}
+
+
+\begin{center}
+Figure 5.2: Using the Ninja command to install Clang-Tidy
+\end{center}
+
+Using the build configuration from Figure 1.4, the command will install the Clang-Tidy binary under the <...>/llvm-project/install/bin folder. Here, <...>/llvm-project refers to the path where the LLVM code base was cloned (see Figure 1.1).
+
+\begin{myNotic}{Important note}
+If you use a build configuration with shared libraries (with the BUILD\_SHARED\_LIBS flag set to ON ), as shown in Figure 1.12, then you might need to install and built all artifacts with ninja install.
+\end{myNotic}
+
+Clang-Tidy is part of Clang-Tools-Extra, and its tests are a part of the clang-tools CMake target. Thus, we can run the tests with the following command:
+
+\begin{shell}
+$ ninja check-clang-tools
+\end{shell}
+
+\begin{center}
+Figure 5.3: Using the Ninja command to run Clang-Tidy tests
+\end{center}
+
+
+The command will run LIT tests (see Section 4.5.2, LLVM test framework) for all Clang-Tidy checks, and will also run unit tests for the Clang-Tidy core system. You can also run a specific LIT test separately; for example, if we want to run the LIT test for the modernize-loop-convert check, we can use the following command:
+
+\begin{shell}
+$ cd <...>/llvm-project
+$ build/bin/llvm-lit -v \
+    clang-tools-extra/test/clang-tidy/checkers/modernize/loop-convert-basic.cpp
+\end{shell}
+
+\begin{center}
+Figure 5.4: Testing the modernize-loop-convert clang-tidy check
+\end{center}
+
+The command will produce the following output:
+
+\begin{shell}
+-- Testing: 1 tests, 1 workers --
+PASS: Clang Tools :: clang-tidy/checkers/modernize/loop-convert-basic.cpp
+(1 of 1)
+
+Testing Time: 1.38s
+  Passed: 1
+\end{shell}
+
+\begin{center}
+Figure 5.5: LIT test output for the cppcoreguidelines-owning-memory clang-tidy check
+\end{center}
+
+After building and testing Clang-Tidy, it's now time to run it on some code examples.
+
+
+\mySubsubsection{5.2.2.}{Clang-Tidy usage}
+
+To test Clang-Tidy, we will use the following test program:
+
+\begin{cpp}
+#include <iostream>
+#include <vector>
+
+int main() {
+  std::vector<int> numbers = {1, 2, 3, 4, 5};
+  for (std::vector<int>::iterator it = numbers.begin(); it != numbers.end();
+    ++it) {
+    std::cout << *it << std::endl;
+  }
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 5.6: Test program for Clang-Tidy: loop-convert.cpp
+\end{center}
+
+The program is correctly written in the older C++ code style, that is, before C++11. Clang-Tidy has a set of checks that encourage adopting the modern C++ code style and using new C++ idioms available in the latest C++ standard. These checks can be run on the program as follows:
+
+\begin{shell}
+1  $ <...>/llvm-project/install/bin/clang-tidy \
+2       -checks='-*,modernize-*'               \
+3       loop-convert.cpp                       \
+4       -- -std=c++17
+\end{shell}
+
+\begin{center}
+Figure 5.7: Running Clang-Tidy modernize checks on loop-convert.cpp
+\end{center}
+
+The most important parts of Figure 5.7 are as follows:
+
+\begin{itemize}
+\item
+Line 1: The path to the Clang-Tidy binary is specified here.
+
+\item
+Line 2: We remove all checks using the '-*' option. Then, we enable all checks with the 'modernize' prefix by using the '-*,modernize-*' value for the '--checks' argument.
+
+\item
+Line 3: We specify the path to the code to be tested.
+
+\item
+Line 4: We pass additional arguments to the compiler, notably specifying that we want the compiler to use C++17 as the C++ standard.
+\end{itemize}
+
+The output of the program will be as follows:
+
+\begin{shell}
+loop-convert.cpp:4:5: warning: use a trailing return type for this function
+...
+  4 | int main() {
+    | ~~~ ^
+    | auto       -> int
+loop-convert.cpp:6:3: warning: use range-based for loop instead
+[modernize-loop-convert]
+  6 |   for (std::vector<int>::iterator it = numbers.begin();
+          it != numbers.end();
+    |     ^   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    |       (int & number : numbers)
+  7 |        ++it) {
+    |        ~~~~~
+  8 |     std::cout << *it << std::endl;
+    |                  ~~~
+    |                  number
+loop-convert.cpp:6:8: warning: use auto when declaring iterators
+[modernize-use-auto]
+  6 |   for (std::vector<int>::iterator it = numbers.begin();
+          it != numbers.end();
+    |        ^
+note: this fix will not be applied because it overlaps with another fix
+\end{shell}
+
+\begin{center}
+Figure 5.8: Output from running Clang-Tidy on loop-convert.cpp
+\end{center}
+
+As we can see, several issues were detected, and Clang-Tidy suggested some fixes. Unfortunately, some of them conflict with each other, especially modernize-loop-convert and modernize-use-auto , and cannot be applied together. On the other hand, we can apply the fix suggested by modernize-loop-convert by running only this specific check to avoid any conflicts, as follows:
+
+
+\begin{shell}
+1  $ <...>/llvm-project/install/bin/clang-tidy \
+2       -checks='-*,modernize-loop-convert'    \
+3       -fix                                   \
+4       loop-convert.cpp                       \
+5       -- -std=c++17
+\end{shell}
+
+\begin{center}
+Figure 5.9: Running a modernize-loop-convert check on loop-convert.cpp
+\end{center}
+
+As we can see, the second line has changed compared to Figure 5.7, and another line (3) has been added. The latter instructs Clang-Tidy to apply the fixes suggested by the check. The resulting code can be found in the original file:
+
+\begin{cpp}
+#include <iostream>
+#include <vector>
+
+int main() {
+  std::vector<int> numbers = {1, 2, 3, 4, 5};
+  for (int & number : numbers) {
+    std::cout << number << std::endl;
+  }
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 5.10: Fixed test program for Clang-Tidy: loop-convert.cpp
+\end{center}
+
+As we can see, Lines 6 and 7 have changed compared to the original code from Figure 5.6. This functionality makes Clang-Tidy a powerful tool that can not only detect issues but also fix them. We will explore this possibility in greater depth later in Section 7.3, Clang-Tidy as a code modification tool.
+
+\begin{markdown}
+
+#### 5.2.3. Clang-Tidy checks
+
+Clang-Tidy has a wide variety of checks grouped into different categories. Here's a concise list of some of the main categories, with an example check from each and a brief description:
+
+
+1. boost-*:
+* `boost-use-to-string`: Suggests replacing `boost::lexical_cast<std::string>` with `boost::to_string`
+
+2. bugprone-*:
+
+* `bugprone-integer-division`: Warns when integer division in a floating-point context is likely to cause unintended loss of precision
+
+3. cert-* (Checks related to the CERT C++ Secure Coding Standard):
+
+* `cert-dcl03-c`: Ensures that macros are not used in unsafe contexts
+
+4. cppcoreguidelines-* (Checks from C++ Core Guidelines):
+
+* `cppcoreguidelines-slicing`: Warns on slicing (object slicing, where a derived object is assigned to a base object, cutting off the derived parts)
+
+5.google-* (Google's coding conventions):
+
+* `google-build-using-namespace`: Flags using-directives
+
+6. llvm-* (LLVM coding conventions):
+
+* `llvm-namespace-comment`: Ensures that namespaces have closing comments
+
+7. misc-* (Miscellaneous checks):
+
+* `misc-unused-parameters`: Flags parameters that are unused
+
+8. modernize-* (Modernization checks for C++):
+
+* `modernize-use-auto`: Recommends the use of auto for variable declarations when appropriate
+
+9. performance-*:
+
+* `performance-faster-string-find`: Suggests faster alternatives for string searching
+
+10. readability-*:
+
+* `readability-identifier-naming`: Ensures consistent identifier naming
+
+This list is just a representation of a subset of the checks available. Each category contains multiple checks, and there are additional categories in the tool as well. For a complete, up-to-date list of checks and their detailed descriptions, refer to the official Clang-Tidy documentation ^[LLVM Community. Extra Clang Tools documentation: Clang-Tidy. 2024. URL <https://clang.llvm.org/extra/clang-tidy/>.] or use the clang-tidy -list-checks command on your system.
+
+After learning how to build and use clang-tidy, it's time to delve deeper and examine its internal design.
+
+\end{markdown}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

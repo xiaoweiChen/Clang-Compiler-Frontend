@@ -4,9 +4,9 @@ he LLVM project has its own tooling support. The most important LLVM tools are T
 
 TableGen is a domain-specific language (DSL) and associated tool used in the LLVM project for the purpose of describing and generating tables, particularly those that describe a target architecture. This is highly useful for compiler infrastructure, where one frequently needs to describe things such as instruction sets, registers, and various other target-specific attributes in a structured manner.
 
-TableGen is employed in various parts of the Clang compiler. It’s primarily used where there’s a need to generate large amounts of similar code. For instance, it can be used for supporting cast operations that necessitate extensive enum declarations in basic classes, or in the diagnostic subsystem where code generation is required to handle numerous similar diagnostic messages. We will examine how TableGen functions within the diagnostics system as an example.
+TableGen is employed in various parts of the Clang compiler. It's primarily used where there's a need to generate large amounts of similar code. For instance, it can be used for supporting cast operations that necessitate extensive enum declarations in basic classes, or in the diagnostic subsystem where code generation is required to handle numerous similar diagnostic messages. We will examine how TableGen functions within the diagnostics system as an example.
 
-We will begin with the Diagnostic.td file, which describes Clang’s diagnostics. This file can be found at clang/include/clang/Basic/Diagnostic.td. Let’s examine how diagnostic severity is defined:
+We will begin with the Diagnostic.td file, which describes Clang's diagnostics. This file can be found at clang/include/clang/Basic/Diagnostic.td. Let's examine how diagnostic severity is defined:
 
 \begin{shell}
 // Define the diagnostic severities.
@@ -111,7 +111,7 @@ The provided example demonstrates how TableGen can be used to generate code in C
 
 \mySubsubsection{4.5.2.}{LLVM test framework}
 
-LLVM uses several testing frameworks for different types of testing. The primary ones are LLVM Integrated Tester (LIT) and Google Test (GTest) [ Google. Google Test. 2023. URL \url{https://github.com/google/googletest}. C++ testing framework.]. Both LIT and GTest play significant roles in Clang’s testing infrastructure:
+LLVM uses several testing frameworks for different types of testing. The primary ones are LLVM Integrated Tester (LIT) and Google Test (GTest) [ Google. Google Test. 2023. URL \url{https://github.com/google/googletest}. C++ testing framework.]. Both LIT and GTest play significant roles in Clang's testing infrastructure:
 
 LIT is primarily used for testing the behavior of the Clang toolchain as a whole, with a focus on its code compilation capabilities and the diagnostics it produces.
 
@@ -120,10 +120,10 @@ GTest is utilized for unit tests, targeting specific components of the code base
 These tests are crucial for maintaining the quality and stability of the Clang project.
 
 \begin{myNotic}{Important note}
-We will not delve into GTest, as this testing framework is commonly used outside LLVM and isn’t part of LLVM itself. For more information about GTest, please visit its official page: \url{https://github.com/google/googletest}
+We will not delve into GTest, as this testing framework is commonly used outside LLVM and isn't part of LLVM itself. For more information about GTest, please visit its official page: \url{https://github.com/google/googletest}
 \end{myNotic}
 
-Our focus will be on LIT. LIT is LLVM’s own test framework and is heavily used for testing the various tools and libraries in LLVM, including the Clang compiler. LIT is designed to be lightweight and is tailored for the needs of compiler testing. It’s commonly used for running tests that are essentially shell scripts, often with checks for specific patterns in the output. A typical LIT test may consist of a source code file along with a set of ”RUN” commands that specify how to compile, link, or otherwise process the file, and what output to expect.
+Our focus will be on LIT. LIT is LLVM's own test framework and is heavily used for testing the various tools and libraries in LLVM, including the Clang compiler. LIT is designed to be lightweight and is tailored for the needs of compiler testing. It's commonly used for running tests that are essentially shell scripts, often with checks for specific patterns in the output. A typical LIT test may consist of a source code file along with a set of ”RUN” commands that specify how to compile, link, or otherwise process the file, and what output to expect.
 
 The RUN commands often use FileCheck, another utility in the LLVM project, to check the output against expected patterns. In Clang, LIT tests are often used to test frontend features such as parsing, semantic analysis, code generation, and diagnostics. These tests typically look like source code files with embedded comments to indicate how to run the test and what to expect.
 
@@ -132,17 +132,17 @@ Consider the following example from clang/test/Sema/attr-unknown.c:
 \begin{cpp}
 // RUN: %clang_cc1 -fsyntax-only -verify -Wattributes %s
 
-int x __attribute__((foobar)); // expected-warning {{unknown attribute ’foobar’ ignored}}
-void z(void) __attribute__((bogusattr)); // expected-warning {{unknown attribute ’bogusattr’ ignored}}
+int x __attribute__((foobar)); // expected-warning {{unknown attribute 'foobar' ignored}}
+void z(void) __attribute__((bogusattr)); // expected-warning {{unknown attribute 'bogusattr' ignored}}
 \end{cpp}
 
 \begin{center}
 Figure 4.29: LIT test for Clang warnings about unknown attributes
 \end{center}
 
-The example is a typical C source file that can be processed by Clang. LIT’s behavior is controlled by comments within the source text. The first comment (on Line 1) specifies how the test should be executed. As indicated, clang should be started with some additional arguments: -fsyntax-only and -verify . There are also substitutions that begin with the ’\%’ symbol. The most important of these is ’\%s’, which is replaced by the source file’s name. LIT will also examine comments beginning with expected-
+The example is a typical C source file that can be processed by Clang. LIT's behavior is controlled by comments within the source text. The first comment (on Line 1) specifies how the test should be executed. As indicated, clang should be started with some additional arguments: -fsyntax-only and -verify . There are also substitutions that begin with the '\%' symbol. The most important of these is '\%s', which is replaced by the source file's name. LIT will also examine comments beginning with expected-
 
-warning and ensure that the warnings produced by Clang’s output match the expected values.
+warning and ensure that the warnings produced by Clang's output match the expected values.
 
 The test can be run as follows:
 

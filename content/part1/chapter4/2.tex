@@ -4,7 +4,7 @@ Given a choice between an STL object/algorithm and its corresponding LLVM versio
 
 Additional rules pertain to concerns regarding performance limitations. For instance, both run-time type information (RTTI) and C++ exceptions are disallowed. However, there are situations where RTTI could prove beneficial; thus, LLVM offers alternatives such as llvm::isa<> and other similar template helper functions. More information on this can be found in Section 4.3.1, RTTI replacement and cast operators. Instead of C++ exceptions, LLVM frequently employs C-style asserts.
 
-Sometimes, asserts are not sufficiently informative. LLVM recommends adding textual messages to them to simplify debugging. Here’s a typical example from Clang’s code:
+Sometimes, asserts are not sufficiently informative. LLVM recommends adding textual messages to them to simplify debugging. Here's a typical example from Clang's code:
 
 \begin{cpp}
 static bool unionHasUniqueObjectRepresentations(const ASTContext &Context,
@@ -19,11 +19,11 @@ static bool unionHasUniqueObjectRepresentations(const ASTContext &Context,
 Figure 4.1: Usage of assert() in clang/lib/AST/ASTContext.cpp
 \end{center}
 
-In the code, we check if the second parameter (RD) is a union and raise an assert with a corresponding message if it’s not.
+In the code, we check if the second parameter (RD) is a union and raise an assert with a corresponding message if it's not.
 
 Besides performance considerations, LLVM also introduces some additional requirements. One of these requirements concerns comments. Code comments are very important. Furthermore, both LLVM and Clang have comprehensive documentation generated from the code. They use Doxygen (\url{https://www.doxygen.nl/}) for this purpose. This tool is the de facto standard for commenting in C/C++ programs, and you have most likely encountered it before.
 
-Clang and LLVM are not monolithic pieces of code; instead, they are implemented as a set of libraries. This design provides advantages in terms of code and functionality reuse, as we will explore in Chapter 8, IDE Support and Clangd. These libraries also serve as excellent examples of LLVM code style enforcement. Let’s examine these libraries in detail.
+Clang and LLVM are not monolithic pieces of code; instead, they are implemented as a set of libraries. This design provides advantages in terms of code and functionality reuse, as we will explore in Chapter 8, IDE Support and Clangd. These libraries also serve as excellent examples of LLVM code style enforcement. Let's examine these libraries in detail.
 
 
 

@@ -1,7 +1,7 @@
 The AST is usually depicted as a tree, with its leaf nodes corresponding to various objects, such as function declarations and loop bodies. Typically, the AST represents the result of syntax analysis, i.e., parsing. Clang's AST nodes were designed to be immutable. This design requires that the Clang AST stores results from semantic analysis, meaning the Clang AST represents the outcomes of both syntax and semantic analyses.
 
 \begin{myNotic}{Important note}
-Although Clang also employs an AST, it's worth noting that the Clang AST is not a true tree. The presence of backward edges makes ”graph” a more appropriate term for describing Clang's AST.
+Although Clang also employs an AST, it's worth noting that the Clang AST is not a true tree. The presence of backward edges makes "graph" a more appropriate term for describing Clang's AST.
 \end{myNotic}
 
 Typical tree structure implemented in C++ has all nodes derived from a base class. Clang uses a different approach. It splits different C++ constructions into separate groups with basic classes for each of them:

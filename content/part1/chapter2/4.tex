@@ -1,4 +1,4 @@
-It’s evident that the Clang compiler toolchain conforms to the pattern widely described in various compiler books [1, 18]. However, Clang’s frontend part diverges significantly from a typical compiler frontend. The primary reason for this distinction is the complexity of the C++ language. Some features, such as macros, can modify the source code itself, while others, such as typedef, can influence the kind of token. Clang can also generate output in a variety of formats. For instance, the following command generates an aesthetically pleasing HTML view of the program shown in Figure 2.5:
+It's evident that the Clang compiler toolchain conforms to the pattern widely described in various compiler books [1, 18]. However, Clang's frontend part diverges significantly from a typical compiler frontend. The primary reason for this distinction is the complexity of the C++ language. Some features, such as macros, can modify the source code itself, while others, such as typedef, can influence the kind of token. Clang can also generate output in a variety of formats. For instance, the following command generates an aesthetically pleasing HTML view of the program shown in Figure 2.5:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-html max.cpp
@@ -51,7 +51,7 @@ Another noteworthy deviation is found in the parser component. While conventiona
 
 Furthermore, Clang offers the ability to produce output in different forms or formats. For example, the CodeGenAction class serves as the base class for various code generation actions, such as EmitObjAction or EmitLLVMAction.
 
-We will use the code for the max function from Figure 2.5 for our future exploration of the Clang frontend’s internals:
+We will use the code for the max function from Figure 2.5 for our future exploration of the Clang frontend's internals:
 
 \begin{cpp}
 int max(int a, int b) {
@@ -78,30 +78,30 @@ $ <...>/llvm-project/install/bin/clang -cc1 -dump-tokens max.cpp
 The output of the command is as shown:
 
 \begin{shell}
-int ’int’        [StartOfLine]  Loc=<max.cpp:1:1>
-identifier ’max’         [LeadingSpace] Loc=<max.cpp:1:5>
-l_paren ’(’             Loc=<max.cpp:1:8>
-int ’int’               Loc=<max.cpp:1:9>
-identifier ’a’   [LeadingSpace] Loc=<max.cpp:1:13>
-comma ’,’               Loc=<max.cpp:1:14>
-int ’int’        [LeadingSpace] Loc=<max.cpp:1:16>
-identifier ’b’   [LeadingSpace] Loc=<max.cpp:1:20>
-r_paren ’)’             Loc=<max.cpp:1:21>
-l_brace ’{’      [LeadingSpace] Loc=<max.cpp:1:23>
-if ’if’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:2:3>
-l_paren ’(’      [LeadingSpace] Loc=<max.cpp:2:6>
-identifier ’a’          Loc=<max.cpp:2:7>
-greater ’>’      [LeadingSpace] Loc=<max.cpp:2:9>
-identifier ’b’   [LeadingSpace] Loc=<max.cpp:2:11>
-r_paren ’)’             Loc=<max.cpp:2:12>
-return ’return’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:3:5>
-identifier ’a’   [LeadingSpace] Loc=<max.cpp:3:12>
-semi ’;’                Loc=<max.cpp:3:13>
-return ’return’  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:4:3>
-identifier ’b’   [LeadingSpace] Loc=<max.cpp:4:10>
-semi ’;’                Loc=<max.cpp:4:11>
-r_brace ’}’      [StartOfLine]  Loc=<max.cpp:5:1>
-eof ’’          Loc=<max.cpp:5:2>
+int 'int'        [StartOfLine]  Loc=<max.cpp:1:1>
+identifier 'max'         [LeadingSpace] Loc=<max.cpp:1:5>
+l_paren '('             Loc=<max.cpp:1:8>
+int 'int'               Loc=<max.cpp:1:9>
+identifier 'a'   [LeadingSpace] Loc=<max.cpp:1:13>
+comma ','               Loc=<max.cpp:1:14>
+int 'int'        [LeadingSpace] Loc=<max.cpp:1:16>
+identifier 'b'   [LeadingSpace] Loc=<max.cpp:1:20>
+r_paren ')'             Loc=<max.cpp:1:21>
+l_brace '{'      [LeadingSpace] Loc=<max.cpp:1:23>
+if 'if'  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:2:3>
+l_paren '('      [LeadingSpace] Loc=<max.cpp:2:6>
+identifier 'a'          Loc=<max.cpp:2:7>
+greater '>'      [LeadingSpace] Loc=<max.cpp:2:9>
+identifier 'b'   [LeadingSpace] Loc=<max.cpp:2:11>
+r_paren ')'             Loc=<max.cpp:2:12>
+return 'return'  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:3:5>
+identifier 'a'   [LeadingSpace] Loc=<max.cpp:3:12>
+semi ';'                Loc=<max.cpp:3:13>
+return 'return'  [StartOfLine] [LeadingSpace]   Loc=<max.cpp:4:3>
+identifier 'b'   [LeadingSpace] Loc=<max.cpp:4:10>
+semi ';'                Loc=<max.cpp:4:11>
+r_brace '}'      [StartOfLine]  Loc=<max.cpp:5:1>
+eof ''          Loc=<max.cpp:5:2>
 \end{shell}
 
 \begin{center}
@@ -151,7 +151,7 @@ clangbook::A<int>. The type is represented as an annotation token, as shown in t
 Figure 2.32: LLDB session for annotation.cpp
 \end{center}
 
-As we can see, Clang consumes an annotation token from Line 4 of the program shown in Figure 2.31. The token is located between columns 1 and 7. See Figure 2.32. This corresponds to the following text used as the token: clangbook::A<int>. The token consists of other tokens, such as ’clangbook’, ’::’, and so on. Combining all the tokens into one will significantly simplify the parsing and boost the overall parsing performance.
+As we can see, Clang consumes an annotation token from Line 4 of the program shown in Figure 2.31. The token is located between columns 1 and 7. See Figure 2.32. This corresponds to the following text used as the token: clangbook::A<int>. The token consists of other tokens, such as 'clangbook', '::', and so on. Combining all the tokens into one will significantly simplify the parsing and boost the overall parsing performance.
 
 \myGraphic{0.4}{content/part1/chapter2/images/33.png}{Figure 2.33: Preprocessor (clang lexer) class internals}
 
@@ -182,30 +182,30 @@ The output of this command is shown here:
 \begin{shell}
 TranslationUnitDecl 0xa9cb38 <<invalid sloc>> <invalid sloc>
 |-TypedefDecl 0xa9d3a8 <<invalid sloc>> <invalid sloc>
-implicit __int128_t ’__int128’
-| ‘-BuiltinType 0xa9d100 ’__int128’
+implicit __int128_t '__int128'
+| ‘-BuiltinType 0xa9d100 '__int128'
 ...
 ‘-FunctionDecl 0xae6a98 <max.cpp:1:1, line:5:1> line:1:5 max
-’int (int, int)’
-  |-ParmVarDecl 0xae6930 <col:9, col:13> col:13 used a ’int’
-  |-ParmVarDecl 0xae69b0 <col:16, col:20> col:20 used b ’int’
+'int (int, int)'
+  |-ParmVarDecl 0xae6930 <col:9, col:13> col:13 used a 'int'
+  |-ParmVarDecl 0xae69b0 <col:16, col:20> col:20 used b 'int'
   ‘-CompoundStmt 0xae6cd8 <col:23, line:5:1>
     |-IfStmt 0xae6c70 <line:2:3, line:3:12>
-    | |-BinaryOperator 0xae6c08 <line:2:7, col:11> ’bool’ ’>’
-    | | |-ImplicitCastExpr 0xae6bd8 <col:7> ’int’ <LValueToRValue>
-    | | | ‘-DeclRefExpr 0xae6b98 <col:7> ’int’ lvalue ParmVar 0xae6930
-            ’a’ ’int’
-    | | ‘-ImplicitCastExpr 0xae6bf0 <col:11> ’int’ <LValueToRValue>
-    | |   ‘-DeclRefExpr 0xae6bb8 <col:11> ’int’ lvalue ParmVar 0xae69b0
-            ’b’ ’int’
+    | |-BinaryOperator 0xae6c08 <line:2:7, col:11> 'bool' '>'
+    | | |-ImplicitCastExpr 0xae6bd8 <col:7> 'int' <LValueToRValue>
+    | | | ‘-DeclRefExpr 0xae6b98 <col:7> 'int' lvalue ParmVar 0xae6930
+            'a' 'int'
+    | | ‘-ImplicitCastExpr 0xae6bf0 <col:11> 'int' <LValueToRValue>
+    | |   ‘-DeclRefExpr 0xae6bb8 <col:11> 'int' lvalue ParmVar 0xae69b0
+            'b' 'int'
     | ‘-ReturnStmt 0xae6c60 <line:3:5, col:12>
-    |   ‘-ImplicitCastExpr 0xae6c48 <col:12> ’int’ <LValueToRValue>
-    |     ‘-DeclRefExpr 0xae6c28 <col:12> ’int’ lvalue ParmVar 0xae6930
-            ’a’ ’int’
+    |   ‘-ImplicitCastExpr 0xae6c48 <col:12> 'int' <LValueToRValue>
+    |     ‘-DeclRefExpr 0xae6c28 <col:12> 'int' lvalue ParmVar 0xae6930
+            'a' 'int'
     ‘-ReturnStmt 0xae6cc8 <line:4:3, col:10>
-      ‘-ImplicitCastExpr 0xae6cb0 <col:10> ’int’ <LValueToRValue>
-        ‘-DeclRefExpr 0xae6c90 <col:10> ’int’ lvalue ParmVar 0xae69b0
-            ’b’ ’int’
+      ‘-ImplicitCastExpr 0xae6cb0 <col:10> 'int' <LValueToRValue>
+        ‘-DeclRefExpr 0xae6c90 <col:10> 'int' lvalue ParmVar 0xae69b0
+            'b' 'int'
 \end{shell}
 
 \begin{center}
@@ -214,7 +214,7 @@ Figure 2.34: Clang AST dump output
 
 Clang utilizes a hand-written recursive-descent parser [LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}.]. This parser can be considered simple, and this simplicity was one key reason for its selection. Additionally, the complex rules specified for the C/C++ languages necessitated an ad hoc parser with easily adaptable rules.
 
-Let’s explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate]:
+Let's explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate]:
 
 A source file together with all the headers (16.5.1.2) and source files included (15.3) via the preprocessing directive \#include, less any source lines skipped by any of the conditional inclusion (15.2) preprocessing directives, is called a translation unit.
 
@@ -242,7 +242,7 @@ int max(...) {
 Figure 2.36: Part of the example code corresponding to function definition from C++ standard
 \end{center}
 
-The function definition necessitates a declarator and function body. We’ll start with the declarator, defined in the C++ standard as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general]:
+The function definition necessitates a declarator and function body. We'll start with the declarator, defined in the C++ standard as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general]:
 
 \begin{shell}
 declarator:
@@ -319,7 +319,7 @@ Figure 2.41: Statement definition for C++ standard
 
 In this context, the selection statement corresponds to the if condition in our program, while the jump statement corresponds to the return operator.
 
-Let’s examine the jum statement in more detail [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general]:
+Let's examine the jum statement in more detail [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general]:
 
 \begin{shell}
 jump-statement:
@@ -344,15 +344,15 @@ expr-or-braced-init-list:
 Figure 2.43: Return expression definition for C++ standard
 \end{center}
 
-In this context, the return keyword is followed by an expression and a semicolon. In our case, there’s an implicit cast expression that automatically converts the variable into the required type (int ).
+In this context, the return keyword is followed by an expression and a semicolon. In our case, there's an implicit cast expression that automatically converts the variable into the required type (int ).
 
-It can be enlightening to examine the parser’s operation through the LLDB debugger:
+It can be enlightening to examine the parser's operation through the LLDB debugger:
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 \end{shell}
 
-The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we’ve set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the ’bt’ command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate].
+The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we've set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the 'bt' command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate].
 
 \begin{shell}
 1  (lldb) b clang::Parser::ParseReturnStatement
@@ -360,13 +360,13 @@ The debugger session output is shown in Figure 2.44. As you can see, on Line 1, 
 3  ...
 4  (lldb) c
 5  ...
-6  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+6  * thread #1, name = 'clang', stop reason = breakpoint 1.1
 7     frame #0: ... clang::Parser::ParseReturnStatement(...) ...
 8     2421 StmtResult Parser::ParseReturnStatement() {
 9  -> 2422   assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
 10    2423         "Not a return stmt!");
 11    2424   bool IsCoreturn = Tok.is(tok::kw_co_return);
-12    2425   SourceLocation ReturnLoc = ConsumeToken();  // eat the ’return’.
+12    2425   SourceLocation ReturnLoc = ConsumeToken();  // eat the 'return'.
 13 (lldb) bt
 14   * frame #0: ... clang::Parser::ParseReturnStatement( ...
 15    ...
@@ -391,7 +391,7 @@ The parsing results in the generation of AST. We can also inspect the process of
 5  ...
 6  (lldb) c
 7  ...
-8  * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+8  * thread #1, name = 'clang', stop reason = breakpoint 1.1
 9     frame #0: ... clang::ReturnStmt::Create(...) at Stmt.cpp:1205:8
 10    1202
 11    1203 ReturnStmt *ReturnStmt::Create(const ASTContext &Ctx, SourceLocation RL,
@@ -401,7 +401,7 @@ The parsing results in the generation of AST. We can also inspect the process of
 15    1207   ...
 16    1208   return new (Mem) ReturnStmt(RL, E, NRVOCandidate);
 17 (lldb) bt
-18 * thread #1, name = ’clang’, stop reason = breakpoint 1.1
+18 * thread #1, name = 'clang', stop reason = breakpoint 1.1
 19  * frame #0: ... clang::ReturnStmt::Create( ...
 20    frame #1: ... clang::Sema::BuildReturnStmt( ...
 21    frame #2: ... clang::Sema::ActOnReturnStmt( ...

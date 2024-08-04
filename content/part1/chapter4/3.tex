@@ -1,4 +1,4 @@
-We are going to start with RTTI replacement in the LLVM code and discuss how it’s implemented. We will then continue with basic containers and smart pointers. We will conclude with some important classes used to represent token locations and how diagnostics are realized in Clang. Later, in Section 4.6, Clang plugin project, we will use some of these classes in our test project.
+We are going to start with RTTI replacement in the LLVM code and discuss how it's implemented. We will then continue with basic containers and smart pointers. We will conclude with some important classes used to represent token locations and how diagnostics are realized in Clang. Later, in Section 4.6, Clang plugin project, we will use some of these classes in our test project.
 
 \mySubsubsection{4.3.1.}{RTTI replacement and cast operators}
 
@@ -6,13 +6,13 @@ As mentioned earlier, LLVM avoids using RTTI due to performance concerns. LLVM h
 
 \begin{itemize}
 \item
-llvm::isa<> is akin to Java’s javainstanceof operator. It returns true or false depending on whether the reference to the tested object belongs to the tested class or not.
+llvm::isa<> is akin to Java's javainstanceof operator. It returns true or false depending on whether the reference to the tested object belongs to the tested class or not.
 
 \item
-llvm::cast<>: Use this cast operator when you’re certain that the object is of the specified derived type. If the cast fails (i.e., the object isn’t of the expected type), llvm::cast will abort the program. Use it only when you’re confident the cast won’t fail.
+llvm::cast<>: Use this cast operator when you're certain that the object is of the specified derived type. If the cast fails (i.e., the object isn't of the expected type), llvm::cast will abort the program. Use it only when you're confident the cast won't fail.
 
 \item
-llvm::dyn\_cast<>: This is perhaps the most frequently used casting operator in LLVM. llvm::dyn\_cast is employed for safe downcasting when you anticipate the cast will usually succeed, but there’s some uncertainty. If the object isn’t of the specified derived type, llvm::dyn\_cast<> returns nullptr.
+llvm::dyn\_cast<>: This is perhaps the most frequently used casting operator in LLVM. llvm::dyn\_cast is employed for safe downcasting when you anticipate the cast will usually succeed, but there's some uncertainty. If the object isn't of the specified derived type, llvm::dyn\_cast<> returns nullptr.
 \end{itemize}
 
 The cast operators do not accept nullptr as input. However, there are two special cast operators that can handle null pointers:
@@ -28,10 +28,10 @@ llvm::dyn\_cast\_if\_present<>: A variant of llvm::dyn\_cast<> that accepts null
 Both operators can handle nullptr values. If the input is nullptr or if the cast fails, they simply return nullptr.
 
 \begin{myNotic}{Important note}
-It’s worth noting that the casting operators llvm::cast\_if\_present<> and llvm: :dyn\_cast\_if\_present<> were introduced recently, specifically in 2022. They serve as replacements for popular ones llvm::cast\_or\_null<> and llvm::dyn\_cast\_or \_null<>, which had been in recent use. The older versions are still supported and now redirect calls to the newer cast operators. For more information, see the discussion about this change: \url{https://discourse.llvm.org/t/psa-swapping-out-or-null-with-if-present/65018}
+It's worth noting that the casting operators llvm::cast\_if\_present<> and llvm: :dyn\_cast\_if\_present<> were introduced recently, specifically in 2022. They serve as replacements for popular ones llvm::cast\_or\_null<> and llvm::dyn\_cast\_or \_null<>, which had been in recent use. The older versions are still supported and now redirect calls to the newer cast operators. For more information, see the discussion about this change: \url{https://discourse.llvm.org/t/psa-swapping-out-or-null-with-if-present/65018}
 \end{myNotic}
 
-The following question might arise: how can the dynamic cast operation be performed without RTTI? This can be achieved with certain specific decorations, as illustrated in a simple example inspired by How to set up LLVM-style RTTI for your class hierarchy [LLVM Community. How to set up LLVM-style RTTI for your class hierarchy. 2023. URL \url{https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html}.]. We’ll begin with a base class, clangbook::Animal, that has two descendants: clangbook::Horse and clangbook::Sheep. Each horse can be categorized by its speed (in mph), and each sheep by its wool mass. Here’s how it can be used:
+The following question might arise: how can the dynamic cast operation be performed without RTTI? This can be achieved with certain specific decorations, as illustrated in a simple example inspired by How to set up LLVM-style RTTI for your class hierarchy [LLVM Community. How to set up LLVM-style RTTI for your class hierarchy. 2023. URL \url{https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html}.]. We'll begin with a base class, clangbook::Animal, that has two descendants: clangbook::Horse and clangbook::Sheep. Each horse can be categorized by its speed (in mph), and each sheep by its wool mass. Here's how it can be used:
 
 \begin{cpp}
 void testAnimal() {
@@ -59,7 +59,7 @@ Animal is a Horse and the horse speed is: 10mph
 
 Line 48 in Figure 4.2 demonstrates the use of llvm::isa<>, while Line 51 showcases llvm::dyn\_cast<>. In the latter, we cast the base class to clangbook::Horse and call a method specific to that class.
 
-Let’s look into the class implementations, which will provide insights into how the RTTI replacement works. We will start with the base class clangbook::Animal:
+Let's look into the class implementations, which will provide insights into how the RTTI replacement works. We will start with the base class clangbook::Animal:
 
 \begin{cpp}
 class Animal {
@@ -136,7 +136,7 @@ The LLVM ADT (which stands for Abstract Data Type) library offers a set of conta
 
 The primary class for working with strings in the standard C++ library is std::string. Although this class was designed to be universal, it has some performance related issues. A significant issue concerns the copy operation. Since copying strings is a common operation in compilers, LLVM introduced a specialized class, llvm::StringRef, that handles this operation efficiently without using extra memory. This class is comparable to std::string\_view from C++17 [International Organization for Standardization. International Standard ISO/IEC 14882:2017(E) – Programming Languages – C++. International Organization for Standardization, 2017. URL \url{https://www.iso.org/standard/69466.html}.] and std::span from C++20 [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}.].
 
-The llvm::StringRef class maintains a reference to data, which doesn’t need to be null-terminated like traditional C/C++ strings. It essentially holds a pointer to a data block and the block’s size, making the object’s effective size 16 bytes. Because llvm::StringRef retains a reference rather than the actual data, it must be constructed from an existing data source. This class can be instantiated from basic string objects such as const char*, std::string, and std::string\_view. The default constructor creates an empty object. Typical usage example for llvm::StringRef is shown in Figure 4.6:
+The llvm::StringRef class maintains a reference to data, which doesn't need to be null-terminated like traditional C/C++ strings. It essentially holds a pointer to a data block and the block's size, making the object's effective size 16 bytes. Because llvm::StringRef retains a reference rather than the actual data, it must be constructed from an existing data source. This class can be instantiated from basic string objects such as const char*, std::string, and std::string\_view. The default constructor creates an empty object. Typical usage example for llvm::StringRef is shown in Figure 4.6:
 
 \begin{cpp}
 #include "llvm/ADT/StringRef.h"
@@ -205,7 +205,7 @@ llvm::outs() << "SmallString result: " << SmallStr << "\n";
 Figure 4.8: llvm::SmallString<> usage example
 \end{center}
 
-Despite the fact that string manipulation is key in compiler tasks such as text parsing, LLVM has many other helper classes. We’ll explore its sequential containers next.
+Despite the fact that string manipulation is key in compiler tasks such as text parsing, LLVM has many other helper classes. We'll explore its sequential containers next.
 
 \mySamllsection{Sequential containers}
 
@@ -216,10 +216,10 @@ LLVM recommends some optimized replacements for arrays and vectors from the stan
 llvm::ArrayRef<>: A helper class designed for interfaces that accept a sequential list of elements for read-only access. The class is akin to llvm::StringRef<> in that it does not own the underlying data but merely references it.
 
 \item
-llvm::SmallVector<>: An optimized vector for cases with a small size. It resembles llvm::SmallString, as discussed in Section 4.3.2, String operations. Notably, the size for the array isn’t fixed, allowing the number of stored elements to grow. If the number of elements stays below N (the template argument), then there is no need for additional memory allocation.
+llvm::SmallVector<>: An optimized vector for cases with a small size. It resembles llvm::SmallString, as discussed in Section 4.3.2, String operations. Notably, the size for the array isn't fixed, allowing the number of stored elements to grow. If the number of elements stays below N (the template argument), then there is no need for additional memory allocation.
 \end{itemize}
 
-Let’s examine the llvm::SmallVector<> to better understand these containers, as shown in Figure 4.9:
+Let's examine the llvm::SmallVector<> to better understand these containers, as shown in Figure 4.9:
 
 \begin{cpp}
 llvm::SmallVector<int, 10> SmallVector;
@@ -235,7 +235,7 @@ Figure 4.9: llvm::SmallVector<> usage
 
 The vector is initialized at Line 1 with a chosen size of 10 (indicated by the second template argument). The container offers an API similar to std::vector<>, using the familiar push\_back method to add new elements, as seen in Figure 4.9, Lines 3 and 5.
 
-The first 10 elements are added to the vector without any additional memory allocation (see Figure 4.9, Lines 2-4). However, when the eleventh element is added at Line 5, the array’s size surpasses the pre-allocated space for 10 elements, triggering additional memory allocation. This container design efficiently minimizes memory allocation for small objects
+The first 10 elements are added to the vector without any additional memory allocation (see Figure 4.9, Lines 2-4). However, when the eleventh element is added at Line 5, the array's size surpasses the pre-allocated space for 10 elements, triggering additional memory allocation. This container design efficiently minimizes memory allocation for small objects
 
 while maintaining the flexibility to accommodate larger sizes when necessary.
 
@@ -245,19 +245,19 @@ The standard library provides several containers for storing key-value data. The
 
 \begin{itemize}
 \item
-llvm::StringMap<>: A map that uses strings as keys. Typically, this is more performance optimized than the standard associative container, std::unordered\_map<std::string, T>. It is frequently used in situations where string keys are dominant and performance is critical, as one might expect in a compiler infrastructure like LLVM. Unlike many other data structures in LLVM, llvm::StringMap<> does not store a copy of the string key. Instead, it keeps a reference to the string data, so it’s crucial to ensure the string data outlives the map to prevent undefined behavior.
+llvm::StringMap<>: A map that uses strings as keys. Typically, this is more performance optimized than the standard associative container, std::unordered\_map<std::string, T>. It is frequently used in situations where string keys are dominant and performance is critical, as one might expect in a compiler infrastructure like LLVM. Unlike many other data structures in LLVM, llvm::StringMap<> does not store a copy of the string key. Instead, it keeps a reference to the string data, so it's crucial to ensure the string data outlives the map to prevent undefined behavior.
 
 \item
-llvm::DenseMap<>: This map is designed to be more memory- and time-efficient than std::unordered\_map<> in most situations, though it comes with some additional constraints (e.g., keys and values having trivial destructors). It’s especially beneficial when you have simple key-value types and require high-performance lookups.
+llvm::DenseMap<>: This map is designed to be more memory- and time-efficient than std::unordered\_map<> in most situations, though it comes with some additional constraints (e.g., keys and values having trivial destructors). It's especially beneficial when you have simple key-value types and require high-performance lookups.
 
 \item
 llvm::SmallDenseMap<>: This map is akin to llvm::DenseMap<> but is optimized for instances where the map size is typically small. It allocates from the stack for small maps and only resorts to heap allocation when the map exceeds a predefined size.
 
 \item
-llvm::MapVector<>: This container retains the insertion order, akin to Python’s OrderedDict . It is implemented as a blend of std::vector and either llvm::DenseMap or llvm::SmallDenseMap.
+llvm::MapVector<>: This container retains the insertion order, akin to Python's OrderedDict . It is implemented as a blend of std::vector and either llvm::DenseMap or llvm::SmallDenseMap.
 \end{itemize}
 
-It’s noteworthy that these containers utilize a quadratically probed hash table mechanism. This method is effective for hash collision resolution because the cache isn’t recomputed during element lookups. This is crucial for performance-critical applications, such as compilers.
+It's noteworthy that these containers utilize a quadratically probed hash table mechanism. This method is effective for hash collision resolution because the cache isn't recomputed during element lookups. This is crucial for performance-critical applications, such as compilers.
 
 \mySubsubsection{4.4.3.}{Smart pointers}
 
@@ -294,7 +294,7 @@ Figure 4.11: CRTP usage in llvm::RefCountedBase<>. The code was sourced from the
 
 Since MyClass in Figure 4.10 is derived from RefCountedBase, we can perform a cast on it in Line 6 of Figure 4.11. This cast is feasible since the type to cast is known, given that it is provided as a template parameter.
 
-We’ve just finished with LLVM basic libraries. Now it is time to move on to Clang basic libraries. Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let’s explore the basic classes that Clang provides for these operations.
+We've just finished with LLVM basic libraries. Now it is time to move on to Clang basic libraries. Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let's explore the basic classes that Clang provides for these operations.
 
 
 

@@ -90,7 +90,7 @@ public:
     if (const auto *FD = Result.Nodes.getNodeAs<clang::FunctionDecl>(MatchID)) {
        const auto &SM = *Result.SourceManager;
        const auto &Loc = FD->getLocation();
-       llvm::outs() << "Found ’max’ function at " << SM.getFilename(Loc) << ":"
+       llvm::outs() << "Found 'max' function at " << SM.getFilename(Loc) << ":"
                     << SM.getSpellingLineNumber(Loc) << ":"
                     << SM.getSpellingColumnNumber(Loc) << "\n";
     }
@@ -106,14 +106,14 @@ public:
 Figure 3.26: The match callback for the AST matchers test tool
 \end{center}
 
-The most crucial section of the code is located at lines 7-9. Each matcher is identified by an ID, which, in our case, is ’match-id’. The matcher itself is defined in Lines 8-9:
+The most crucial section of the code is located at lines 7-9. Each matcher is identified by an ID, which, in our case, is 'match-id'. The matcher itself is defined in Lines 8-9:
 
 \begin{cpp}
 clang::ast_matchers::DeclarationMatcher M =
   functionDecl(decl().bind(MatchID), matchesName("max"));
 \end{cpp}
 
-This matcher seeks a function declaration that has a specific name, using functionDecl(), as seen in matchesName(). We utilized a specialized Domain-Specific Language (DSL) to specify the matcher. The DSL is implemented using C++ macros. We can also create our own matchers, as will be shown in Section 7.3.3, Check implementation. It’s worth noting that the recursive AST visitor serves as the backbone for AST traversal inside the matcher’s implementation.
+This matcher seeks a function declaration that has a specific name, using functionDecl(), as seen in matchesName(). We utilized a specialized Domain-Specific Language (DSL) to specify the matcher. The DSL is implemented using C++ macros. We can also create our own matchers, as will be shown in Section 7.3.3, Check implementation. It's worth noting that the recursive AST visitor serves as the backbone for AST traversal inside the matcher's implementation.
 
 The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
 
@@ -140,7 +140,7 @@ When we run our test tool on the example, we will obtain the following output:
 \begin{shell}
 ./matchvisitor minmax.cpp -- -std=c++17
 ...
-Found the ’max’ function at minmax.cpp:1:5
+Found the 'max' function at minmax.cpp:1:5
 \end{shell}
 
 \begin{center}
@@ -149,7 +149,7 @@ Figure 3.28: The result of running the matchvisitor utility on a test file
 
 As we can see, it has located only one function declaration with the name specified for the matcher.
 
-The DSL for matchers is typically employed in custom Clang tools, such as clang-tidy (as discussed in Chapter 5, Clang-Tidy Linter Framework), but it can also be used as a standalone tool. A specialized program called clang-query enables the execution of different match queries, which can be used to search for specific AST nodes in analyzed C++ code. Let’s see how the tool works.
+The DSL for matchers is typically employed in custom Clang tools, such as clang-tidy (as discussed in Chapter 5, Clang-Tidy Linter Framework), but it can also be used as a standalone tool. A specialized program called clang-query enables the execution of different match queries, which can be used to search for specific AST nodes in analyzed C++ code. Let's see how the tool works.
 
 
 

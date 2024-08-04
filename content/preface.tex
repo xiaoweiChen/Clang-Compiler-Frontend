@@ -2,17 +2,17 @@ Low Level Virtual Machine (LLVM), is a collection of modular and reusable compil
 
 One of the key components of LLVM is the C/C++ compiler known as Clang. This compiler is widely used across various companies and has been designated as the default compiler for certain development environments, notably for macOS development. Clang will be the primary focus of our investigation in this book, with particular attention to its frontend—the part that is closest to the C/C++ programming language. Specifically, the book will include examples demonstrating how the C++ standard is implemented within the compiler.
 
-A pivotal aspect of LLVM’s design is its modularity, which facilitates the creation of custom tools that exploit the compiler’s comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project’s needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
+A pivotal aspect of LLVM's design is its modularity, which facilitates the creation of custom tools that exploit the compiler's comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project's needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
 
-LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book’s content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
+LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book's content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
 
-\mySubsubsection{}{Who this book is for}
+\myChapterNoFile{}{Who this book is for}
 
-The book is written for C++ engineers who don’t have prior knowledge of compilers but wish to gain this knowledge and apply it to their daily activities. It provides an overview of the Clang compiler frontend, an essential yet often underestimated part of LLVM. This section of the compiler, along with a collection of powerful tools, enables programmers to enhance code quality and the overall development process. For example, Clang-Tidy offers more than 500 different lint checks that detect anti-patterns in code (such as use after move) and help maintain code style and standards. Another notable tool is Clang-Format, which allows specifying various formatting rules suitable for your project. These tools can also be considered an integral part of the development process. For instance, the language server (Clangd) is a critical service providing navigation and refactoring support for your IDE.
+The book is written for C++ engineers who don't have prior knowledge of compilers but wish to gain this knowledge and apply it to their daily activities. It provides an overview of the Clang compiler frontend, an essential yet often underestimated part of LLVM. This section of the compiler, along with a collection of powerful tools, enables programmers to enhance code quality and the overall development process. For example, Clang-Tidy offers more than 500 different lint checks that detect anti-patterns in code (such as use after move) and help maintain code style and standards. Another notable tool is Clang-Format, which allows specifying various formatting rules suitable for your project. These tools can also be considered an integral part of the development process. For instance, the language server (Clangd) is a critical service providing navigation and refactoring support for your IDE.
 
 Understanding compiler internals might be crucial for anyone wanting to create and use such tools. The book provides the necessary foundation to begin this journey, covering basic LLVM architecture and offering a detailed description of Clang internals. It includes examples from LLVM source code and custom tools that extend the basic functionality provided by the compiler. Additionally, the book addresses compilation databases and various performance optimizations that can enhance the build speed of your projects. This knowledge should help C++ developers correctly apply the compiler to their work activities.
 
-\mySubsubsection{}{What this book covers}
+\myChapterNoFile{}{What this book covers}
 
 Chapter 1, Environment Setup, describes the basic steps required to set up the environment for future experiments with Clang, suitable for Unix-based systems such as Linux and Darwin (macOS). In addition, readers will learn how to download, configure, and build LLVM source code. We will also create a simple Clang Tool to verify the syntax of the provided source code.
 
@@ -35,20 +35,20 @@ Appendix 1: Compilation Database, describes the Compilation Database—a method 
 Appendix 2: Build Speed Optimizations, covers several compiler performance optimizations that can be used to enhance compiler performance. We will cover Clang precompiled headers and Clang modules, which represent a serialized AST that can be loaded much faster than building it from scratch.
 
 
-\mySubsubsection{}{To get the most out of this book}
+\myChapterNoFile{}{To get the most out of this book}
 
 You will need to have an understanding of C++, especially C++17, which is used for LLVM and throughout the examples in the book. The provided examples are assumed to be run on a Unix-like operating system, with Linux and Darwin (Mac OS) being considered the operating system requirements for the book. We will use Git to clone the LLVM source tree and start working on it. Some tools also need to be installed, such as CMake and Ninja, which will be actively used to build the examples and the LLVM source code.
 
-If you are using the digital version of this book, we advise you to type the code yourself or access the code from the book’s GitHub repository (a link is available in the next section). Doing so will help you avoid any potential errors related to the copying and pasting of code.
+If you are using the digital version of this book, we advise you to type the code yourself or access the code from the book's GitHub repository (a link is available in the next section). Doing so will help you avoid any potential errors related to the copying and pasting of code.
 
-\mySubsubsection{}{Download the example code files}
+\myChapterNoFile{}{Download the example code files}
 
-The code bundle for the book is also hosted on GitHub at \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt}. In case there’s an update to the code, it will be updated on the existing GitHub repository.
+The code bundle for the book is also hosted on GitHub at \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt}. In case there's an update to the code, it will be updated on the existing GitHub repository.
 
 We also have other code bundles from our rich catalog of books and videos available at \url{https://github.com/PacktPublishing/}. Check them out!
 
 
-\mySubsubsection{}{Conventions used}
+\myChapterNoFile{}{Conventions used}
 
 There are a number of text conventions used throughout this book.
 

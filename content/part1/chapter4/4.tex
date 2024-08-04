@@ -1,12 +1,12 @@
-Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let’s explore the basic classes that Clang provides for these operations.
+Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let's explore the basic classes that Clang provides for these operations.
 
 \mySubsubsection{4.4.1.}{SourceManager and SourceLocation}
 
-Clang, as a compiler, operates with text files (programs), and locating a specific place in the program is one of the most frequently requested operations. Let’s look at a typical Clang error report. Consider a program from Chapter 3, Clang AST, as seen in Figure 3.33. Clang produces the following error message for the program:
+Clang, as a compiler, operates with text files (programs), and locating a specific place in the program is one of the most frequently requested operations. Let's look at a typical Clang error report. Consider a program from Chapter 3, Clang AST, as seen in Figure 3.33. Clang produces the following error message for the program:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only maxerr.cpp
-maxerr.cpp:3:12: error: use of undeclared identifier ’ab’
+maxerr.cpp:3:12: error: use of undeclared identifier 'ab'
   return ab;
          ^
 1  error generated.
@@ -20,13 +20,13 @@ As we can see in Figure 4.12, the following information is required to display t
 
 \begin{itemize}
 \item
-Filename: In our case, it’s maxerr.cpp
+Filename: In our case, it's maxerr.cpp
 
 \item
-Line in the file: In our case, it’s 3
+Line in the file: In our case, it's 3
 
 \item
-Column in the file: In our case, it’s 12
+Column in the file: In our case, it's 12
 \end{itemize}
 
 The data structure that stores this information should be as compact as possible because the compiler uses it frequently. Clang stores the required information in the clang::SourceLocation object.
@@ -55,7 +55,7 @@ Spelling location: Refers to the location where something was actually spelled o
 Expansion location: Refers to where a macro gets expanded. If you have a source location pointing inside a macro body, the expansion location will give you the location in the source code where the macro was used (expanded).
 \end{itemize}
 
-Let’s look at a specific example:
+Let's look at a specific example:
 
 \begin{cpp}
 #define BAR void bar()
@@ -69,7 +69,7 @@ Figure 4.14: Example program to test different types of source locations: functi
 
 In Figure 4.14, we define two functions: int foo() at Line 2 and void bar() at Line 3. For the first function, both the spelling and expansion locations point to Line 2. However, for the second function, the spelling location is at Line 1, while the expansion location is at Line 3.
 
-Let’s examine this with a test Clang tool. We will use the test project from Section 3.4, Recursive AST visitor and replace some parts of the code here. First of all, we have to pass clang::ASTContext to our Visitor implementation. This is required because clang::ASTContext provides access to clang::SourceManager. We will replace Line 11 in Figure 3.8 and pass ASTContext as follows:
+Let's examine this with a test Clang tool. We will use the test project from Section 3.4, Recursive AST visitor and replace some parts of the code here. First of all, we have to pass clang::ASTContext to our Visitor implementation. This is required because clang::ASTContext provides access to clang::SourceManager. We will replace Line 11 in Figure 3.8 and pass ASTContext as follows:
 
 \begin{cpp}
 CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef File) {
@@ -147,7 +147,7 @@ clang::SourceLocation and clang::SourceManager are very powerful classes. In com
 
 \mySubsubsection{4.4.2.}{Diagnostics support}
 
-Clang’s diagnostics subsystem is responsible for generating and reporting warnings, errors, and other messages [8]. The main classes involved are:
+Clang's diagnostics subsystem is responsible for generating and reporting warnings, errors, and other messages [8]. The main classes involved are:
 
 \begin{itemize}
 \item

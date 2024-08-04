@@ -183,11 +183,11 @@ USAGE: syntax-check [options] <source0> [... <sourceN>]
 Figure 1.16: The syntax-check –help output
 \end{center}
 
-The program will successively terminate if we run it on a valid C++ source file, but it will produce an error message if it’s run on a broken C++ file:
+The program will successively terminate if we run it on a valid C++ source file, but it will produce an error message if it's run on a broken C++ file:
 
 \begin{shell}
 $ ./syntax-check mainbroken.cpp -- -std=c++17
-mainbroken.cpp:2:11: error: expected ’;’ after return statement
+mainbroken.cpp:2:11: error: expected ';' after return statement
   return 0
           ^
           ;
@@ -199,7 +199,7 @@ Error while processing mainbroken.cpp.
 Figure 1.17: The syntax-check run on a file with a syntax error
 \end{center}
 
-We used ’- -’ to pass additional arguments to the compiler in Figure 1.17, specifically indicating that we want to use C++17 with the option ’-std=c++17’.
+We used '- -' to pass additional arguments to the compiler in Figure 1.17, specifically indicating that we want to use C++17 with the option '-std=c++17'.
 
 We can also run our tool with the LLDB debugger:
 
@@ -226,7 +226,7 @@ We can set a breakpoint and run the program as follows:
 4  ...
 5  Running without flags.
 6  Process 608249 stopped
-7  * thread #1, name = ’syntax-check’, stop reason = breakpoint 1.1
+7  * thread #1, name = 'syntax-check', stop reason = breakpoint 1.1
 8    frame #0: ... clang::ParseAST(...) at ParseAST.cpp:117:3
 9     114
 10    115  void clang::ParseAST(Sema &S, bool PrintStats, bool SkipFunctionBodies) {
@@ -248,7 +248,7 @@ Figure 1.19: LLDB session for Clang Tool test project
 
 We set a breakpoint in the clang::ParseAST function (Figure 1.19, line 1). The function is the primary entry point for source code parsing. We run the program on Line 3 and continue the execution after the breakpoint on Line 16.
 
-We will use the same debugging techniques later in the book when we investigate Clang’s source code.
+We will use the same debugging techniques later in the book when we investigate Clang's source code.
 
 
 

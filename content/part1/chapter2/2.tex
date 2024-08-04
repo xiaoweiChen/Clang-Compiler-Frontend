@@ -1,6 +1,6 @@
 Despite the fact that compilers are used to translate programs from one form to another, they can also be considered large software systems that use various algorithms and data structures. The knowledge obtained by studying compilers can be used to design other scalable software systems as well. On the other hand, compilers are also a subject of active scientific research, and there are many unexplored areas and topics to investigate.
 
-You can find some basic information about the internal structure of a compiler here. We will keep it as basic as possible so the information applies to any compiler, not just Clang. We will briefly cover all phases of compilation, which will help to understand Clang’s position in the overall compiler architecture.
+You can find some basic information about the internal structure of a compiler here. We will keep it as basic as possible so the information applies to any compiler, not just Clang. We will briefly cover all phases of compilation, which will help to understand Clang's position in the overall compiler architecture.
 
 \mySubsubsection{2.2.1.}{Exploring the compiler workflow}
 
@@ -16,7 +16,7 @@ We are going to focus on compilers that produce binary code, and a typical compi
 
 \begin{itemize}
 \item
-Frontend: The frontend does lexical analysis and parsing, which includes both syntax analysis and semantic analysis. The syntax analysis assumes that your program is well-organized according to the language grammar rules. The semantic analysis performs checks on the program’s meaning and rejects invalid programs, such as those that use wrong types.
+Frontend: The frontend does lexical analysis and parsing, which includes both syntax analysis and semantic analysis. The syntax analysis assumes that your program is well-organized according to the language grammar rules. The semantic analysis performs checks on the program's meaning and rejects invalid programs, such as those that use wrong types.
 
 \item
 Middle-end: The middle-end performs various optimizations on the intermediate representation (IR) code (LLVM-IR for Clang).
@@ -29,11 +29,11 @@ The source program is transformed into different forms as it passes through the 
 
 \myGraphic{0.4}{content/part1/chapter2/images/3.png}{Figure 2.3: Source code transformation by compiler}
 
-Input data consists of Source code and Compile options. The source code is transformed by the Frontend into IR. The Middle-end does different optimizations on IR and passes the final (optimized) result to the Backend. The Backend generates the Target code. The Frontend, Middle-end, and Backend use Compile options as settings for the code transformations. Let’s look into the compiler frontend as the first component of the compiler’s workflow.
+Input data consists of Source code and Compile options. The source code is transformed by the Frontend into IR. The Middle-end does different optimizations on IR and passes the final (optimized) result to the Backend. The Backend generates the Target code. The Frontend, Middle-end, and Backend use Compile options as settings for the code transformations. Let's look into the compiler frontend as the first component of the compiler's workflow.
 
 \mySubsubsection{2.2.2.}{Frontend}
 
-The primary goal for the frontend is to convert a given source code to intermediate form. It’s worth mentioning that the frontend also transforms the source code into various forms before it produces the IR. The frontend will be our primary focus in the book, so we will examine its components. The first component of the
+The primary goal for the frontend is to convert a given source code to intermediate form. It's worth mentioning that the frontend also transforms the source code into various forms before it produces the IR. The frontend will be our primary focus in the book, so we will examine its components. The first component of the
 
 frontend is the Lexer (see Figure 2.4). It converts the source code into a set of tokens, which are used to create a special data structure called the abstract syntax tree (AST ). The final component, the code generator (Codegen), traverses the AST and generates the IR from it.
 
@@ -55,7 +55,7 @@ int max(int a, int b) {
 Figure 2.5: Test program for compiler frontend
 \end{center}
 
-The first component of the frontend is the lexer. Let’s examine it.
+The first component of the frontend is the lexer. Let's examine it.
 
 \mySamllsection{Lexer}
 
@@ -102,7 +102,7 @@ Figure 2.9: Listing of program code with a syntax error
 Clang produces the following output for the program:
 
 \begin{shell}
-max_invalid_syntax.cpp:4:11: error: expected ’;’ after return statement
+max_invalid_syntax.cpp:4:11: error: expected ';' after return statement
   return b // missing ;
           ^
           ;
@@ -130,7 +130,7 @@ Clang generates the following output for the program:
 
 \begin{shell}
 max_invalid_sema.cpp:4:10: error: cannot initialize return object of type \
-’int’ with an rvalue of type ’int *’
+'int' with an rvalue of type 'int *'
   return &b; // invalid return type
          ^~
 \end{shell}
@@ -141,19 +141,19 @@ Figure 2.12: Compiler output for a program with a semantic error
 
 AST is mainly constructed as a result of syntax analysis, but for certain languages, such as C++, semantic analysis is also crucial for constructing the AST, particularly for C++ template instantiation.
 
-During syntax analysis, the compiler verifies that the template declaration adheres to the language’s grammar and syntax rules, including the proper use of keywords such as ”template” and ”typename,” as well as the formation of the template parameters and body.
+During syntax analysis, the compiler verifies that the template declaration adheres to the language's grammar and syntax rules, including the proper use of keywords such as ”template” and ”typename,” as well as the formation of the template parameters and body.
 
-Semantic analysis, on the other hand, involves the compiler performing template instantiation, which generates the AST for specific instances of the template. It’s worth noting that the semantic analysis of templates can be quite complex, as the compiler must perform tasks such as type checking, name resolution, and more for each template instantiation. Additionally, the instantiation process can be recursive and lead to a significant amount of code duplication, known as code bloat. To combat this, C++ compilers employ techniques such as template instantiation caching to minimize the amount of redundant code generated.
+Semantic analysis, on the other hand, involves the compiler performing template instantiation, which generates the AST for specific instances of the template. It's worth noting that the semantic analysis of templates can be quite complex, as the compiler must perform tasks such as type checking, name resolution, and more for each template instantiation. Additionally, the instantiation process can be recursive and lead to a significant amount of code duplication, known as code bloat. To combat this, C++ compilers employ techniques such as template instantiation caching to minimize the amount of redundant code generated.
 
 \mySamllsection{The codegen}
 
-The codegen (it’s worth mentioning that we also have another Codegen component as a part of Backend that generate the target code) or code generator, which is the final component of the compiler’s frontend, has the primary goal of generating the Intermediate Representation (IR). For this purpose, the compiler traverses the AST generated by the parser and converts it into other source code that is called the Intermediate Representation or IR. The IR is a language-independent representation, allowing the same middle-end component to be used for different frontends (FORTRAN vs C++). Another reason for using an Intermediate Representation (IR) is that if we have a new architecture available tomorrow, we can generate the target code specific to that architecture. Since the source language remains unchanged, all the steps leading up to the IR will remain the same. The IR provides this flexibility.
+The codegen (it's worth mentioning that we also have another Codegen component as a part of Backend that generate the target code) or code generator, which is the final component of the compiler's frontend, has the primary goal of generating the Intermediate Representation (IR). For this purpose, the compiler traverses the AST generated by the parser and converts it into other source code that is called the Intermediate Representation or IR. The IR is a language-independent representation, allowing the same middle-end component to be used for different frontends (FORTRAN vs C++). Another reason for using an Intermediate Representation (IR) is that if we have a new architecture available tomorrow, we can generate the target code specific to that architecture. Since the source language remains unchanged, all the steps leading up to the IR will remain the same. The IR provides this flexibility.
 
 The use of IRs in compilers is a concept that has been around for several decades. The idea of using an intermediate representation to represent the source code of a program during compilation has evolved over time, and the exact date when IR was first introduced in compilers is not clear.
 
 However, it is known that the first compilers in the 1950s and 1960s did not use IRs and instead translated source code directly into machine code. By the 1960s and 1970s, researchers had begun experimenting with using IRs in compilers to improve the efficiency and flexibility of the compilation process.
 
-One of the first widely used IRs was three-address code, which was used in the mid-1960s in IBM/360’s FORTRAN compiler. Other early examples of IRs include the register transfer language (RTL) and the static single assignment (SSA) form, which were introduced in the 1970s and 1980s respectively.
+One of the first widely used IRs was three-address code, which was used in the mid-1960s in IBM/360's FORTRAN compiler. Other early examples of IRs include the register transfer language (RTL) and the static single assignment (SSA) form, which were introduced in the 1970s and 1980s respectively.
 
 Today, the use of IRs in compilers is a standard practice, and many compilers use multiple IRs throughout the compilation process. This allows for more powerful optimization and code generation techniques to be applied.
 

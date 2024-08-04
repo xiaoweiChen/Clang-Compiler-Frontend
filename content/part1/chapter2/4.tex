@@ -183,28 +183,28 @@ The output of this command is shown here:
 TranslationUnitDecl 0xa9cb38 <<invalid sloc>> <invalid sloc>
 |-TypedefDecl 0xa9d3a8 <<invalid sloc>> <invalid sloc>
 implicit __int128_t '__int128'
-| ‘-BuiltinType 0xa9d100 '__int128'
+| '-BuiltinType 0xa9d100 '__int128'
 ...
-‘-FunctionDecl 0xae6a98 <max.cpp:1:1, line:5:1> line:1:5 max
+'-FunctionDecl 0xae6a98 <max.cpp:1:1, line:5:1> line:1:5 max
 'int (int, int)'
   |-ParmVarDecl 0xae6930 <col:9, col:13> col:13 used a 'int'
   |-ParmVarDecl 0xae69b0 <col:16, col:20> col:20 used b 'int'
-  ‘-CompoundStmt 0xae6cd8 <col:23, line:5:1>
+  '-CompoundStmt 0xae6cd8 <col:23, line:5:1>
     |-IfStmt 0xae6c70 <line:2:3, line:3:12>
     | |-BinaryOperator 0xae6c08 <line:2:7, col:11> 'bool' '>'
     | | |-ImplicitCastExpr 0xae6bd8 <col:7> 'int' <LValueToRValue>
-    | | | ‘-DeclRefExpr 0xae6b98 <col:7> 'int' lvalue ParmVar 0xae6930
+    | | | '-DeclRefExpr 0xae6b98 <col:7> 'int' lvalue ParmVar 0xae6930
             'a' 'int'
-    | | ‘-ImplicitCastExpr 0xae6bf0 <col:11> 'int' <LValueToRValue>
-    | |   ‘-DeclRefExpr 0xae6bb8 <col:11> 'int' lvalue ParmVar 0xae69b0
+    | | '-ImplicitCastExpr 0xae6bf0 <col:11> 'int' <LValueToRValue>
+    | |   '-DeclRefExpr 0xae6bb8 <col:11> 'int' lvalue ParmVar 0xae69b0
             'b' 'int'
-    | ‘-ReturnStmt 0xae6c60 <line:3:5, col:12>
-    |   ‘-ImplicitCastExpr 0xae6c48 <col:12> 'int' <LValueToRValue>
-    |     ‘-DeclRefExpr 0xae6c28 <col:12> 'int' lvalue ParmVar 0xae6930
+    | '-ReturnStmt 0xae6c60 <line:3:5, col:12>
+    |   '-ImplicitCastExpr 0xae6c48 <col:12> 'int' <LValueToRValue>
+    |     '-DeclRefExpr 0xae6c28 <col:12> 'int' lvalue ParmVar 0xae6930
             'a' 'int'
-    ‘-ReturnStmt 0xae6cc8 <line:4:3, col:10>
-      ‘-ImplicitCastExpr 0xae6cb0 <col:10> 'int' <LValueToRValue>
-        ‘-DeclRefExpr 0xae6c90 <col:10> 'int' lvalue ParmVar 0xae69b0
+    '-ReturnStmt 0xae6cc8 <line:4:3, col:10>
+      '-ImplicitCastExpr 0xae6cb0 <col:10> 'int' <LValueToRValue>
+        '-DeclRefExpr 0xae6c90 <col:10> 'int' lvalue ParmVar 0xae69b0
             'b' 'int'
 \end{shell}
 

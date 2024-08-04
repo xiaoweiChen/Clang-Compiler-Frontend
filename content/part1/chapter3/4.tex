@@ -34,7 +34,7 @@ endif()
 Figure 3.20: CMakeLists.txt file for the RecursiveVisitor test tool
 \end{center}
 
-The main function for our tool is similar to the ‘DeclVisitor‘ one defined in Figure 3.7.
+The main function for our tool is similar to the 'DeclVisitor' one defined in Figure 3.7.
 
 \begin{cpp}
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -96,7 +96,7 @@ public:
 Figure 3.22: Visitor class implementation
 \end{center}
 
-There are several changes compared to the code for ‘DeclVisitor‘ (see Figure 3.10). The first is that recursion isn't implemented. We've only implemented the callbacks for nodes of interest to us. A reasonable question arises: how is the recursion controlled? The answer lies in another change: our callbacks now return a boolean result. The false value indicates that the recursion should stop, while true signals the visitor to continue the traversal.
+There are several changes compared to the code for 'DeclVisitor' (see Figure 3.10). The first is that recursion isn't implemented. We've only implemented the callbacks for nodes of interest to us. A reasonable question arises: how is the recursion controlled? The answer lies in another change: our callbacks now return a boolean result. The false value indicates that the recursion should stop, while true signals the visitor to continue the traversal.
 
 The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
 

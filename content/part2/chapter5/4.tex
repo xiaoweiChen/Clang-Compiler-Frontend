@@ -1,0 +1,454 @@
+
+\begin{markdown}
+In this part of the chapter, we will transform our plugin example (see Section 4.6, Clang plugin project) into a Clang-Tidy check. This check will estimate the complexity of a C++ class based on the number of methods it contains. We will define a threshold as a parameter for the check.
+
+Clang-Tidy offers a tool designed to aid in the creation of checks. Let's begin by creating a skeleton for our check.
+
+#### 5.4.1. Creating a skeleton for the check
+
+Clang-Tidy provides a specific Python script, add_new_check.py , to assist in creating new checks. This script is located in the clang-tools-extra/clang-tidy directory. The script requires two positional parameters:
+
+* module : This refers to the module directory where the new tidy check will be placed. In our case, this will be misc .
+
+* check : This is the name of the new tidy check to add. For our purposes, we will name it classchecker .
+
+By running the script in the llvm-project directory (which contains the cloned LLVM repository), we receive the following output:
+
+\end{markdown}
+
+\begin{shell}
+$ ./clang-tools-extra/clang-tidy/add_new_check.py misc classchecker
+...
+Updating ./clang-tools-extra/clang-tidy/misc/CMakeLists.txt...
+Creating ./clang-tools-extra/clang-tidy/misc/ClasscheckerCheck.h...
+Creating ./clang-tools-extra/clang-tidy/misc/ClasscheckerCheck.cpp...
+Updating ./clang-tools-extra/clang-tidy/misc/MiscTidyModule.cpp...
+Updating clang-tools-extra/docs/ReleaseNotes.rst...
+Creating clang-tools-extra/test/clang-tidy/checkers/misc/classchecker.cpp...
+Creating clang-tools-extra/docs/clang-tidy/checks/misc/classchecker.rst...
+Updating clang-tools-extra/docs/clang-tidy/checks/list.rst...
+
+Done. Now it's your turn!
+\end{shell}
+
+\begin{markdown}
+
+\begin{center}
+Figure 5.15: Creating a skeleton for the misc-classchecker check
+\end{center}
+
+From the output, we can observe that several files under the `clang-tools-extra/clang-tidy` directory have been updated. These files pertain to checks registration, such as `misc/MiscTidyModule.cpp`, or build configuration, such as `misc/CMakeLists.txt` . The script also generated several new files, which we need to modify in order to implement our check's desired logic:
+
+* `misc/ClasscheckerCheck.h` : This is the header file for our check
+* `misc/ClasscheckerCheck.cpp` : This file will house the implementation of our check
+
+Additionally, the script has generated a LIT test for our check, named `ClassChecker.cpp`. This test can be found in the `clang-tools-extra/test/clang-tidy/checkers/misc` directory.
+
+Apart from the source files, the script also modifies some documentation files in the clang-tools-extra/docs directory:
+
+* `ReleaseNotes.rst` : This file contains updated release notes with placeholder entries for our new check
+
+* `clang-tidy/checks/misc/classchecker.rst` : This serves as the primary documentation for our check
+
+* `clang-tidy/checks/list.rst` : The list of checks has been updated to include our new check alongside other checks from the 'misc ' module
+
+We will now turn our attention to implementing the check and the subsequent build process.
+
+#### 5.4.2. Clang-Tidy check implementation
+
+We'll begin by modifying `ClasscheckerCheck.cpp`. The generated file can be found in the `clang-tools-extra/clang-tidy/misc` directory. Let's replace the generated code with the following (note: the generated comment containing the license info has been omitted for brevity):
+
+\end{markdown}
+
+\begin{cpp}
+#include "ClasscheckerCheck.h"
+#include "clang/AST/ASTContext.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+using namespace clang::ast_matchers;
+
+namespace clang::tidy::misc {
+void ClasscheckerCheck::registerMatchers(MatchFinder *Finder) {
+  // Match every C++ class.
+  Finder->addMatcher(cxxRecordDecl().bind("class"), this);
+}
+void ClasscheckerCheck::check(const MatchFinder::MatchResult &Result) {
+   const auto *ClassDecl = Result.Nodes.getNodeAs<CXXRecordDecl>("class");
+   if (!ClassDecl || !ClassDecl->isThisDeclarationADefinition())
+     return;
+   unsigned MethodCount = 0;
+   for (const auto *D : ClassDecl->decls()) {
+     if (isa<CXXMethodDecl>(D))
+       MethodCount++;
+   }
+   unsigned Threshold = Options.get("Threshold", 5);
+   if (MethodCount > Threshold) {
+     diag(ClassDecl->getLocation(),
+       "class %0 is too complex: method count = %1",
+       DiagnosticIDs::Warning)
+     << ClassDecl->getName() << MethodCount;
+   }
+  }
+} // namespace clang::tidy::misc
+\end{cpp}
+
+\begin{markdown}
+
+\begin{center}
+Figure 5.16: Modifications to ClasscheckerCheck.cpp
+\end{center}
+
+We replaced the original stub with Lines 15-35 to implement the necessary changes.
+
+To integrate our check into the Clang-Tidy binary, we can execute the standard build procedure from the `build` directory within the LLVM source tree; see Figure 5.2.
+
+The name of our check is defined in the modified `MiscTidyModule.cpp` file in `clang-tools-extra/clang-tidy/misc` folder:
+\end{markdown}
+
+\begin{cpp}
+class MiscModule : public ClangTidyModule {
+public:
+  void addCheckFactories(ClangTidyCheckFactories &CheckFactories) override {
+    CheckFactories.registerCheck<ClasscheckerCheck>(
+      "misc-classchecker");
+    CheckFactories.registerCheck<ConfusableIdentifierCheck>(
+      "misc-confusable-identifiers");
+\end{cpp}
+
+\begin{center}
+Figure 5.17: Modifications to MiscTidyModule.cpp
+\end{center}
+
+As illustrated in Figure 5.17 (Lines 43-44), we registered the new check under the name "misc-classchecker". After the code modification, we are ready to recompile Clang-Tidy with
+
+\begin{shell}
+$ ninja install
+\end{shell}
+
+We can verify that the check has been added by executing Clang-Tidy with the -list-checks argument as follows:
+
+\begin{shell}
+<...>/llvm-project/install/bin/clang-tidy -checks '*' -list-checks
+...
+misc-classchecker
+...
+\end{shell}
+
+\begin{center}
+Figure 5.18: Clang-Tidy -list-checks option
+\end{center}
+
+It's worth noting that we enabled all checks using the -checks '*' command-line option, as shown in Figure 5.18.
+
+To test the check, we can use the file from the clang plugin project, as seen in Figure 4.39:
+
+\begin{cpp}
+class Simple {
+public:
+  void func1() {}
+  void func2() {}
+  void func3() {}
+};
+\end{cpp}
+
+\begin{center}
+Figure 5.19: Test file for the misc-classchecker clang-tidy check: test.cpp
+\end{center}
+
+This file contains three methods. To trigger a warning, we must set the threshold to 2, as demonstrated:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-tidy                           \
+  -checks='-*,misc-classchecker'                                      \
+  -config="{CheckOptions: [{key:misc-classchecker.Threshold, value:'2'}]}" \
+  test.cpp                                                            \
+  -- -std=c++17
+\end{shell}
+
+
+\begin{center}
+Figure 5.20: Run a misc-classchecker check on the test file: test.cpp
+\end{center}
+
+The output will be as follows:
+
+\begin{shell}
+test.cpp:1:7: warning: class Simple is too complex: method count = 3
+[misc-classchecker]
+class Simple {
+    ^
+\end{shell}
+
+\begin{markdown}
+
+\begin{center}
+Figure 5.21: Output of the misc-classchecker check for the test.cpp test file
+\end{center}
+
+After testing the file with custom source code, it's time to create an LIT test for our check.
+
+#### 5.4.3. LIT test
+
+For the LIT test, we will use the slightly modified code from Figure 4.43. Let's modify `classchecker.cpp`, located in the `clang-tools-extra/test/clang-tidy/checkers/misc` folder, as follows:
+\end{markdown}
+
+\begin{cpp}
+// RUN: %check_clang_tidy %s misc-classchecker %t
+class Simple {
+public:
+  void func1() {}
+  void func2() {}
+};
+
+// CHECK-MESSAGES: :[[LINE+1]]:{{[0-9]+}}: warning: class Complex is too complex: method count = 6 [misc-classchecker]
+class Complex {
+public:
+  void func1() {}
+  void func2() {}
+  void func3() {}
+  void func4() {}
+  void func5() {}
+  void func6() {}
+};
+\end{cpp}
+
+\begin{center}
+Figure 5.22: LIT test: classchecker.cpp
+\end{center}
+
+As we can see, the only difference compared to Figure 4.43 is in Line 1, where we specify which commands should be run, and in Line 9, where we define the test pattern.
+
+We can run the test as follows:
+
+\begin{shell}
+$ cd <...>/llvm-project
+$ build/bin/llvm-lit -v \
+clang-tools-extra/test/clang-tidy/checkers/misc/classchecker.cpp
+\end{shell}
+
+\begin{center}
+Figure 5.23: Testing the misc-classchecker clang-tidy check
+\end{center}
+
+The command produces the following output:
+
+\begin{shell}
+-- Testing: 1 tests, 1 workers --
+PASS: Clang Tools :: clang-tidy/checkers/misc/classchecker.cpp (1 of 1)
+
+Testing Time: 0.12s
+  Passed: 1
+\end{shell}
+
+\begin{center}
+Figure 5.24: Testing output for misc-classchecker
+\end{center}
+
+We can also use the command shown in Figure 5.3 to run all clang-tidy checks, including our newly added one.
+
+When we run our check on a real code base, as opposed to synthetic tests, we may encounter unexpected results. One such issue has already been discussed in Section 3.7, Processing AST in the case of errors and pertains to the impact of compilation errors on Clang-Tidy results. Let's delve into this problem using a specific example.
+
+\begin{markdown}
+#### 5.4.4. Results in the case of compilation errors
+\end{markdown}
+
+Clang-Tidy uses AST as the information provider for checks, and the checks can produce wrong results if the information source is broken. The typical case is when the analyzed code has compilation errors (see Section 3.7, Processing AST in the case of errors).
+
+Consider the following code as an example:
+
+\begin{cpp}
+class MyClass {
+public:
+  void doSomething();
+};
+
+void MyClass::doSometing() {}
+\end{cpp}
+
+\begin{center}
+Figure 5.25: Test file with compilation errors: error.cpp
+\end{center}
+
+In the example, we made a syntax error in Line 6: the method name is incorrectly written as 'doSometing' instead of 'doSomething'. If we run our check on the file without any parameters, we will receive the following output:
+
+\begin{shell}
+error.cpp:1:7: warning: class MyClass is too complex: method count = 7
+[misc-classchecker]
+class MyClass {
+      ^
+error.cpp:6:15: error: out-of-line definition of 'doSometing' ...
+[clang-diagnostic-error]
+void MyClass::doSometing() {}
+              ^~~~~~~~~~
+doSomething
+error.cpp:3:8: note: 'doSomething' declared here
+  void doSomething();
+       ^
+Found compiler error(s).
+\end{shell}
+
+
+\begin{center}
+Figure 5.26: Running a misc-classchecker check on a file containing compilation errors
+\end{center}
+
+Our check seems to be working incorrectly with this code. It assumes the class has seven methods when, in fact, it has only one.
+
+The case of compilation errors can be considered an edge case, and we can process it correctly. Before addressing these cases, we should investigate the produced AST to examine the issue.
+
+\begin{markdown}
+#### 5.4.5. Compilation errors as edge cases
+\end{markdown}
+
+Let's use clang-query (see Section 3.6, Explore Clang AST with clang-query) to explore what has happened with the AST. The program with the error fixed is shown in the following figure:
+
+\begin{cpp}
+class MyClass {
+public:
+  void doSomething();
+};
+
+void MyClass::doSomething() {}
+\end{cpp}
+
+
+\begin{center}
+Figure 5.27: noerror.cpp test file with compilation errors fixed
+\end{center}
+
+The clang-query command can be run on the file as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-query noerror.cpp -- --std=c++17
+\end{shell}
+
+\begin{center}
+Figure 5.28: Clang-Query run on noerror.cpp file with compilation errors fixed
+\end{center}
+
+Then, we will set up Clang-Query's output as dump and find all matches for CXXRecordDecl
+
+\begin{shell}
+clang-query> set output dump
+clang-query> match cxxRecordDecl()
+\end{shell}
+
+\begin{center}
+Figure 5.29: Setup Clang-Query output and run matchers
+\end{center}
+
+The result is shown below
+
+\begin{shell}
+Match #1:
+
+Binding for "root":
+CXXRecordDecl ... <noerror.cpp:1:1, line:4:1> line:1:7 class MyClass
+definition
+|-DefinitionData ...
+| |-DefaultConstructor exists trivial ...
+| |-CopyConstructor simple trivial ...
+| |-MoveConstructor exists simple trivial ...
+| |-CopyAssignment simple trivial ...
+| |-MoveAssignment exists simple trivial ...
+| '-Destructor simple irrelevant trivial ...
+|-CXXRecordDecl ... <col:1, col:7> col:7 implicit class MyClass
+|-AccessSpecDecl ... <line:2:1, col:7> col:1 public
+'-CXXMethodDecl ... <line:3:3, col:20> col:8 doSomething 'void ()'
+...
+\end{shell}
+
+\begin{center}
+Figure 5.30: AST for the noerror.cpp file with compilation errors fixed
+\end{center}
+
+Compare it with the output for the code with an error (see Figure 5.25). We run Clang-Query on the error.cpp file and set up the required matcher as follows
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-query error.cpp -- --std=c++17
+clang-query> set output dump
+clang-query> match cxxRecordDecl()
+\end{shell}
+
+\begin{center}
+Figure 5.31: Clang-Query run on error.cpp
+\end{center}
+
+The found match is shown below:
+
+\begin{shell}
+CXXRecordDecl ... <error.cpp:1:1, line:4:1> line:1:7 class MyClass
+definition
+|-DefinitionData ...
+| |-DefaultConstructor exists trivial ...
+| |-CopyConstructor simple trivial ..
+| |-MoveConstructor exists simple trivial
+| |-CopyAssignment simple trivial ...
+| |-MoveAssignment exists simple trivial
+| '-Destructor simple irrelevant trivial
+|-CXXRecordDecl ... <col:1, col:7> col:7 implicit class MyClass
+|-AccessSpecDecl ... <line:2:1, col:7> col:1 public
+|-CXXMethodDecl ... <line:3:3, col:20> col:8 doSomething 'void ()'
+|-CXXConstructorDecl ... <line:1:7> col:7 implicit constexpr MyClass
+'void ()' ...
+|-CXXConstructorDecl ... <col:7> col:7 implicit constexpr MyClass
+'void (const MyClass &)' ...
+| '-ParmVarDecl ... <col:7> col:7 'const MyClass &'
+|-CXXMethodDecl ... <col:7> col:7 implicit constexpr operator= 'MyClass
+&(const MyClass &)' inline default trivial ...
+| '-ParmVarDecl ... <col:7> col:7 'const MyClass &'
+|-CXXConstructorDecl ... <col:7> col:7 implicit constexpr MyClass 'void
+(MyClass &&)' ...
+| '-ParmVarDecl ... <col:7> col:7 'MyClass &&'
+|-CXXMethodDecl ... <col:7> col:7 implicit constexpr operator= 'MyClass
+&(MyClass &&)' ...
+| '-ParmVarDecl ... <col:7> col:7 'MyClass &&'
+'-CXXDestructorDecl ... <col:7> col:7 implicit ~MyClass 'void ()' inline
+default ...
+...
+\end{shell}
+
+\begin{center}
+Figure 5.32: AST for the error.cpp file with a compilation error
+\end{center}
+
+As we can see, all additional methods are added implicitly. We can exclude them by modifying Line 30 (see Figure 5.16) of our check code, as shown:
+
+\begin{cpp}
+for (const auto *D : ClassDecl->decls()) {
+  if (isa<CXXMethodDecl>(D) && !D->isImplicit())
+    MethodCount++;
+}
+\end{cpp}
+
+
+\begin{center}
+Figure 5.33: Exclude implicit declaration from the check report
+\end{center}
+
+If we run the modified check on the file that contains compilation errors, we will get the following output:
+
+\begin{shell}
+error.cpp:6:15: error: out-of-line definition of ’doSometing’ ...
+[clang-diagnostic-error]
+void MyClass::doSometing() {}
+              ^~~~~~~~~~
+doSomething
+error.cpp:3:8: note: ’doSomething’ declared here
+  void doSomething();
+       ^
+Found compiler error(s).
+\end{shell}
+
+\begin{center}
+Figure 5.34: Running a fixed misc-classchecker check on a file containing compilation errors
+\end{center}
+
+As we can see, the compiler error is reported, but our check does not trigger any warnings.
+
+Despite the fact that we correctly processed the unusual clang-tidy result, it’s worth noting that not every compilation error can be correctly processed. As mentioned in Section 3.7, Processing AST in the case of errors, the Clang compiler tries to produce an AST even when encountering compilation errors. This approach is because it’s designed for use by IDEs and other tools that benefit from as much information as possible, even in the presence of errors. However, this ”error-recovery” mode of the AST can produce structures that Clang-Tidy might not anticipate. Therefore, we should adhere to the following rule:
+
+
+\begin{myTip}{Tip}
+Always ensure your code compiles without errors before running Clang-Tidy and other Clang Tools. This guarantees that the AST is both accurate and complete.
+\end{myTip}
+

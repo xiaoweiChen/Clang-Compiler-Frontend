@@ -172,6 +172,8 @@ loop-convert.cpp:6:8: warning: use auto when declaring iterators
 note: this fix will not be applied because it overlaps with another fix
 \end{shell}
 
+\begin{markdown}
+
 \begin{center}
 Figure 5.8: Output from running Clang-Tidy on loop-convert.cpp
 \end{center}
@@ -179,13 +181,13 @@ Figure 5.8: Output from running Clang-Tidy on loop-convert.cpp
 As we can see, several issues were detected, and Clang-Tidy suggested some fixes. Unfortunately, some of them conflict with each other, especially modernize-loop-convert and modernize-use-auto , and cannot be applied together. On the other hand, we can apply the fix suggested by modernize-loop-convert by running only this specific check to avoid any conflicts, as follows:
 
 
-\begin{shell}
+```shell
 1  $ <...>/llvm-project/install/bin/clang-tidy \
 2       -checks='-*,modernize-loop-convert'    \
 3       -fix                                   \
 4       loop-convert.cpp                       \
 5       -- -std=c++17
-\end{shell}
+```
 
 \begin{center}
 Figure 5.9: Running a modernize-loop-convert check on loop-convert.cpp
@@ -211,8 +213,6 @@ Figure 5.10: Fixed test program for Clang-Tidy: loop-convert.cpp
 \end{center}
 
 As we can see, Lines 6 and 7 have changed compared to the original code from Figure 5.6. This functionality makes Clang-Tidy a powerful tool that can not only detect issues but also fix them. We will explore this possibility in greater depth later in Section 7.3, Clang-Tidy as a code modification tool.
-
-\begin{markdown}
 
 #### 5.2.3. Clang-Tidy checks
 

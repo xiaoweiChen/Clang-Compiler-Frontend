@@ -30,7 +30,7 @@ These relationships are schematically illustrated in the following figure:
 
 \myGraphic{0.7}{content/part2/chapter5/images/1.png}{Figure 5.11: Clang-Tidy's internal organization}
 
-Now that we have gained an understanding of Clang-Tidy’s internals and its relationship with other parts of Clang/LLVM, it’s time to explore components external to the Clang-Tidy binary: its configuration and other tools that leverage the functionality provided by Clang-Tidy.
+Now that we have gained an understanding of Clang-Tidy's internals and its relationship with other parts of Clang/LLVM, it's time to explore components external to the Clang-Tidy binary: its configuration and other tools that leverage the functionality provided by Clang-Tidy.
 
 #### 5.3.2 Configuration and integration
 
@@ -40,9 +40,9 @@ The Clang-Tidy binary can interact with other components, as shown in Figure 5.1
 
 Clang-Tidy can be seamlessly integrated with various Integrated Development Environments (IDEs), such as Visual Studio Code, CLion, and Eclipse, to provide real-time feedback during coding. We will explore this possibility later in Section 8.5.2, Clang-Tidy.
 
-It can also be incorporated into build systems such as CMake and Bazel to run checks during builds. Continuous Integration (CI) platforms, such as Jenkins and GitHub Actions, often employ Clang-Tidy to ensure code quality on pull requests. Code review platforms, such as Phabricator, utilize Clang-Tidy for automated reviews. Additionally, custom scripts and static analysis platforms can harness Clang-Tidy’s capabilities for tailored workflows and combined analyses.
+It can also be incorporated into build systems such as CMake and Bazel to run checks during builds. Continuous Integration (CI) platforms, such as Jenkins and GitHub Actions, often employ Clang-Tidy to ensure code quality on pull requests. Code review platforms, such as Phabricator, utilize Clang-Tidy for automated reviews. Additionally, custom scripts and static analysis platforms can harness Clang-Tidy's capabilities for tailored workflows and combined analyses.
 
-Another important part of Clang-Tidy shown in Figure 5.12 is its configuration. Let’s explore it in detail.
+Another important part of Clang-Tidy shown in Figure 5.12 is its configuration. Let's explore it in detail.
 
 \mySamllsection{Clang-Tidy configuration}
 
@@ -58,10 +58,10 @@ We will begin with the Checks key, which allows us to specify which checks to en
 
 * Checks are comma-separated
 
-Here’s an example:
+Here's an example:
 
 \begin{shell}
-1  Checks: ’-*,modernize-*’
+Checks: '-*,modernize-*'
 \end{shell}
 
 \begin{center}
@@ -69,6 +69,23 @@ Figure 5.13: Checks key of a .clang-tidy config file
 \end{center}
 
 The next key is CheckOptions . This key allows us to set options for specific checks, with each option specified as a key-value pair. An example is provided here:
+
+```shell
+CheckOptions:
+- key: readability-identifier-naming.NamespaceCase
+  value: CamelCase
+- key: readability-identifier-naming.ClassCase
+  value: CamelCase
+```
+
+\begin{center}
+Figure 5.14: CheckOptions key of a .clang-tidy config file
+\end{center}
+
+When Clang-Tidy is run, it searches for the .clang-tidy file in the directory of the file being processed and its parent directories. The search stops when the file is found.
+
+Now that we have an understanding of Clang-Tidy's internal design, it's time to create our first custom Clang-Tidy check using the information we've gathered from this and previous chapters of the book.
+
 
 \end{markdown}
 

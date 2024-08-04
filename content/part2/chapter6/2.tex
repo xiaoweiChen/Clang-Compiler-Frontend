@@ -1,0 +1,25 @@
+Static analysis is a crucial technique in software development that involves inspecting the code without actually running the program. This method focuses on analyzing either the source code or its compiled version to detect a variety of issues, such as errors, vulnerabilities, and deviations from coding standards. Unlike dynamic analysis, which requires the execution of the program, static analysis allows for examining the code in a non-runtime environment.
+
+More generally, static analysis aims to check a specific property of a computer program based on its meaning; that is, it can be considered a part of semantic analysis (see Figure 2.6, Parser). For instance, if $\mathcal{C}$ is the set of all C/C++ programs and $\mathcal{P}$ is a property of such a program, then the goal of static analysis is to check the property for a specific program $\mathcal{P} \in \mathcal{C}$, that is, to answer the question of whether $\mathcal{P}$(P) is true or false.
+
+Our Clang-Tidy check from the previous chapter (see Section 5.4, Custom Clang-Tidy check) is a good example of such a property. In reality, it takes C++ code with a class definition and decides whether the class is complex or not based on the number of methods it has.
+
+\begin{markdown}
+It’s worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem ^[Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.].
+\end{markdown}
+
+\begin{myNotic}{Important note}
+The halting problem can be formulated as follows: Given a program P and an input I, determine whether P halts or continues to run indefinitely when executed with I.
+\end{myNotic}
+
+Formally, the problem is to decide, for a given program P and an input I, whether the computation of P(I) eventually stops (halts) or will never terminate (loops indefinitely).
+
+Alan Turing proved that there is no general algorithmic method for solving this problem for all possible program-input pairs. This result implies that there is no single algorithm that can correctly determine for every pair (P,I) whether P halts when run with I.
+
+Despite the fact that not all properties of programs can be proven, it can be done for some cases. There is a reasonable number of such cases that make static analysis a practical tool for usage. Thus, we can use the tools in these cases to systematically scan the code to determine properties of the code. These tools are adept at identifying issues ranging from simple syntax errors to more complex potential bugs. One of the key benefits of static analysis is its ability to catch problems early in the development cycle. This early detection is not only efficient but also resource-saving, as it helps identify and rectify issues before the software is run or deployed.
+
+Static analysis plays a significant role in ensuring the quality and compliance of software. It checks that the code adheres to prescribed coding standards and guidelines, which is particularly important in large-scale projects or industries with strict regulatory requirements. Moreover, it is highly effective in uncovering common security vulnerabilities such as buffer overflows, SQL injection flaws, and cross-site scripting vulnerabilities.
+
+Additionally, static analysis contributes to code refactoring and optimization by pinpointing areas of redundancy, unnecessary complexity, and opportunities for improvement. It’s a common practice to integrate these tools into the development process, including continuous integration pipelines. This integration allows for ongoing analysis of the code with each new commit or build, ensuring continual quality assurance.
+
+The Clang-Tidy checks that we created in the last chapter can be considered an example of a static analysis program. In this chapter, we will consider more advanced topics involving data structures such as CFGs, which we will see next.

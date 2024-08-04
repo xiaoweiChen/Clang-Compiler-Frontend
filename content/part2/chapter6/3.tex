@@ -1,0 +1,127 @@
+A CFG is a fundamental data structure in compiler design and static program analysis, representing all paths that might be traversed through a program during execution.
+
+A CFG consists of the following key components:
+
+\begin{markdown}
+
+* Nodes: Correspond to basic blocks, a straight-line sequence of operations with one entry and one exit point
+
+* Edges: Represent the flow of control from one block to another, including both conditional and unconditional branches
+
+* Start and end nodes: Every CFG has a unique entry node and one or more exit nodes
+\end{markdown}
+
+As an example of a CFG, consider the function to calculate the maximum of two integer numbers that we used as an example before; see Figure 2.5:
+
+\begin{cpp}
+int max(int a, int b) {
+  if (a > b)
+    return a;
+  return b;
+}
+\end{cpp}
+
+\begin{center}
+Figure 6.1: CFG example C++ code: max.cpp
+\end{center}
+
+The corresponding CFG can be represented as follows:
+
+\myGraphic{0.5}{content/part2/chapter6/images/2.png}{Figure 6.2: CFG example for max.cpp}
+
+The diagram shown in Figure 6.2 visually represents a CFG for the max function (from Figure 6.1) with a series of connected nodes and directed edges:
+
+\begin{markdown}
+
+\begin{itemize}
+\item
+Entry node: At the top, there is an “entry” node, representing the starting point of the function’s execution.
+
+\item
+Conditional node: Below the entry node, there is a node labeled “a > b”. This node represents the conditional statement in the function, where the comparison between a and b is made.
+
+\item
+Branches for true and false conditions:
+\begin{itemize}
+\item
+On the true branch (left side), there is a node labeled “Return a”, connected by an edge from the “a > b” node. This edge is labeled “true”, indicating that if a is greater than b, the flow goes to this node.
+
+\item
+On the false branch (right side), there is a node labeled “Return b”, connected by an edge from the “a > b” node. This edge is labeled “false”, indicating that if a is not greater than b, the flow goes to this node.
+\end{itemize}
+
+\item
+Exit node: Below both the “Return a” and “Return b” nodes, converging at a point, there is an “exit” node. This represents the termination point of the function, where the control flow exits the function after returning either a or b.
+\end{itemize}
+
+This CFG effectively illustrates how the max function processes input and reaches a decision on which value to return based on the comparison.
+
+The CFG representation can also be used to estimate function complexity. In brief, a more complex picture corresponds to a more complex system. We will use a precise definition of complexity known as cyclomatic complexity, or M ^[Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.], which can be calculated as follows:
+\end{markdown}
+
+$M = E - N + 2P$
+
+where:
+
+\begin{markdown}
+* E is the number of edges in the graph
+
+* N is the number of nodes in the graph
+
+* P is the number of connected components (for a single CFG, P is usually 1)
+\end{markdown}
+
+For the max function discussed earlier, the CFG can be analyzed as follows:
+
+\begin{markdown}
+* Nodes (N): There are five nodes (Entry, a > b, Return a, b, Exit)
+
+* Edges (E): There are five edges (from Entry to a > b, from a > b to Return a, from a > b to Return b, from Return a to Exit, and from Return b to Exit)
+
+* Connected components (P): As it’s a single function, P = 1
+\end{markdown}
+
+Substituting these values into the formula, we get the following:
+
+$ M = 5 − 5 + 2 × 1 = 2$
+
+Thus, the cyclomatic complexity of the max function, based on the given CFG, is 2. This indicates that there are two linearly independent paths through the code, corresponding to the two branches of the if statement.
+
+Our next step will be to create a Clang-Tidy check that uses a CFG to calculate cyclomatic complexity.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

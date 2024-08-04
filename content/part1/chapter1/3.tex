@@ -263,12 +263,12 @@ A typical debug session for the created executable is shown in Figure 1.11.
 2  (lldb) target create "./main"
 3  ...
 4  (lldb) b main
-5  Breakpoint 1: where = main‘main + 11 at main.cpp:2:3,...
+5  Breakpoint 1: where = main'main + 11 at main.cpp:2:3,...
 6  (lldb) r
 7  Process 1443051 launched: ...
 8  Process 1443051 stopped
 9  * thread #1, name = 'main', stop reason = breakpoint 1.1
-10  frame #0: 0x000055555555513b main‘main at main.cpp:2:3
+10  frame #0: 0x000055555555513b main'main at main.cpp:2:3
 11    1    int main() {
 12 -> 2     return 0;
 13    3    }

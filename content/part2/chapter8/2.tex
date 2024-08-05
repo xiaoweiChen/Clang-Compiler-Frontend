@@ -1,0 +1,51 @@
+An IDE is a software application or platform that provides a comprehensive set of tools and features to assist developers in creating, editing, debugging, and managing software code. An IDE typically includes a code editor with syntax highlighting, debugging capabilities, project management features, version control integration, and, often, plugins or extensions to support various programming languages and frameworks.
+
+Popular examples of IDEs are Visual Studio/VS Code, IntelliJ IDEA, Emacs, and Vim. These tools are designed to streamline the development process, making it easier for developers to write, test, and maintain their code efficiently.
+
+A typical IDE supports multiple languages, and integrating each language can be a challenging task. Each language requires specific support, which can be visualized in Figure 8.1. It’s worth noting that there are many similarities in the development process of different programming languages. For example, the languages shown in Figure 8.1 have a code navigation feature that allows developers to quickly locate and view the definition of a symbol or identifier within their code base.
+
+\myGraphic{0.5}{content/part2/chapter8/images/1.png}{Figure 8.1: Programming languages integration in IDEs}
+
+The feature will be referred to as go-to definition in this chapter. Such similarities suggest a way to simplify the relationships shown in Figure 8.1 by introducing an intermediate level called the Language Server Protocol, or LSP, as shown here:
+
+\myGraphic{0.5}{content/part2/chapter8/images/2.png}{Figure 8.2: Programming languages integration in IDEs using LSP}
+
+The LSP project was initiated by Microsoft in 2015 as part of its efforts to improve VS Code, a lightweight, open source code editor. Microsoft recognized the need for a standardized way to provide rich language services across different programming languages within VS Code and other code editors.
+
+LSP quickly gained popularity and adoption in the developer community. Many code editors and IDEs, including VS Code, Emacs, and Eclipse, began implementing support for LSP.
+
+Language server implementations emerged for various programming languages. These language servers, developed by both Microsoft and the open source community, offered language-specific intelligence and services, making it easier to integrate language features into different editors.
+
+In this chapter, we will explore Clangd, a language server that is part of clang-tools-extra. Clangd leverages the Clang compiler frontend and offers a comprehensive suite of code analysis and language support features. Clangd assists developers with intelligent code completion, semantic analysis, and real-time diagnostics, helping them to write code more efficiently and catch errors early in the development process. We will delve into Clangd in detail here, starting with a real example of the interaction between the IDE (VS Code) and Clangd. We will begin with the environment setup, including the Clangd build and VS Code setup.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

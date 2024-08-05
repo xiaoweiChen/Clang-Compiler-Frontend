@@ -1,0 +1,483 @@
+In this brief LSP demo, we will demonstrate how Clangd opens a file and finds a symbol’s definition. Clangd features a comprehensive logging subsystem that offers valuable insights into its interaction with the IDE. We will use the log subsystem to obtain the necessary information.
+
+\mySubsubsection{8.4.1.}{Demo description}
+
+In our example, we open a test file as shown in the following screenshot and retrieve the definition of the doPrivateWork token:
+
+\myGraphic{0.5}{content/part2/chapter8/images/6.png}{Figure 8.6: Go-to definition and hover for the doPrivateWork token}
+
+VS Code communicates with Clangd via standard input/output, and we will use Clangd logs to capture the interaction.
+
+This can be achieved by setting up a wrapper shell script instead of using the actual clangd binary in the VS Code settings:
+
+\myGraphic{0.5}{content/part2/chapter8/images/7.png}{Figure 8.7: Wrapper shell script setup in VS Code}
+
+We can use the following script, clangd.sh :
+
+\begin{shell}
+#!/bin/sh
+$HOME/clangbook/llvm-project/install/bin/clangd -log verbose -pretty 2> /tmp/clangd.log
+\end{shell}
+
+\begin{center}
+Figure 8.8: Wrapper shell script for clangd
+\end{center}
+
+In Figure 8.8, we use two log options:
+
+\begin{itemize}
+\item
+The first one, -log verbose , activates verbose logging to ensure that actual LSP messages from and to Clangd will be logged.
+
+\item
+The second option, -pretty , is used to provide nicely formatted JSON messages. We also redirect stderr output to the log file, /tmp/clangd.log , in our case.
+\end{itemize}
+
+As a result, the file will contain logs from our example session. We can view these logs using the following command::
+
+\begin{shell}
+$ cat /tmp/clangd.log
+\end{shell}
+
+In the logs, we can find "textDocument/definition" that was sent by VS Code:
+
+\begin{shell}
+V[16:24:39.336] <<< {
+    "id": 13,
+    "jsonrpc": "2.0",
+    "method": "textDocument/definition",
+    "params": {
+        "position": {
+            "character": 26,
+            "line": 7
+        },
+        "textDocument": {
+            "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+        }
+    }
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.9: The ”textDocument/definition” request sent by the IDE
+\end{center}
+
+The request sent by the IDE is received and processed by Clangd. The corresponding log is recorded as follows:
+
+\begin{shell}
+I[16:24:39.336] <-- textDocument/definition(13)
+V[16:24:39.336] ASTWorker running Definitions on version 1 of /home/.../
+helper.hpp
+\end{shell}
+
+
+\begin{center}
+Figure 8.10: Handling of the ”textDocument/definition” request in Clangd
+\end{center}
+
+Finally, Clangd creates the response and sends it to the IDE. The corresponding log record shows that the reply was sent:
+
+\begin{shell}
+I[16:24:39.336] --> reply:textDocument/definition(13) 0 ms
+V[16:24:39.336] >>> {
+    "id": 13,
+    "jsonrpc": "2.0",
+    "result": [
+    {
+        "range": {
+            "end": {
+                "character": 20,
+                "line": 10
+            },
+            "start": {
+                "character": 7,
+                "line": 10
+            }
+        },
+        "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+    }
+    ]
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.11: The ”textDocument/definition” reply from Clangd
+\end{center}
+
+The logs will be our primary tool to investigate LSP internals. Let’s dive into more complex examples.
+
+\mySubsubsection{8.4.2.}{LSP session}
+
+An LSP session consists of several requests to and responses from the Clangd server. It starts with an "initialize" request. Then, we open a document, and VS Code sends a "textDocument/didOpen" notification. After the request, Clangd will periodically respond with "textDocument/publishDiagnostics" notifications when the state of the opened file changes. For example, this occurs when compilation is finished and its ready to process navigation requests. Next, we initiate a go-to definition request for a token, and Clangd responds with the location information for the found definition. We also investigate how Clangd processes file modifications that are notified by the client via "textDocument /didChange" notifications. We finish our session with a "textDocument/didClose" request when we close the opened file. A diagram depicting the interaction is presented in the following figure:
+
+\myGraphic{0.5}{content/part2/chapter8/images/8.png}{Figure 8.12: LSP session example}
+
+Let’s look at the example in detail. We will start with the "initialize" request.
+
+\mySamllsection{Initialization}
+
+To establish communication, the client (code editor or IDE) and the language server exchange JSON-RPC messages. The initialization process begins with the client sending an "initialize" request to the language server, specifying the capabilities it supports. The actual request sent by VS Code is quite large, and a simplified version, where some parts of the request are replaced with "..." , is shown as follows:
+
+\begin{shell}
+{
+ "id": 0,
+ "jsonrpc": "2.0",
+ "method": "initialize",
+ "params": {
+   "capabilities": {
+     ...
+     "textDocument": {
+       ...
+       "definition": {
+         "dynamicRegistration": true,
+         "linkSupport": true
+       },
+       ...
+     },
+     "clientInfo": {
+       "name": "Visual Studio Code",
+       "version": "1.85.1"
+     },
+     ...
+   }
+ }
+\end{shell}
+
+
+\begin{center}
+Figure 8.13: VS Code to Clangd (initialize request)
+\end{center}
+
+In the request, the client (VS Code) tells the server (Clangd) what capabilities are supported on the client side; for example, at Lines 10-13 in Figure 8.13, the client says that it supports the "textDocument/definition" request type that is used for go-to definition requests.
+
+The language server replies to the request with a response that contains capabilities supported by the server:
+
+\begin{shell}
+{
+  "id": 0,
+  "jsonrpc": "2.0",
+  "result": {
+    "capabilities": {
+      ...
+      "definitionProvider": true,
+      ...
+    },
+    "serverInfo": {
+      "name": "clangd",
+      "version": "clangd version 16.0.6 (https://github.com/llvm/llvm-project.git 7cbf1a2591520c2491aa35339f227775f4d3adf6) linux x86_64-unknown-linux-gnu"
+    }
+  }
+}
+\end{shell}
+
+Figure 8.14: Clangd to VS Code (initialize reply)
+
+As we can see, the same id is used to connect the request with its reply. Clangd replied that it supports go-to definition requests as specified in Line 7 in Figure 8.14. Thus our client (VS Code) can send the navigation request to the server, which we will explore later in Figure 8.19, Go-to definition.
+
+VS Code acknowledges the initialization by sending an "initialized" notification:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "initialized"
+}
+\end{shell}
+
+Contrary to the "initialize" request, there is a notification, and it does not expect any response from the server. As a result, it does not have an "id" field. The "initialized" notification can be sent only once, and it should be received before any other requests or notifications are sent from the client side. After the initialization, we are ready to open a document and send the corresponding "textDocument/didOpen" notification.
+
+\mySamllsection{Open document}
+
+When a developer opens a C++ source file, the client sends a "textDocument/didOpen" notification to inform the language server about the newly opened file. In our example, the opened file is located at /home/ivanmurashko/clangbook/helper.hpp , and the corresponding notification sent by VS Code will look like this:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didOpen",
+  "params": {
+    "textDocument": {
+      "languageId": "cpp",
+      "text": "#pragma once\n\nnamespace clangbook {\nclass Helper {\npublic:\n  Helper(){};\n\n  void doWork() { doPrivateWork(); }\n\nprivate:\n  void doPrivateWork() {}\n};\n}; // namespace clangbook\n",
+      "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+      "version": 1
+     }
+   }
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.15: VS Code to Clangd (didOpen notification)
+\end{center}
+
+As we can see, VS Code sends the notification with parameters included in the "params/ textDocument" field. These parameters consist of the filename in the "uri" field and the source file text within the "text" field.
+
+Clangd starts compiling the file upon receiving the ’didOpen’ notification. It builds an AST and extracts semantic information about different tokens from it. The server uses this information to distinguish between different tokens with the same name. For example, we can use a token named ’foo’ that may serve as a class member or a local variable depending on the scope in which it is used, as shown in the following code fragment:
+
+\begin{cpp}
+class TestClass {
+public:
+  int foo(){return 0};
+};
+
+int main() {
+  TestClass test;
+  int foo = test.foo();
+  return foo;
+}
+\end{cpp}
+
+\begin{center}
+Figure 8.16: Occurrences of the ’foo’ token in foo.hpp
+\end{center}
+
+As we can see in Line 8, we use the ’foo’ token two times: as a function call and in a local variable definition.
+
+The go-to definition request will be delayed until the compilation process is finished. It’s worth noting that the majority of requests are put in a queue and wait until the compilation process is finished. The rule has some exemptions, and some requests can be executed without an AST with a limited provided functionality. One of the examples is the code-formatting requests. The code formatting does not require an AST and therefore the formatting functionality can be provided before the AST is built.
+
+If the state of the file is changed, then Clangd will notify VS Code with the "textDocument/publishDiagnostics" notification. For example, when the compilation process is finished, then Clangd will send the notification to VS Code:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "diagnostics": [],
+    "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+    "version": 1
+  }
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.17: Clangd to VS Code (publishDiagnostics notification)
+\end{center}
+
+As we can see, there are no compilation errors; params/diagnostics is empty. It will contain errors or warning descriptions if our code contains a compilation error or warning, as shown here:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "diagnostics": [
+    {
+      "code": "expected_semi_after_expr",
+      "message": "Expected ’;’ after expression (fix available)",
+      "range": {
+        "end": {
+          "character": 35,
+          "line": 7
+        },
+        "start": {
+          "character": 34,
+          "line": 7
+        }
+      },
+      "relatedInformation": [],
+      "severity": 1,
+      "source": "clang"
+    }
+    ],
+    "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+    "version": 5
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.18: Clangd to VS Code (publishDiagnostics with compilation error)
+\end{center}
+
+VS Code processes the diagnostics and displays it, as shown in the following screenshot:
+
+\myGraphic{0.5}{content/part2/chapter8/images/9.png}{Figure 8.19: Compilation error in helper.hpp}
+
+After the compilation finished and we got "textDocument/publishDiagnostics" , Clangd is ready to process navigation requests, such as "textDocument/definition" (go-to definition).
+
+Go-to definition
+To find the definition of a symbol in a C++ file, the client sends a "textDocument/definition" request to the language server:
+
+\begin{shell}
+{
+  "id": 13,
+  "jsonrpc": "2.0",
+  "method": "textDocument/definition",
+  "params": {
+    "position": {
+      "character": 26,
+      "line": 7
+    },
+    "textDocument": {
+       "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+    }
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.20: VS Code to Clangd (textDocument/definition request)
+\end{center}
+
+The line position is specified as 7 instead of the actual line 8 in the editor, as shown in Figure 8.6. This is because line numbering starts at 0.
+
+The language server responds with the definition location in the C++ code:
+
+\begin{shell}
+{
+  "id": 13,
+  "jsonrpc": "2.0",
+  "result": [
+  {
+    "range": {
+      "end": {
+        "character": 20,
+        "line": 10
+      },
+      "start": {
+        "character": 7,
+        "line": 10
+      }
+    },
+    "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+  }
+  ]
+}
+\end{shell}
+
+\begin{center}
+Figure 8.21: Clangd to VS Code (textDocument/definition response)
+\end{center}
+
+As we can see, the server responded with the actual position of the definition. Another popular action in the IDE is document modification. This functionality is served by the "textDocument/didChange" notification. Let’s look at it.
+
+Change document
+As part of the document modification, let’s insert a comment, // Constructor, at Line 6, as shown in this screenshot:
+
+\myGraphic{0.5}{content/part2/chapter8/images/10.png}{Figure 8.22: Change document}
+
+VS Code will detect that the document has been modified and notify the LSP server (Clangd) using the following notification:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [
+      {
+        "range": {
+          "end": {
+            "character": 13,
+            "line": 5
+          },
+          "start": {
+            character": 13,
+            "line": 5
+          }
+        },
+        "rangeLength": 0,
+        "text": "// Constructor"
+      }
+    ],
+    "textDocument": {
+      "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+      "version": 2
+    }
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.23: VS Code to Clangd (didChange notification)
+\end{center}
+
+As we can see, the notification contains the range specification and the text for replacing the specified range in the document. One important part of the notification is the "version" field, which specifies the version of the document.
+
+We can observe that version changed from 1, as used in the document open (see Line 9 in Figure 8.15), to 2 for the document modification (see Line 23 in Figure 8.23).
+
+Clangd starts the document compilation because the document modification can cause a significant change in the resulting AST, which is used for navigation requests. Once the compilation is finished, the server will respond with the corresponding "textDocument/publishDiagnostics" notification, as shown here:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "diagnostics": [],
+    "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+     "version": 2
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.24: Clangd to VS Code (publishDiagnostics notification)
+\end{center}
+
+As we can see, the diagnostic was sent for the modified document because it contains the version field pointing to version 2, which corresponds to the modified document, as seen in Line 7 of Figure 8.24.
+
+Our last action in the example is to close the document. Let’s take a closer look at it.
+
+\mySamllsection{Closing a document}
+
+When we finish our work with the document and close it, VS Code sends a "textDocument/didClose" notification to the language server:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/didClose",
+  "params": {
+    "textDocument": {
+      "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+    }
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.25: VS Code to Clangd (textDocument/didClose request)
+\end{center}
+
+After receiving the request, Clangd will remove the document from its internal structures. Clangd will not send any updates for the document anymore, thus it will empty out the list of diagnostics shown on the client (e.g., in the Problems pane of VS Code) by sending the final empty "textDocument/publishDiagnostics" message, as shown here:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+    "diagnostics": [],
+    "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.26: Clangd to VS Code (textDocument/didClose request)
+\end{center}
+
+The shown example demonstrates the typical interactions between Clangd and VS Code. The provided example utilizes functionality from the Clang frontend, that is, basic Clang functionality. On the other hand, Clangd has a strong connection with other Clang tools, such as Clang-Format and Clang-Tidy, and can reuse the functionality provided by these tools. Let’s take a closer look at this.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

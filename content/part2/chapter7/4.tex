@@ -1,0 +1,286 @@
+Clang-Format is an essential tool in the Clang/LLVM project, designed for formatting C, C++, Java, JavaScript, Objective-C, or Protobuf code. It plays a crucial role in the Clang tooling ecosystem, offering capabilities for parsing, analyzing, and manipulating source code.
+
+Clang-Format is a part of Clang and has to be installed if we have built and installed the Clang compiler. Let’s look at how it can be used.
+
+\mySubsubsection{7.4.1.}{Clang-Format configuration and usage examples}
+
+Clang-Format uses .clang-format configuration files. The utility will use the closest configuration file; i.e., if the file is located at the folder with the source files we want to format, then the configuration from the folder will be used. The format for configuration files is YAML, which is the same format used for Clang-Tidy configuration files, as shown in Figure 5.12, Clang-Tidy configuration. Let’s create the following simple configuration file:
+
+\begin{shell}
+BasedOnStyle: LLVM
+\end{shell}
+
+\begin{center}
+Figure 7.27: Simple .clang-format configuration file
+\end{center}
+
+The configuration file says that we will use the code style defined by LLVM, see \url{https://llvm.org/docs/CodingStandards.html}.
+
+Suppose we have a non-formatted file main.cpp , then the following command will format it:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-format -i main.cpp
+\end{shell}
+
+The result of the formatting is shown here:
+
+\begin{cpp}
+namespace clang {
+class TestClang {
+public:
+  void testClang(){};
+};
+int main() {
+  TestClang test;
+  test.testClang();
+  return 0;
+}
+\end{cpp}
+
+Original code
+
+\begin{cpp}
+namespace clang {
+class TestClang {
+public:
+  void testClang(){};
+};
+} // namespace clang
+int main() {
+  TestClang test;
+  test.testClang();
+  return 0;
+}
+\end{cpp}
+
+Formatted code
+
+\begin{center}
+Figure 7.28: Formatting for main.cpp
+\end{center}
+
+In the example provided in Figure 7.28, we can see that the indentation defined by the LLVM code style was applied. We can also observe that Clang-Format broke Line 6 in the original source code and made the main function definition start on a separate line. Additionally, we can see that Clang-Format added a comment to the namespace closing bracket in the formatted code at Line 6.
+
+After considering the usage example, it’s time to look at the internal design of Clang-Format.
+
+\mySubsubsection{7.4.2.}{Design considerations}
+
+At the core of Clang-Format is the Clang Lexer (see Figure 2.5, Lexer), which tokenizes the input source code, breaking it down into individual tokens like keywords, identifiers, and literals. These tokens serve as the basis for formatting decisions.
+
+The initial Clang-Format design document considered the Parser and AST as basic components for formatting. Despite the advantages provided by advanced data structures such as the AST, this approach has some disadvantages:
+
+\begin{itemize}
+\item
+The Parser requires a full build process and, therefore, build configuration.
+
+\item
+The Parser has limited capabilities to process a part of the source text, which is a typical task for formatting, such as formatting a single function or a source range of the source file.
+
+\item
+Formatting macros is a challenging task when using the AST as the basic structure for formatting. For instance, the processed macro may not be called in the compiled code and, as a result, may be missed in the AST.
+\end{itemize}
+
+The Parser is much slower than the Lexer.
+
+Clang-Format leverages clang::tooling::Replacement to represent code formatting changes and utilizes clang::Rewriter to apply these changes to the source code.
+
+Configuration plays a pivotal role in Clang-Format’s operation. Users define their preferred formatting style by configuring rules in a .clang-format file. This configuration specifies details such as indentation width, brace placement, line breaks, and more.
+
+Clang-Format supports various predefined and customizable formatting styles, such as ”LLVM,” ”Google,” and ”Chromium.” Users can select a style that aligns with their project’s coding standards.
+
+Once tokenized, Clang-Format processes the token stream, taking into account the current context, indentation level, and configured style rules. It then adjusts whitespace and line breaks accordingly to adhere to the chosen style.
+
+One notable feature of Clang-Format is its ability to handle macros effectively, preserving the original formatting within macros and complex macros.
+
+Customization is a key aspect of Clang-Format. Users can extend or customize its behavior by defining custom rules and formatting options in the configuration file. This flexibility allows teams to enforce specific coding standards or adapt Clang-Format to project-specific needs.
+
+It offers a user-friendly command-line interface, enabling manual code formatting or integration into scripts and automation.
+
+Clang-Format utilizes Clang’s Format library to generate formatted code accurately. This library ensures that the code consistently follows the desired formatting style. The design follows the main paradigm of LLVM: ”everything is a library,” as discussed in Section 1.2.1, Short LLVM history. Thus, we can effectively use the formatting functionality in other Clang Tools. For instance, formatting can be used with Clang-Tidy to format code with fixes applied by Clang-Tidy. Let’s consider an example of how this functionality can be used.
+
+\mySubsubsection{7.4.3.}{Clang-Tidy and Clang-Format}
+
+The applied Clang-Tidy fixes can break formatting. Clang-Tidy suggests using the -format-style option to address the problem. This option will apply formatting using the functionality provided by the clangFormat library. The formatting is applied to the modified lines of code. Consider an example when our TestClass has broken formatting.
+
+If we run Clang-Tidy as we did before (see Figure 7.25), then the formatting will remain unchanged and broken:
+
+\begin{cpp}
+class TestClass {
+public:
+  TestClass(){};
+  void pos(){};
+};
+
+int main() {
+  TestClass test;
+  test.pos();
+  return 0;
+}
+\end{cpp}
+
+Original code
+
+\begin{cpp}
+class TestClass {
+public:
+  TestClass(){};
+  void test_pos(){};
+};
+
+int main() {
+  TestClass test;
+  test.test_pos();
+  return 0;
+}
+\end{cpp}
+
+Applied fixes
+
+\begin{center}
+Figure 7.29: Applying Clang-Tidy fixes without formatting on TestClassNotFormated.cpp
+\end{center}
+
+We used the following command for Figure 7.29
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-tidy \
+   -fix-notes                               \
+   -checks=’-*,misc-methodrename’           \
+   ./TestClassNotFormated.cpp               \
+   -- -std=c++17
+\end{shell}
+
+The result will be different if we run Clang-Tidy with -format-style option, for example:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-tidy \
+   -format-style ’llvm’                     \
+   -fix-notes                               \
+   -checks=’-*,misc-methodrename’           \
+   ./TestClassNotFormated.cpp               \
+   -- -std=c++17
+\end{shell}
+
+As we can see the ’llvm’ formatting style was chosen for the example. The result is shown in the following figure:
+
+\begin{cpp}
+class TestClass {
+public:
+  TestClass(){};
+  void pos(){};
+};
+
+int main() {
+  TestClass test;
+  test.pos();
+  return 0;
+}
+\end{cpp}
+
+Original code
+
+\begin{cpp}
+class TestClass {
+public:
+  TestClass(){};
+  void test_pos(){};
+};
+
+int main() {
+  TestClass test;
+  test.test_pos();
+  return 0;
+}
+\end{cpp}
+
+Applied fixes with formatting
+
+\begin{center}
+Figure 7.30: Applying Clang-Tidy fixes with formatting on TestClassNotFormated.cpp
+\end{center}
+
+The relationship between Clang-Tidy and Clang-Format, as we just demonstrated, can be visualized as presented in the following figure:
+
+
+\myGraphic{0.5}{content/part2/chapter7/images/1.png}{Figure 7.31: Clang-Tidy and Clang-Format integration}
+
+
+In the figure, both Clang-Tidy and Clang-Format use the clangFormat library to format the code.
+
+The provided example demonstrates the integration of various Clang Tools. Modularity, an essential design decision in LLVM/Clang, is a key component for such integration. This example is not unique, and we will explore the further integration of different Clang Tools to enhance the development experience in Integrated Development Environments (IDEs) like Visual Studio Code (VS Code). This will be the topic of our next chapter.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

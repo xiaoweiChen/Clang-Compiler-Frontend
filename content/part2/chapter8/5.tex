@@ -1,0 +1,259 @@
+Clangd takes advantage of the LLVM module architecture and has a very strong integration with other Clang tools. In particular, Clangd uses Clang-Format libraries to provide formatting functionality and Clang-Tidy libraries (such as libraries with clang-tidy checks) to support linters in the IDE. The integration is schematically shown in the following figure:
+
+\myGraphic{0.7}{content/part2/chapter8/images/11.png}{Figure 8.27: VS Code with LSP extension and Clangd server for C++ }
+
+The configuration from .clang-format (see Section 7.4.1, Clang-Format configuration and usage examples) is used for formatting, and from .clang-tidy (see Figure 5.12, Clang-Tidy configuration) for linters. Let's see how the formatting works in Clangd.
+
+
+\mySubsubsection{8.5.1.}{Clangd support for code formatting using LSP messages}
+
+Clangd provides robust support for code formatting. This feature is essential for developers to maintain consistent code styles and readability in their C and C++ projects. Clangd leverages LSP messages, primarily the "textDocument/formatting" and "textDocument/rangeFormatting" requests, to achieve this functionality.
+
+\mySamllsection{Formatting entire documents}
+
+The "textDocument/formatting" request is used when a developer wants to format the entire content of a document. This request is typically initiated by the user in VS Code by pressing Ctrl + Shift + I (or  \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + Shift + I for macOS); the IDE sends a "textDocument/formatting" request to Clangd for the entire document:
+
+\begin{shell}
+{
+  "id": 9,
+  "jsonrpc": "2.0",
+  "method": "textDocument/formatting",
+  "params": {
+    "options": {
+      "insertSpaces": true,
+      "tabSize": 4
+    },
+    "textDocument": {
+      "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+    }
+  }
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.28: VS Code to Clangd (textDocument/formatting request)
+\end{center}
+
+Clangd processes this request by utilizing the code style configuration specified in the project's .clang-format file. The .clang-format file contains formatting rules and preferences, allowing developers to define their desired code style; see Section 7.4.1, Clang-Format configuration and usage examples.
+
+The response contains the list of modifications to be applied to the opened document:
+
+\begin{shell}
+{
+  "id": 9,
+  "jsonrpc": "2.0",
+  "result": [
+  {
+    "newText": "\n  ",
+    "range": {
+      "end": {
+        "character": 0,
+        "line": 5
+      },
+      "start": {
+        "character": 7,
+        "line": 4
+      }
+    }
+  }
+  ]
+}
+\end{shell}
+
+
+\begin{center}
+Figure 8.29: Clangd to VS Code (textDocument/formatting response)
+\end{center}
+
+In the example, we should replace the text at the specified range at Lines 7-16 in Figure 8.29 with new text specified at Line 6.
+
+\mySamllsection{Formatting specific code ranges}
+
+In addition to formatting entire documents, Clangd also supports formatting specific code ranges within a document. This is achieved using the "textDocument/rangeFormatting" request. Developers can select a range within the code, such as a function, a block of code, or even just a few lines, and request formatting for that specific range, as shown in the following screenshot:
+
+\myGraphic{0.7}{content/part2/chapter8/images/12.png}{Figure 8.30: Reformatting a specific code range in helper.hpp}
+
+When selecting the menu item or pressing Ctrl + K and then Ctrl + F (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + K and then \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + F for macOS), VS Code will send the following request to Clangd:
+
+\begin{shell}
+{
+  "id": 89,
+  "jsonrpc": "2.0",
+  "method": "textDocument/rangeFormatting",
+  "params": {
+    "options": {
+      "insertSpaces": true,
+      "tabSize": 4
+    },
+    "range": {
+      "end": {
+        "character": 2,
+        "line": 10
+      },
+      "start": {
+        "character": 0,
+        "line": 3
+      }
+    },
+    "textDocument": {
+      "uri": "file:///home/ivanmurashko/clangbook/helper.hpp"
+    }
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.31: VS Code to Clangd (textDocument/rangeFormatting request)
+\end{center}
+
+The "textDocument/rangeFormatting" request specifies the range to be formatted within the document, and Clangd applies the same formatting rules from the .clang-format file to this specific code segment. The response will be similar to the one used for the formatting request and will contain the modification that should be applied to the original text, as shown in Figure 8.29. The only difference will be the method name, which should be "textDocument/rangeFormatting" in this case.
+
+Another tool that is integrated via Clangd is Clang-Tidy, and it utilizes the LSP protocol in a different manner compared to the formatting functionality that we just described.
+
+\mySubsubsection{8.5.2.}{Clang-Tidy}
+
+As we can see, Clangd uses specific LSP methods to implement integration with Clang-Format:
+
+\begin{itemize}
+\item
+"textDocument/formatting"
+
+\item
+"textDocument/rangeFormatting"
+\end{itemize}
+
+On the other hand, the integration with Clang-Tidy is implemented differently, and it reuses the "publishDiagnostics" notification to report linter warnings and errors.
+
+Let's investigate how it works and create a custom Clang-Tidy configuration as the first step.
+
+\mySamllsection{Clang-Tidy integration with LSP}
+
+We will run the misc-methodrename check that we recently created for testing method renaming, see Section 7.3, Clang-Tidy as a code modification tool. Our Clang-Tidy configuration will look like this:
+
+\begin{shell}
+Checks: '-*,misc-methodrename'
+\end{shell}
+
+\begin{center}
+Figure 8.32: .clang-tidy config for IDE integration
+\end{center}
+
+The .clang-tidy file with the configuration should be placed in the folder with our test project.
+
+If we rename our helper class to TestHelper, we will be able to observe that the lint check we created in Section 7.3, Clang-Tidy as a code modification tool will start reporting diagnostics about the incorrect method name used for the test class. The corresponding diagnostic is displayed in the drop-down pane and in the PROBLEMS tab, as we can see in the following screenshot:
+
+\myGraphic{0.7}{content/part2/chapter8/images/13.png}{Figure 8.33: Clang-Tidy integration}
+
+The message is displayed as part of diagnostics. Specifically, the following notification is sent from Clang to VS Code:
+
+\begin{shell}
+{
+  "jsonrpc": "2.0",
+  "method": "textDocument/publishDiagnostics",
+  "params": {
+  "diagnostics": [
+  {
+    "code": "misc-methodrename",
+    "codeDescription": {
+      "href": "https://clang.llvm.org/extra/clang-tidy/checks/misc/
+               methodrename.html"
+    },
+    "message": "Method 'testdoWork' does not have 'test_' prefix (fix available)",
+    "range": {
+      "end": {
+        "character": 17,
+        "line": 6
+      },
+      "start": {
+        "character": 7,
+        "line": 6
+      }
+    },
+    "relatedInformation": [],
+    "severity": 2,
+    "source": "clang-tidy"
+   }
+ ],
+ "uri": "file:///home/ivanmurashko/clangbook/helper.hpp",
+ "version": 11
+}
+\end{shell}
+
+\begin{center}
+Figure 8.34: Clangd to VS Code (publishDiagnostics notification)
+\end{center}
+
+As we can see in the figure (Line 11), a fix for the problem is also available. There is an amazing opportunity to apply Clang-Tidy fixes in the IDE. Let's explore how the functionality is implemented with LSP.
+
+\mySamllsection{Applying fixes in the IDE}
+
+The fixes can be applied in the IDE and the functionality is provided via the "textDocument/codeAction" method. The method is used by VS Code to prompt Clangd to compute commands for the specific document and range. The most important parts of the command are provided in the following example:
+
+\begin{shell}
+{
+  "id": 98,
+  "jsonrpc": "2.0",
+  "method": "textDocument/codeAction",
+  "params": {
+    "context": {
+      "diagnostics": [
+      {
+        "code": "misc-methodrename",
+        ...
+        "range": ...,
+        ...
+      },
+    ...
+  }
+}
+\end{shell}
+
+\begin{center}
+Figure 8.35: VS Code to Clangd (textDocument/codeAction request)
+\end{center}
+
+The most important part of the request is at Lines 7-11, where we can see a copy of the original diagnostics notification. This information will be used to retrieve the necessary document modifications provided by clang::FixItHint in the activated check. Consequently, Clangd can respond with the action that describes the required modification to be made:
+
+\begin{shell}
+{
+  "id": 98,
+  "jsonrpc": "2.0",
+  "result": [
+  {
+    "diagnostics": [
+    ...
+    ],
+    "edit": {
+      "changes": {
+        "file:///home/ivanmurashko/clangbook/helper.hpp": [
+        {
+          "newText": "test_",
+          "range": {
+            "end": {
+              "character": 7,
+              "line": 6
+            },
+            "start": {
+              "character": 7,
+              "line": 6
+            }
+          }
+        }
+        ...
+      }
+    ]
+  }
+\end{shell}
+
+\begin{center}
+Figure 8.36: Clangd to VS Code (codeAction response)
+\end{center}
+
+The "edit" field in Figure 8.36 is the most important part of the response, as it describes the changes to be applied to the original text.
+
+The integration with Clang-Tidy is possible without extra computation because the AST is built for navigation and diagnostics purposes by Clangd core. The AST can be used as the seed for Clang-Tidy checks, eliminating the need to run a separate Clang-Tidy executable to retrieve messages from the linter. This is not the only optimization made in Clangd; let's now look at another example of performance optimizations in Clangd.
+
+
+
+

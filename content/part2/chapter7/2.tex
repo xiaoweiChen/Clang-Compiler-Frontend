@@ -7,11 +7,11 @@ clang::Rewriter is a Clang library class that facilitates source code rewriting 
 
 The class has several methods for text insertion; for instance, clang::Rewriter ::InsertText inserts the text at the specified source location, and clang ::SourceLocation is used to specify the exact location at the buffer, see Section 4.4.1, SourceManager and SourceLocation. In addition to the text insertion, you can also remove text with clang::Rewriter::RemoveText or replace text with a new one using clang::Rewriter::ReplaceText. The last two use source range (clang::SourceRange) to specify the positions at the text to be removed or replaced.
 
-clang::Rewriter uses clang::SourceManager, as explained in Section 4.4.1, SourceManager and SourceLocation, to access the source code that needs to be modified. Let’s look at how Rewriter can be used in a real project.
+clang::Rewriter uses clang::SourceManager, as explained in Section 4.4.1, SourceManager and SourceLocation, to access the source code that needs to be modified. Let's look at how Rewriter can be used in a real project.
 
 \mySubsubsection{7.2.2.}{Test class}
 
-Suppose we have a class that is used for tests. The class name starts with the ”Test” prefix (for instance, TestClass), but there aren’t any ’test\_’ prefixes for public methods of the class. For instance, the class has a public method with the name ’pos’ (TestClass::pos) instead of ’test\_pos’ (TestClass::test\_pos()). We want to create a tool that will add such a prefix for the class methods.
+Suppose we have a class that is used for tests. The class name starts with the "Test" prefix (for instance, TestClass), but there aren't any 'test\_' prefixes for public methods of the class. For instance, the class has a public method with the name 'pos' (TestClass::pos) instead of 'test\_pos' (TestClass::test\_pos()). We want to create a tool that will add such a prefix for the class methods.
 
 \begin{cpp}
 class TestClass {
@@ -64,20 +64,20 @@ Modified code
 
 
 \begin{center}
-Figure 7.2: Code transformations for TestClass’s method calls
+Figure 7.2: Code transformations for TestClass's method calls
 \end{center}
 
-The tool should also ignore all public methods with the required modifications already applied, either manually or automatically. In other words, if a method already has the required ’test\_’ prefix, the tool should not modify it.
+The tool should also ignore all public methods with the required modifications already applied, either manually or automatically. In other words, if a method already has the required 'test\_' prefix, the tool should not modify it.
 
-We are going to create a Clang tool called ’methodrename’, which will perform all the required code modifications. This tool will utilize the recursive AST visitor discussed in Section 3.4, Recursive AST visitor. The most crucial aspect is the implementation of the Visitor class. Let’s examine it in detail.
+We are going to create a Clang tool called 'methodrename', which will perform all the required code modifications. This tool will utilize the recursive AST visitor discussed in Section 3.4, Recursive AST visitor. The most crucial aspect is the implementation of the Visitor class. Let's examine it in detail.
 
 \mySubsubsection{7.2.3.}{Visitor class implementation}
 
 Our Visitor class should handle specific processing for the following AST nodes:
 
-clang::CXXRecordDecl: This involves processing C++ class definitions with names starting with the ”Test” prefix. For such classes, all user-defined public methods should be prefixed with ”test\_”.
+clang::CXXRecordDecl: This involves processing C++ class definitions with names starting with the "Test" prefix. For such classes, all user-defined public methods should be prefixed with "test\_".
 
-clang::CXXMemberCallExpr: Additionally, we need to identify all instances where the modified method is used and make the corresponding changes following the method’s renaming in the class definition.
+clang::CXXMemberCallExpr: Additionally, we need to identify all instances where the modified method is used and make the corresponding changes following the method's renaming in the class definition.
 
 The processing for clang::CXXRecordDecl nodes will be as follows:
 
@@ -102,7 +102,7 @@ bool VisitCXXRecordDecl(clang::CXXRecordDecl *Class) {
 Figure 7.3: CXXRecordDecl visitor implementation
 \end{center}
 
-Lines 11-16 in Figure 7.3 represent the conditions that we require from the examined node. For example, the corresponding class name should start with the ”Test” prefix (see Lines 15-16 in Figure 7.3), where we utilize the starts\_with() method of the llvm::StringRef class.
+Lines 11-16 in Figure 7.3 represent the conditions that we require from the examined node. For example, the corresponding class name should start with the "Test" prefix (see Lines 15-16 in Figure 7.3), where we utilize the starts\_with() method of the llvm::StringRef class.
 
 After verifying these conditions, we proceed to examine the methods within the found class.
 
@@ -136,7 +136,7 @@ Figure 7.4: Implementation of processMethod
 
 Lines 46-51 in Figure 7.4 contain the checks for the required conditions. For instance, in Lines 46-47, we verify that the method is public. Lines 48-49 are used to exclude constructors from processing, and Lines 50-51 serve to exclude methods that already have the required prefix.
 
-The main replacement logic is implemented in Lines 53-58. Particularly, in Lines 56-57, we create a special clang::tooling::Replacement object, which serves as a wrapper for required code modifications. The object’s parameters are as follows:
+The main replacement logic is implemented in Lines 53-58. Particularly, in Lines 56-57, we create a special clang::tooling::Replacement object, which serves as a wrapper for required code modifications. The object's parameters are as follows:
 
 \begin{enumerate}
 \item
@@ -171,7 +171,7 @@ There is a special getter to access the object outside the Visitor class:
 38   }
 \end{cpp}
 
-We log the action at Lines 59-60, using LogMessage as the prefix for the log message. Different log messages are used for different AST nodes; for instance, we use ”Renamed method” (see Figure 7.3, Line 19) for clang::CXXRecordDecl.
+We log the action at Lines 59-60, using LogMessage as the prefix for the log message. Different log messages are used for different AST nodes; for instance, we use "Renamed method" (see Figure 7.3, Line 19) for clang::CXXRecordDecl.
 
 The log message will be different for the method call. The corresponding processing is shown in the following figure.
 
@@ -192,7 +192,7 @@ bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *Call) {
 Figure 7.5: CXXMemberCallExpr visitor implementation
 \end{center}
 
-We verify that the class name, which holds the test method, starts with the ’Test’ prefix at Lines 27-29. The replacement source location is obtained at Line 30. At Line 31, we call our processMethod function to process the found method, passing the ”Renamed method call” as the log message to the call.
+We verify that the class name, which holds the test method, starts with the 'Test' prefix at Lines 27-29. The replacement source location is obtained at Line 30. At Line 31, we call our processMethod function to process the found method, passing the "Renamed method call" as the log message to the call.
 
 The Visitor is initialized in the Consumer class, which will be our next goal.
 
@@ -231,7 +231,7 @@ Figure 7.6: Consumer class implementation
 
 We initialize the Visitor and begin traversal at Lines 9-10 (see Figure 7.6). The Rewriter is created at Line 13, and replacements are applied at Lines 14-19. Finally, the result is stored in the original file at Lines 22-24.
 
-The Visitor and Consumer classes are wrapped within the clangbook::methodrename namespace. The Consumer instance is created in the FrontendAction class. This class’s implementation mirrors that of the RecursiveVisitor and DeclVisitor, as detailed in Figure 3.8. The only difference is the use of the clangbook::methodrename namespace for the new tool.
+The Visitor and Consumer classes are wrapped within the clangbook::methodrename namespace. The Consumer instance is created in the FrontendAction class. This class's implementation mirrors that of the RecursiveVisitor and DeclVisitor, as detailed in Figure 3.8. The only difference is the use of the clangbook::methodrename namespace for the new tool.
 
 \mySubsubsection{7.2.5.}{Build configuration and main function}
 
@@ -254,7 +254,7 @@ int main(int argc, const char **argv) {
 \end{cpp}
 
 \begin{center}
-Figure 7.7: The main function for the ’methodrename’ test tool
+Figure 7.7: The main function for the 'methodrename' test tool
 \end{center}
 
 As you can see, we changed only the namespace name for our custom frontend action at Line 23.
@@ -292,12 +292,12 @@ endif()
 \end{cmake}
 
 \begin{center}
-Figure 7.8: Build configuration for ’methodrename’ test tool
+Figure 7.8: Build configuration for 'methodrename' test tool
 \end{center}
 
 The most notable changes, compared to the code from Figure 3.20, are at Lines 23 and 24, where we added two new libraries to support code modifications: clangToolingCore and clangRewrite . Other changes include the new name for the tool (Line 2) and the source file that contains the main function (Line 14).
 
-As soon as we finish with the code, it’s time to build and run our tool.
+As soon as we finish with the code, it's time to build and run our tool.
 
 7.2.6 Running the code modification tool
 The program can be compiled using the same sequence of commands as we used previously in Section 3.3, AST traversal, see Figure 3.11:
@@ -311,7 +311,7 @@ ninja
 \end{shell}
 
 \begin{center}
-Figure 7.9: Configure and build commands for ’methodrename’ tool
+Figure 7.9: Configure and build commands for 'methodrename' tool
 \end{center}
 
 We can run the create tool on the following test file (TestClass.cpp ):
@@ -368,7 +368,7 @@ int main() {
 Figure 7.12: Modified TestClass.cpp
 \end{center}
 
-The provided example demonstrates how Clang can assist in creating refactoring tools. The created Clang Tool uses a recursive visitor to set up the required code transformation. Another possible option is to use Clang-Tidy, which we investigated earlier in Chapter 5, Clang-Tidy Linter Framework. Let’s examine this option in more detail.
+The provided example demonstrates how Clang can assist in creating refactoring tools. The created Clang Tool uses a recursive visitor to set up the required code transformation. Another possible option is to use Clang-Tidy, which we investigated earlier in Chapter 5, Clang-Tidy Linter Framework. Let's examine this option in more detail.
 
 
 

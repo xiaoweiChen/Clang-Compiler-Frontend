@@ -176,6 +176,16 @@
 \makeatother
 
 
+\makeatletter
+\newcommand{\savefootnote}[1]{%
+    \protected@xdef\@thefnmark{#1}%
+    \global\let\@sf@label\@currentlabel
+}
+\newcommand{\usefootnote}{%
+    \footnotemark[\@sf@label]%
+}
+\makeatother
+
 \ExplSyntaxOn
 
 % Setup enumerate, itemize and description

@@ -35,23 +35,23 @@ The diagram shown in Figure 6.2 visually represents a CFG for the max function (
 
 \begin{itemize}
 \item
-Entry node: At the top, there is an “entry” node, representing the starting point of the function’s execution.
+Entry node: At the top, there is an "entry" node, representing the starting point of the function's execution.
 
 \item
-Conditional node: Below the entry node, there is a node labeled “a > b”. This node represents the conditional statement in the function, where the comparison between a and b is made.
+Conditional node: Below the entry node, there is a node labeled "a > b". This node represents the conditional statement in the function, where the comparison between a and b is made.
 
 \item
 Branches for true and false conditions:
 \begin{itemize}
 \item
-On the true branch (left side), there is a node labeled “Return a”, connected by an edge from the “a > b” node. This edge is labeled “true”, indicating that if a is greater than b, the flow goes to this node.
+On the true branch (left side), there is a node labeled "Return a", connected by an edge from the "a > b" node. This edge is labeled "true", indicating that if a is greater than b, the flow goes to this node.
 
 \item
-On the false branch (right side), there is a node labeled “Return b”, connected by an edge from the “a > b” node. This edge is labeled “false”, indicating that if a is not greater than b, the flow goes to this node.
+On the false branch (right side), there is a node labeled "Return b", connected by an edge from the "a > b" node. This edge is labeled "false", indicating that if a is not greater than b, the flow goes to this node.
 \end{itemize}
 
 \item
-Exit node: Below both the “Return a” and “Return b” nodes, converging at a point, there is an “exit” node. This represents the termination point of the function, where the control flow exits the function after returning either a or b.
+Exit node: Below both the "Return a" and "Return b" nodes, converging at a point, there is an "exit" node. This represents the termination point of the function, where the control flow exits the function after returning either a or b.
 \end{itemize}
 
 This CFG effectively illustrates how the max function processes input and reaches a decision on which value to return based on the comparison.
@@ -78,7 +78,7 @@ For the max function discussed earlier, the CFG can be analyzed as follows:
 
 * Edges (E): There are five edges (from Entry to a > b, from a > b to Return a, from a > b to Return b, from Return a to Exit, and from Return b to Exit)
 
-* Connected components (P): As it’s a single function, P = 1
+* Connected components (P): As it's a single function, P = 1
 \end{markdown}
 
 Substituting these values into the formula, we get the following:

@@ -1,10 +1,10 @@
 When discussing compilers, we typically refer to a command-line utility that initiates and manages the compilation process. For example, to use the GNU Compiler Collection, one must call gcc to start the compilation process. Similarly, to compile a C++ program using Clang, one must call clang as the compiler. The program that controls the compilation process is known as the driver. The driver coordinates different stages of compilation and connects them together. In the book, we will be focusing on LLVM and using Clang as the driver for the compilation process.
 
-It may be confusing for readers that the same word, ”Clang,” is used to refer to both the compiler frontend and the compilation driver. In contrast, with other compilers, where the driver and C++ compiler can be separate executables, ”Clang” is a single executable that functions as both the driver and the compiler frontend. To use Clang as the compiler frontend only, the special option -cc1 must be passed to it.
+It may be confusing for readers that the same word, "Clang," is used to refer to both the compiler frontend and the compilation driver. In contrast, with other compilers, where the driver and C++ compiler can be separate executables, "Clang" is a single executable that functions as both the driver and the compiler frontend. To use Clang as the compiler frontend only, the special option -cc1 must be passed to it.
 
 \mySubsubsection{2.3.1.}{Example program}
 
-We will use the simple “Hello world!” example program for our experiments with the Clang driver. The main source file is called hello.cpp . The file implements a trivial C++ program that prints “Hello world!” to the standard output:
+We will use the simple "Hello world!" example program for our experiments with the Clang driver. The main source file is called hello.cpp . The file implements a trivial C++ program that prints "Hello world!" to the standard output:
 
 \begin{cpp}
 #include <iostream>
@@ -206,7 +206,7 @@ InstalledDir: <...>/llvm-project/install/bin
 ...
 \end{shell}
 
-As shown above, the Clang driver does not spawn a new process and instead calls the ”cc1” tool within the same process. This feature not only improves the compiler's performance but can also be leveraged for Clang debugging.
+As shown above, the Clang driver does not spawn a new process and instead calls the "cc1" tool within the same process. This feature not only improves the compiler's performance but can also be leveraged for Clang debugging.
 \end{myNotic}
 
 Upon using the -cc1 option and excluding the -lstdc++ option (which is specific to the second process, the ld linker), the debugger will generate the following output:

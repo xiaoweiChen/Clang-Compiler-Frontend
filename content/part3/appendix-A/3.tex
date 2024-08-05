@@ -1,0 +1,73 @@
+The concept of a CDB is not specific to Clang but Clang-based tools make extensive use of it. For instance, the Clang compiler itself can use a compilation database to understand how to compile files in a project. Tools such as Clang-Tidy and Clangd (for language support in IDEs) can also use it to ensure they understand code as it was built, making their analyses and transformations more accurate.
+
+\mySamllsection{Clang-Tidy Configuration for Large Projects}
+
+To use clang-tidy with a CDB, you typically don't need any additional configuration. Clang-tidy can automatically detect and utilize the compile\_commands.json file in your project's root directory.
+
+On the other hand, Clang Tools provide a special option, -p, defined as follows:
+
+\begin{shell}
+-p <build-path> is used to read a compile command database
+\end{shell}
+
+You can use this option to run Clang-Tidy on a file from the Clang source code. For example, if you run it from the llvm-project folder where the source code was cloned, it would look like this:
+
+\begin{shell}
+$ ./install/bin/clang-tidy clang/lib/Parse/Parser.cpp -p ./build/
+\end{shell}
+
+\begin{center}
+Figure 9.5: Running Clang-Tidy on the LLVM code base
+\end{center}
+
+In this case, we are running Clang-Tidy from the folder, where we installed it, as described in Section 5.2.1, Building and testing Clang-Tidy. We have also specified the build folder as the project root folder containing the CDB.
+
+Clang-Tidy is one of the tools that actively uses the CDB to be executed on large projects. Another tool is Clangd, which we will also explore.
+
+\mySamllsection{Clangd Setup for Large Projects}
+
+Clangd offers a special configuration option to specify the path to the CDB. This option is defined as follows:
+
+\begin{shell}
+$ clangd --help
+...
+--compile-commands-dir=<string> - Specify a path to look for
+compile_commands.json.If the path is invalid, clangd will search
+in the current directory and parent paths of each source file.
+...
+\end{shell}
+
+\begin{center}
+Figure 9.6: Description for '–compile-commands-dir' option from 'clangd –help' output
+\end{center}
+
+You can specify this option in Visual Studio Code via the Settings panel, as shown in the following figure:
+
+\myGraphic{0.7}{content/part3/appendix-A/images/7.png}{Figure 9.7: Configure the CDB path for clangd}
+
+Therefore, if you open a file from the Clang source code, you will have access to navigation support provided by Clangd as you can see in the following figure:
+
+\myGraphic{0.7}{content/part3/appendix-A/images/8.png}{Figure 9.8: Hover provided for Parser::Parser method by Clangd at clang/lib/Parse/Parser.cpp}
+
+Integration of compile commands with Clang tools, such as Clang-Tidy or Clangd, provides a powerful tool for exploring and analyzing your source code.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

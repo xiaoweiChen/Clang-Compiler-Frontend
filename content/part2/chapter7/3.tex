@@ -3,7 +3,7 @@ We plan to investigate FixItHint, which is a part of the Clang Diagnostics subsy
 
 \mySubsubsection{7.3.1.}{FixItHint}
 
-clang::FixItHint is a class in the Clang compiler that significantly enhances its diagnostic capabilities. Its primary role is to provide automated suggestions for correcting code errors or issues that the compiler detects. These suggestions, known as ”fix-its,” are a part of Clang’s diagnostic messages and are intended to guide developers in resolving identified issues in their code.
+clang::FixItHint is a class in the Clang compiler that significantly enhances its diagnostic capabilities. Its primary role is to provide automated suggestions for correcting code errors or issues that the compiler detects. These suggestions, known as "fix-its," are a part of Clang's diagnostic messages and are intended to guide developers in resolving identified issues in their code.
 
 When Clang encounters a coding error, warning, or stylistic issue, it generates a FixItHint. This hint contains specific recommendations for changes in the source code. For instance, it may suggest replacing a snippet of text with a corrected version or inserting or removing code at a particular location.
 
@@ -24,13 +24,13 @@ If we run a compilation for the file, we will get the following error:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj foo.cpp -o /tmp/foo.o
-foo.cpp:3:24: error: constexpr variable ’b’ must be initialized by a
+foo.cpp:3:24: error: constexpr variable 'b' must be initialized by a
 constant expression
     3 |   constexpr const int *b = &a;
       |                        ^   ~~
-foo.cpp:3:24: note: pointer to ’a’ is not a constant expression
-foo.cpp:2:17: note: address of non-static constexpr variable ’a’ may differ
-on each invocation of the enclosing function; add ’static’ to give it a
+foo.cpp:3:24: note: pointer to 'a' is not a constant expression
+foo.cpp:2:17: note: address of non-static constexpr variable 'a' may differ
+on each invocation of the enclosing function; add 'static' to give it a
 constant address
     2 |   constexpr int a = 0;
       |                 ^
@@ -46,15 +46,15 @@ As you can see, the compiler suggests adding the static keyword at Line 2 for th
 
 The error is processed by Clang using the FixItHint object, as shown in Figure 7.15. As seen in Figure 7.15, when Clang detects an issue in the source code and generates a diagnostic, it can also produce a clang::FixItHint that suggests how to fix the issue. The hint is later processed by the Clang diagnostics subsystem and displayed to the user.
 
-It’s important to highlight that the hint can also be converted into a Replacement object, which represents the exact text change needed. For example, Clang-Tidy uses the Replacement object as temporary storage for information from FixItHint in its DiagnosticConsumer class implementation, allowing the FixItHint to be converted into a Replacement object that represents the exact text change needed.
+It's important to highlight that the hint can also be converted into a Replacement object, which represents the exact text change needed. For example, Clang-Tidy uses the Replacement object as temporary storage for information from FixItHint in its DiagnosticConsumer class implementation, allowing the FixItHint to be converted into a Replacement object that represents the exact text change needed.
 
 \begin{cpp}
 if (VarD && VarD->isConstexpr()) {
   // Non-static local constexpr variables have unintuitive semantics:
   //   constexpr int a = 1;
   //   constexpr const int *p = &a;
-  // ... is invalid because the address of ’a’ is not constant. Suggest
-  // adding a ’static’ in this case.
+  // ... is invalid because the address of 'a' is not constant. Suggest
+  // adding a 'static' in this case.
   Info.Note(VarD->getLocation(), diag::note_constexpr_not_static)
     << VarD
     << FixItHint::CreateInsertion(VarD->getBeginLoc(), "static ");
@@ -64,11 +64,11 @@ if (VarD && VarD->isConstexpr()) {
 Figure 7.15: Code fragment from clang/lib/AST/ExprConstant.cpp
 \end{center}
 
-Overall, clang::FixItHint enhances the user-friendliness and utility of Clang, providing developers with practical tools for improving code quality and resolving issues efficiently. Its integration into Clang’s diagnostic system exemplifies the compiler’s emphasis on not only pinpointing code issues but also aiding in their resolution. We are going to utilize this feature in a Clang-Tidy check that will rename methods in a test class and convert the code shown in Figure 7.10 to that in Figure 7.12.
+Overall, clang::FixItHint enhances the user-friendliness and utility of Clang, providing developers with practical tools for improving code quality and resolving issues efficiently. Its integration into Clang's diagnostic system exemplifies the compiler's emphasis on not only pinpointing code issues but also aiding in their resolution. We are going to utilize this feature in a Clang-Tidy check that will rename methods in a test class and convert the code shown in Figure 7.10 to that in Figure 7.12.
 
 \mySubsubsection{7.3.2.}{Creating project skeleton}
 
-Let’s create the project skeleton for our Clang-Tidy check. We will name our check ”methodrename” and it will be a part of ”misc” set of Clang-Tidy checks. We will use the command from Section 5.4.1
+Let's create the project skeleton for our Clang-Tidy check. We will name our check "methodrename" and it will be a part of "misc" set of Clang-Tidy checks. We will use the command from Section 5.4.1
 
 \begin{shell}
 $ ./clang-tools-extra/clang-tidy/add_new_check.py misc methodrename
@@ -89,7 +89,7 @@ Updating clang-tools-extra/docs/ReleaseNotes.rst...
 Creating clang-tools-extra/test/clang-tidy/checkers/misc/methodrename.cpp...
 Creating clang-tools-extra/docs/clang-tidy/checks/misc/methodrename.rst...
 Updating clang-tools-extra/docs/clang-tidy/checks/list.rst...
-Done. Now it’s your turn!
+Done. Now it's your turn!
 \end{shell}
 
 \begin{center}
@@ -101,7 +101,7 @@ We have to modify at least two generated files in the ./clang-tools-extra/clang-
 
 \begin{enumerate}
 \item
-MethodrenameCheck.h : This is the header file for our check. Here, we want to add an additional private method processMethod for checking the method’s properties and displaying diagnostics.
+MethodrenameCheck.h : This is the header file for our check. Here, we want to add an additional private method processMethod for checking the method's properties and displaying diagnostics.
 
 \item
 MethodrenameCheck.cpp : This file contains the processing logic, and we need to implement three methods: registerMatchers, check, and the newly added private method processMethod.
@@ -123,7 +123,7 @@ Figure 7.18: MethodrenameCheck.h modifications
 \end{center}
 
 
-The added private method MethodrenameCheck::processMethod has the same parameters as the method introduced earlier in our Clang Tool ’methodrename’, as seen in Figure 7.4.
+The added private method MethodrenameCheck::processMethod has the same parameters as the method introduced earlier in our Clang Tool 'methodrename', as seen in Figure 7.4.
 
 We start the implementation with the MethodrenameCheck::registerMatchers method of our check as follows:
 
@@ -141,9 +141,9 @@ void MethodrenameCheck::registerMatchers(MatchFinder *Finder) {
 Figure 7.19: Implementation of registerMatchers
 \end{center}
 
-Lines 30 and 31 register two matchers. The first one is for method declarations (bound to the ”method” identifier), and the second one is for method calls (bound to the ”call” identifier).
+Lines 30 and 31 register two matchers. The first one is for method declarations (bound to the "method" identifier), and the second one is for method calls (bound to the "call" identifier).
 
-Here, we use a Domain Specific Language (DSL) defined in Section 3.5, AST matchers. The ClassMatcher specifies that our method declaration has to be declared within a class with a name starting with the ”Test” prefix.
+Here, we use a Domain Specific Language (DSL) defined in Section 3.5, AST matchers. The ClassMatcher specifies that our method declaration has to be declared within a class with a name starting with the "Test" prefix.
 
 The method declaration matcher (MethodMatcher) is defined at Line 28. It must be declared within the class specified by ClassMatcher and should be a test method (details about the isNotTestMethod matcher will be described below).
 
@@ -166,7 +166,7 @@ Figure 7.20: isNotTestMethod matcher implementation
 
 The macro has two parameters. The first one specifies the AST node we want to check, which is clang::CXXMethodDecl in our case. The second parameter is the matcher name that we want to use for the user-defined matcher, which is isNotTestMethod in our case.
 
-The AST node can be accessed as a Node variable at the macro body. The macro should return true if the Node matches the required conditions. We use the same conditions we used for our ’methodrename’ Clang Tool in Figure 7.4 (Lines 46-51).
+The AST node can be accessed as a Node variable at the macro body. The macro should return true if the Node matches the required conditions. We use the same conditions we used for our 'methodrename' Clang Tool in Figure 7.4 (Lines 46-51).
 
 The MethodrenameCheck::check is the main method for our check and can be implemented as follows:
 
@@ -190,14 +190,14 @@ Figure 7.21: check implementation
 
 The code has two blocks. The first one (Lines 35-37) processes method declarations, and the last one (Lines 39-42) processes method calls. Both call MethodrenameCheck ::processMethod to display diagnostics and create the required code modifications.
 
-Let’s examine how it’s implemented and how clang::FixItHint is used.
+Let's examine how it's implemented and how clang::FixItHint is used.
 
 \begin{cpp}
 void MethodrenameCheck::processMethod(const clang::CXXMethodDecl *Method,
                                       clang::SourceLocation StartLoc,
                                       const char *LogMessage) {
-  diag(StartLoc, "%0 %1 does not have ’test_’ prefix") << LogMessage << Method;
-  diag(StartLoc, "insert ’test_’", DiagnosticIDs::Note)
+  diag(StartLoc, "%0 %1 does not have 'test_' prefix") << LogMessage << Method;
+  diag(StartLoc, "insert 'test_'", DiagnosticIDs::Note)
     << FixItHint::CreateInsertion(StartLoc, "test_");
 }
 \end{cpp}
@@ -208,7 +208,7 @@ Figure 7.22: processMethod implementation
 
 We print diagnostics about the detected issue at Line 49. Lines 50-51 print an informational message about the suggested code modifications and create the corresponding code replacement at Line 51. To insert text, we use clang::FixItHint::CreateInsertion. We also display the insertion as a note for our primary warning.
 
-As soon as all the required changes are applied to the generated skeleton, it’s time to build and run our check on a test file.
+As soon as all the required changes are applied to the generated skeleton, it's time to build and run our check on a test file.
 
 \mySubsubsection{7.3.4.}{Build and run the check}
 
@@ -228,7 +228,7 @@ We can run our check as follows on the TestClass from Figure 7.10:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
-             -checks=’-*,misc-methodrename’ \
+             -checks='-*,misc-methodrename' \
                ./TestClass.cpp              \
              -- -std=c++17
 \end{shell}
@@ -241,19 +241,19 @@ Figure 7.23: Clang-Tidy misc-methodrename check run on the test file TestClass.c
 The command will produce the following output:
 
 \begin{shell}
-TestClass.cpp:4:8: warning: Method ’pos’ does not have ’test_’ prefix
+TestClass.cpp:4:8: warning: Method 'pos' does not have 'test_' prefix
 [misc-methodrename]
   void pos(){};
        ^
-TestClass.cpp:4:8: note: insert ’test_’
+TestClass.cpp:4:8: note: insert 'test_'
   void pos(){};
        ^
        test_
-TestClass.cpp:9:8: warning: Method call ’pos’ does not have ’test_’ prefix
+TestClass.cpp:9:8: warning: Method call 'pos' does not have 'test_' prefix
 [misc-methodrename]
   test.pos();
        ^
-TestClass.cpp:9:8: note: insert ’test_’
+TestClass.cpp:9:8: note: insert 'test_'
   test.pos();
        ^
        test_
@@ -269,7 +269,7 @@ As we can see, the check correctly detected two places where the method name has
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
                -fix-notes                   \
-               -checks=’-*,misc-methodrename’ \
+               -checks='-*,misc-methodrename' \
                ./TestClass.cpp              \
                -- -std=c++17
 \end{shell}
@@ -283,21 +283,21 @@ The command output is as follows:
 
 \begin{shell}
 2 warnings generated.
-TestClass.cpp:4:8: warning: Method ’pos’ does not have ’test_’ prefix
+TestClass.cpp:4:8: warning: Method 'pos' does not have 'test_' prefix
 [misc-methodrename]
   void pos(){};
        ^
 TestClassSmall.cpp:4:8: note: FIX-IT applied suggested code changes
-TestClass.cpp:4:8: note: insert ’test_’
+TestClass.cpp:4:8: note: insert 'test_'
   void pos(){};
        ^
        test_
-TestClass.cpp:9:8: warning: Method call ’pos’ does not have ’test_’ prefix
+TestClass.cpp:9:8: warning: Method call 'pos' does not have 'test_' prefix
 [misc-methodrename]
   test.pos();
        ^
 TestClass.cpp:9:8: note: FIX-IT applied suggested code changes
-TestClass.cpp:9:8: note: insert ’test_’
+TestClass.cpp:9:8: note: insert 'test_'
   test.pos();
        ^
        test_
@@ -309,7 +309,7 @@ clang-tidy applied 2 of 2 suggested fixes.
 Figure 7.26: Clang-Tidy fixes applied to the TestClass.cpp
 \end{center}
 
-As we can see, the required insertions were applied here. Clang-Tidy has powerful tools to control the applied fixes and can be considered a significant resource for code modification. Another popular tool used for code modification is Clang-Format. As the name suggests, this tool specializes in code formatting. Let’s explore it in detail.
+As we can see, the required insertions were applied here. Clang-Tidy has powerful tools to control the applied fixes and can be considered a significant resource for code modification. Another popular tool used for code modification is Clang-Format. As the name suggests, this tool specializes in code formatting. Let's explore it in detail.
 
 
 

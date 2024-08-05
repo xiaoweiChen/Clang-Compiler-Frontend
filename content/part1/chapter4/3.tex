@@ -79,7 +79,7 @@ private:
 Figure 4.3: clangbook::Animal class
 \end{center}
 
-The most crucial aspect is Line 11 in the preceding code. It specifies different ”kinds” of animals. One enum value is used for the horse (AK\_Horse) and another for the sheep (AK\_Sheep). Hence, the base class has some knowledge about its descendants. The implementations for the clangbook::Horse and clangbook::Sheep classes can be found in the following code:
+The most crucial aspect is Line 11 in the preceding code. It specifies different "kinds" of animals. One enum value is used for the horse (AK\_Horse) and another for the sheep (AK\_Sheep). Hence, the base class has some knowledge about its descendants. The implementations for the clangbook::Horse and clangbook::Sheep classes can be found in the following code:
 
 \begin{cpp}
 class Horse : public Animal {

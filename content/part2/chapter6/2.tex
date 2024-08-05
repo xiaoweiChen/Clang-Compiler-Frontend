@@ -5,7 +5,7 @@ More generally, static analysis aims to check a specific property of a computer 
 Our Clang-Tidy check from the previous chapter (see Section 5.4, Custom Clang-Tidy check) is a good example of such a property. In reality, it takes C++ code with a class definition and decides whether the class is complex or not based on the number of methods it has.
 
 \begin{markdown}
-It’s worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem ^[Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.].
+It's worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem ^[Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.].
 \end{markdown}
 
 \begin{myNotic}{Important note}
@@ -20,6 +20,6 @@ Despite the fact that not all properties of programs can be proven, it can be do
 
 Static analysis plays a significant role in ensuring the quality and compliance of software. It checks that the code adheres to prescribed coding standards and guidelines, which is particularly important in large-scale projects or industries with strict regulatory requirements. Moreover, it is highly effective in uncovering common security vulnerabilities such as buffer overflows, SQL injection flaws, and cross-site scripting vulnerabilities.
 
-Additionally, static analysis contributes to code refactoring and optimization by pinpointing areas of redundancy, unnecessary complexity, and opportunities for improvement. It’s a common practice to integrate these tools into the development process, including continuous integration pipelines. This integration allows for ongoing analysis of the code with each new commit or build, ensuring continual quality assurance.
+Additionally, static analysis contributes to code refactoring and optimization by pinpointing areas of redundancy, unnecessary complexity, and opportunities for improvement. It's a common practice to integrate these tools into the development process, including continuous integration pipelines. This integration allows for ongoing analysis of the code with each new commit or build, ensuring continual quality assurance.
 
 The Clang-Tidy checks that we created in the last chapter can be considered an example of a static analysis program. In this chapter, we will consider more advanced topics involving data structures such as CFGs, which we will see next.

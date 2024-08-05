@@ -1,0 +1,12 @@
+Clang has implemented several features with the goal of improving build speed for large projects. One of the most interesting features is precompiled headers and modules. They can be considered techniques that allow caching some parts of the AST and reusing it for different compiler invocations. Caching can significantly improve build speed for your project, and some of these features can be used to speed up different Clang tool executions. For instance, precompiled headers are used as the primary Clangd optimization for document editing.
+
+In this appendix, we will cover two primary topics
+
+\begin{itemize}
+\item
+Precompiled headers
+
+\item
+Modules
+\end{itemize}
+

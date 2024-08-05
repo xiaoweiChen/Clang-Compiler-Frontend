@@ -188,7 +188,7 @@ bin  include  lib  libexec  share
 
 \mySubsubsection{1.3.3.}{The LLVM debugger, its build, and usage}
 
-The LLVM debugger, LLDB , has been created with a look at the GNU debugger (GDB ). Some of its commands repeat the counterparts from GDB . You may ask ”Why do we need a new debugger if we have a good one?” The answer can be found in the different architecture solutions used by GCC and LLVM. LLVM uses a modular architecture, and different parts of the compiler can be reused. For example, the Clang frontend can be reused in the debugger, resulting in support for modern C/C++ features. For example, the print command in lldb can specify any valid language constructions, and you can use some modern C++ features with the lldb print command.
+The LLVM debugger, LLDB , has been created with a look at the GNU debugger (GDB ). Some of its commands repeat the counterparts from GDB . You may ask "Why do we need a new debugger if we have a good one?" The answer can be found in the different architecture solutions used by GCC and LLVM. LLVM uses a modular architecture, and different parts of the compiler can be reused. For example, the Clang frontend can be reused in the debugger, resulting in support for modern C/C++ features. For example, the print command in lldb can specify any valid language constructions, and you can use some modern C++ features with the lldb print command.
 
 In contrast, GCC uses a monolithic architecture, and it's hard to separate the C/C++ frontend from other parts. Therefore, GDB has to implement language features separately, which may take some time before modern language features implemented in GCC become available in GDB .
 

@@ -1,10 +1,10 @@
 Clang-Format is an essential tool in the Clang/LLVM project, designed for formatting C, C++, Java, JavaScript, Objective-C, or Protobuf code. It plays a crucial role in the Clang tooling ecosystem, offering capabilities for parsing, analyzing, and manipulating source code.
 
-Clang-Format is a part of Clang and has to be installed if we have built and installed the Clang compiler. Let’s look at how it can be used.
+Clang-Format is a part of Clang and has to be installed if we have built and installed the Clang compiler. Let's look at how it can be used.
 
 \mySubsubsection{7.4.1.}{Clang-Format configuration and usage examples}
 
-Clang-Format uses .clang-format configuration files. The utility will use the closest configuration file; i.e., if the file is located at the folder with the source files we want to format, then the configuration from the folder will be used. The format for configuration files is YAML, which is the same format used for Clang-Tidy configuration files, as shown in Figure 5.12, Clang-Tidy configuration. Let’s create the following simple configuration file:
+Clang-Format uses .clang-format configuration files. The utility will use the closest configuration file; i.e., if the file is located at the folder with the source files we want to format, then the configuration from the folder will be used. The format for configuration files is YAML, which is the same format used for Clang-Tidy configuration files, as shown in Figure 5.12, Clang-Tidy configuration. Let's create the following simple configuration file:
 
 \begin{shell}
 BasedOnStyle: LLVM
@@ -61,7 +61,7 @@ Figure 7.28: Formatting for main.cpp
 
 In the example provided in Figure 7.28, we can see that the indentation defined by the LLVM code style was applied. We can also observe that Clang-Format broke Line 6 in the original source code and made the main function definition start on a separate line. Additionally, we can see that Clang-Format added a comment to the namespace closing bracket in the formatted code at Line 6.
 
-After considering the usage example, it’s time to look at the internal design of Clang-Format.
+After considering the usage example, it's time to look at the internal design of Clang-Format.
 
 \mySubsubsection{7.4.2.}{Design considerations}
 
@@ -84,9 +84,9 @@ The Parser is much slower than the Lexer.
 
 Clang-Format leverages clang::tooling::Replacement to represent code formatting changes and utilizes clang::Rewriter to apply these changes to the source code.
 
-Configuration plays a pivotal role in Clang-Format’s operation. Users define their preferred formatting style by configuring rules in a .clang-format file. This configuration specifies details such as indentation width, brace placement, line breaks, and more.
+Configuration plays a pivotal role in Clang-Format's operation. Users define their preferred formatting style by configuring rules in a .clang-format file. This configuration specifies details such as indentation width, brace placement, line breaks, and more.
 
-Clang-Format supports various predefined and customizable formatting styles, such as ”LLVM,” ”Google,” and ”Chromium.” Users can select a style that aligns with their project’s coding standards.
+Clang-Format supports various predefined and customizable formatting styles, such as "LLVM," "Google," and "Chromium." Users can select a style that aligns with their project's coding standards.
 
 Once tokenized, Clang-Format processes the token stream, taking into account the current context, indentation level, and configured style rules. It then adjusts whitespace and line breaks accordingly to adhere to the chosen style.
 
@@ -96,7 +96,7 @@ Customization is a key aspect of Clang-Format. Users can extend or customize its
 
 It offers a user-friendly command-line interface, enabling manual code formatting or integration into scripts and automation.
 
-Clang-Format utilizes Clang’s Format library to generate formatted code accurately. This library ensures that the code consistently follows the desired formatting style. The design follows the main paradigm of LLVM: ”everything is a library,” as discussed in Section 1.2.1, Short LLVM history. Thus, we can effectively use the formatting functionality in other Clang Tools. For instance, formatting can be used with Clang-Tidy to format code with fixes applied by Clang-Tidy. Let’s consider an example of how this functionality can be used.
+Clang-Format utilizes Clang's Format library to generate formatted code accurately. This library ensures that the code consistently follows the desired formatting style. The design follows the main paradigm of LLVM: "everything is a library," as discussed in Section 1.2.1, Short LLVM history. Thus, we can effectively use the formatting functionality in other Clang Tools. For instance, formatting can be used with Clang-Tidy to format code with fixes applied by Clang-Tidy. Let's consider an example of how this functionality can be used.
 
 \mySubsubsection{7.4.3.}{Clang-Tidy and Clang-Format}
 
@@ -145,7 +145,7 @@ We used the following command for Figure 7.29
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
    -fix-notes                               \
-   -checks=’-*,misc-methodrename’           \
+   -checks='-*,misc-methodrename'           \
    ./TestClassNotFormated.cpp               \
    -- -std=c++17
 \end{shell}
@@ -154,14 +154,14 @@ The result will be different if we run Clang-Tidy with -format-style option, for
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
-   -format-style ’llvm’                     \
+   -format-style 'llvm'                     \
    -fix-notes                               \
-   -checks=’-*,misc-methodrename’           \
+   -checks='-*,misc-methodrename'           \
    ./TestClassNotFormated.cpp               \
    -- -std=c++17
 \end{shell}
 
-As we can see the ’llvm’ formatting style was chosen for the example. The result is shown in the following figure:
+As we can see the 'llvm' formatting style was chosen for the example. The result is shown in the following figure:
 
 \begin{cpp}
 class TestClass {

@@ -1,0 +1,70 @@
+A compilation database (CDB) is a JSON file that specifies how each source file in a code base should be compiled. This JSON file is typically named compile\_commands.json and resides in the root directory of a project. It provides a machine-readable record of all compiler invocations in the build process and is often used by various tools for more accurate analysis, refactoring, and more. Each entry in this JSON file typically contains the following fields:
+
+\begin{itemize}
+\item
+directory: The working directory of the compilation.
+
+\item
+command: The actual compile command, including compiler options.
+
+\item
+arguments: Another field that can be used to specify compilation arguments. It contains the list of arguments.
+
+\item
+file: The path to the source file being compiled.
+
+\item
+output: The path to the output created by this compilation step.
+\end{itemize}
+
+As we can see from the fields description, there are two ways to specify compilation flags: using the command or arguments field. Let's look at a specific example. Suppose our C++ file ProjectLib.cpp is located at the /home/user/project/src/lib folder and can be compiled with Clang using the following invocation command (the command is used as an example, and you can ignore the meaning of its arguments)
+
+\begin{shell}
+$ cd /home/user/project/src/lib
+$ clang -Wall -I../headers ProjectLib.cpp -o ProjectLib.o
+\end{shell}
+
+The following CDB can be used to represent the command:
+
+\begin{shell}
+[
+{
+  "directory": "/home/user/project/src/lib",
+  "command": "clang -Wall -I../headers ProjectLib.cpp -o ProjectLib.o",
+  "file": "ProjectLib.cpp",
+  "output": "ProjectLib.o"
+}
+]
+\end{shell}
+
+\begin{center}
+Figure 9.1: Compilation Database for ProjectLib.cpp
+\end{center}
+
+The "command" field was used in the example. We can also create the CDB in another form and use the arguments field. The result will be as follows:
+
+\begin{shell}
+[
+{
+  "directory": "/home/user/project/src/lib",
+  "arguments": [
+    "clang",
+    "-Wall",
+    "-I../headers",
+    "ProjectLib.cpp",
+    "-o",
+    "ProjectLib.o"
+  ],
+  "file": "ProjectLib.cpp",
+  "output": "ProjectLib.o"
+}
+]
+\end{shell}
+
+\begin{center}
+Figure 9.2: CDB for ProjectLib.cpp
+\end{center}
+
+The CDB shown in Figure 9.2 represents the same compilation recipe as in Figure 9.1, but it uses a list of arguments (the "arguments" field) instead of the invocation command (the "command" field) used in Figure 9.1. It's important to note that the list of arguments also contains the executable "clang" as its first argument. CDB processing tools can use this argument to make a decision about which compiler should be used for the compilation in environments where different compilers are available, such as GCC versus Clang.
+
+The provided CDB example contains only one record for one file. A real project might contain thousands of records. LLVM is a good example, and if you look at the build folder that we used for the LLVM build (see Section 1.3.1, Configuration with CMake), you may notice that it contains a compile\_commands.json file with the CDB for the projects we selected to be built. It's worth noting that LLVM creates the CDB by default, but your project might require some special manipulations to create it. Let's look at how the CDB can be created in detail.

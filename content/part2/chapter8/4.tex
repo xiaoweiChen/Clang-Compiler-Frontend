@@ -1,4 +1,4 @@
-In this brief LSP demo, we will demonstrate how Clangd opens a file and finds a symbol’s definition. Clangd features a comprehensive logging subsystem that offers valuable insights into its interaction with the IDE. We will use the log subsystem to obtain the necessary information.
+In this brief LSP demo, we will demonstrate how Clangd opens a file and finds a symbol's definition. Clangd features a comprehensive logging subsystem that offers valuable insights into its interaction with the IDE. We will use the log subsystem to obtain the necessary information.
 
 \mySubsubsection{8.4.1.}{Demo description}
 
@@ -60,7 +60,7 @@ V[16:24:39.336] <<< {
 
 
 \begin{center}
-Figure 8.9: The ”textDocument/definition” request sent by the IDE
+Figure 8.9: The "textDocument/definition" request sent by the IDE
 \end{center}
 
 The request sent by the IDE is received and processed by Clangd. The corresponding log is recorded as follows:
@@ -73,7 +73,7 @@ helper.hpp
 
 
 \begin{center}
-Figure 8.10: Handling of the ”textDocument/definition” request in Clangd
+Figure 8.10: Handling of the "textDocument/definition" request in Clangd
 \end{center}
 
 Finally, Clangd creates the response and sends it to the IDE. The corresponding log record shows that the reply was sent:
@@ -103,10 +103,10 @@ V[16:24:39.336] >>> {
 
 
 \begin{center}
-Figure 8.11: The ”textDocument/definition” reply from Clangd
+Figure 8.11: The "textDocument/definition" reply from Clangd
 \end{center}
 
-The logs will be our primary tool to investigate LSP internals. Let’s dive into more complex examples.
+The logs will be our primary tool to investigate LSP internals. Let's dive into more complex examples.
 
 \mySubsubsection{8.4.2.}{LSP session}
 
@@ -114,7 +114,7 @@ An LSP session consists of several requests to and responses from the Clangd ser
 
 \myGraphic{0.5}{content/part2/chapter8/images/8.png}{Figure 8.12: LSP session example}
 
-Let’s look at the example in detail. We will start with the "initialize" request.
+Let's look at the example in detail. We will start with the "initialize" request.
 
 \mySamllsection{Initialization}
 
@@ -213,7 +213,7 @@ Figure 8.15: VS Code to Clangd (didOpen notification)
 
 As we can see, VS Code sends the notification with parameters included in the "params/ textDocument" field. These parameters consist of the filename in the "uri" field and the source file text within the "text" field.
 
-Clangd starts compiling the file upon receiving the ’didOpen’ notification. It builds an AST and extracts semantic information about different tokens from it. The server uses this information to distinguish between different tokens with the same name. For example, we can use a token named ’foo’ that may serve as a class member or a local variable depending on the scope in which it is used, as shown in the following code fragment:
+Clangd starts compiling the file upon receiving the 'didOpen' notification. It builds an AST and extracts semantic information about different tokens from it. The server uses this information to distinguish between different tokens with the same name. For example, we can use a token named 'foo' that may serve as a class member or a local variable depending on the scope in which it is used, as shown in the following code fragment:
 
 \begin{cpp}
 class TestClass {
@@ -229,12 +229,12 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 8.16: Occurrences of the ’foo’ token in foo.hpp
+Figure 8.16: Occurrences of the 'foo' token in foo.hpp
 \end{center}
 
-As we can see in Line 8, we use the ’foo’ token two times: as a function call and in a local variable definition.
+As we can see in Line 8, we use the 'foo' token two times: as a function call and in a local variable definition.
 
-The go-to definition request will be delayed until the compilation process is finished. It’s worth noting that the majority of requests are put in a queue and wait until the compilation process is finished. The rule has some exemptions, and some requests can be executed without an AST with a limited provided functionality. One of the examples is the code-formatting requests. The code formatting does not require an AST and therefore the formatting functionality can be provided before the AST is built.
+The go-to definition request will be delayed until the compilation process is finished. It's worth noting that the majority of requests are put in a queue and wait until the compilation process is finished. The rule has some exemptions, and some requests can be executed without an AST with a limited provided functionality. One of the examples is the code-formatting requests. The code formatting does not require an AST and therefore the formatting functionality can be provided before the AST is built.
 
 If the state of the file is changed, then Clangd will notify VS Code with the "textDocument/publishDiagnostics" notification. For example, when the compilation process is finished, then Clangd will send the notification to VS Code:
 
@@ -265,7 +265,7 @@ As we can see, there are no compilation errors; params/diagnostics is empty. It 
     "diagnostics": [
     {
       "code": "expected_semi_after_expr",
-      "message": "Expected ’;’ after expression (fix available)",
+      "message": "Expected ';' after expression (fix available)",
       "range": {
         "end": {
           "character": 35,
@@ -351,10 +351,10 @@ The language server responds with the definition location in the C++ code:
 Figure 8.21: Clangd to VS Code (textDocument/definition response)
 \end{center}
 
-As we can see, the server responded with the actual position of the definition. Another popular action in the IDE is document modification. This functionality is served by the "textDocument/didChange" notification. Let’s look at it.
+As we can see, the server responded with the actual position of the definition. Another popular action in the IDE is document modification. This functionality is served by the "textDocument/didChange" notification. Let's look at it.
 
 Change document
-As part of the document modification, let’s insert a comment, // Constructor, at Line 6, as shown in this screenshot:
+As part of the document modification, let's insert a comment, // Constructor, at Line 6, as shown in this screenshot:
 
 \myGraphic{0.5}{content/part2/chapter8/images/10.png}{Figure 8.22: Change document}
 
@@ -417,7 +417,7 @@ Figure 8.24: Clangd to VS Code (publishDiagnostics notification)
 
 As we can see, the diagnostic was sent for the modified document because it contains the version field pointing to version 2, which corresponds to the modified document, as seen in Line 7 of Figure 8.24.
 
-Our last action in the example is to close the document. Let’s take a closer look at it.
+Our last action in the example is to close the document. Let's take a closer look at it.
 
 \mySamllsection{Closing a document}
 
@@ -456,7 +456,7 @@ After receiving the request, Clangd will remove the document from its internal s
 Figure 8.26: Clangd to VS Code (textDocument/didClose request)
 \end{center}
 
-The shown example demonstrates the typical interactions between Clangd and VS Code. The provided example utilizes functionality from the Clang frontend, that is, basic Clang functionality. On the other hand, Clangd has a strong connection with other Clang tools, such as Clang-Format and Clang-Tidy, and can reuse the functionality provided by these tools. Let’s take a closer look at this.
+The shown example demonstrates the typical interactions between Clangd and VS Code. The provided example utilizes functionality from the Clang frontend, that is, basic Clang functionality. On the other hand, Clangd has a strong connection with other Clang tools, such as Clang-Format and Clang-Tidy, and can reuse the functionality provided by these tools. Let's take a closer look at this.
 
 
 

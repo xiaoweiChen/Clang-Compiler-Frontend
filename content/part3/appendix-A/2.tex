@@ -1,0 +1,58 @@
+The shellcompile˙commands.json file can be generated in various ways. For example, the build system CMake has built-in support for generating a compilation database. Some tools can also generate this file from Makefiles or other build systems. There are even tools such as Bear and intercept-build that can generate a CDB by intercepting the actual compile commands as they are run.
+
+So while the term is commonly associated with Clang and LLVM-based tools, the concept itself is more general and could theoretically be used by any tool that needs to understand the compilation settings for a set of source files. We will start with CDB generation using CMake, one of the most popular build systems.
+
+\mySamllsection{Generating a CDB with CMake}
+
+Generating a CDB with CMake involves a few steps:
+
+\begin{enumerate}
+\item
+First, open a terminal or command prompt and navigate to your project's root directory.
+
+\item
+Then, run CMake with the -DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON option, which instructs CMake to create a compile\_commands.json file. This file contains the compilation commands for all source files in your project.
+
+\item
+After configuring your project with CMake, you can find the compile\_commands.json file in the same directory where you ran the configuration command.
+\end{enumerate}
+
+As we noticed before, LLVM created the CDB by default. It's achievable because llvm/CMakeLists.txt contains the following setup:
+
+\begin{cmake}
+# Generate a CompilationDatabase (compile_commands.json file) for our build,
+# for use by clang_complete, YouCompleteMe, etc.
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+\end{cmake}
+
+\begin{center}
+Figure 9.3: LLVM-18.x CMake configuration from llvm/CMakeLists.txt
+\end{center}
+
+i.e., it set up the CDB generation by default.
+
+\mySamllsection{Ninja to Generate a CDB}
+
+The Ninja can also be used to generate a CDB. We can use a Ninja subtool called "compdb" to dump the CDB to stdout. To run the subtool, we use the -t <subtool> command-line option in Ninja. Thus, we will use the following command to produce the CDB with Ninja:
+
+\begin{shell}
+$ ninja -t compdb > compile_commands.json
+\end{shell}
+
+\begin{center}
+Figure 9.4: Creating a CDB with Ninja
+\end{center}
+
+This command instructs Ninja to generate the CDB information and save it in the compile\_commands.json file.
+
+The generated compilation database can be used with the different Clang tools that we have described in the book. Let's look at two of the most valuable examples, which include Clang-Tidy and Clangd.
+
+
+
+
+
+
+
+
+
+

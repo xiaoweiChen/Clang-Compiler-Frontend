@@ -1,0 +1,160 @@
+Obtaining a smooth IDE experience with accurate results provided without visible delays is a challenging task. One of the ways to achieve this experience is through compiler performance optimization, as good navigation can be provided with well-parsed source code. Clangd offers excellent examples of performance optimization, which we will explore in some detail. We will start with the optimizations for code modifications.
+
+8.6.1 Optimizations for modified documents
+As we saw in Line 4, Open document, navigation support requires the AST as the basic data structure, so we have to use the Clang frontend to obtain it. Additionally, we have to rebuild the AST when there are document modifications. Document modification is a common activity for developers, and we won't be able to provide a good IDE experience if we always start the build process from scratch.
+
+\mySamllsection{Source code preamble}
+
+To gain insights into the ideas used to speed up AST building for modified documents, let's examine a simple C++ program:
+
+\begin{cpp}
+#include <iostream>
+
+int main() {
+  std::cout << "Hello world!" << std::endl;
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 8.37: C++ program: helloworld.cpp
+\end{center}
+
+The program has six lines of code, but the conclusion can be deceptive. The \#include directive inserts a lot of additional code. We can estimate the amount of code inserted by the preprocessor if we run Clang with the -E command-line option and calculate the number of lines, as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -E helloworld.cpp | wc -l
+36215
+\end{shell}
+
+\begin{center}
+Figure 8.38: Number of lines in the post-processed program
+\end{center}
+
+where <...> is the folder where llvm-project was cloned; see Figure 1.1.
+
+As we can see, the code that should be parsed contains more than 36,000 lines of code. This is a common pattern, and the majority of the code to be compiled is inserted from included headers. The part of the document located at the beginning of the source file and containing the include directives is called the preamble.
+
+It's worth noting that preamble modifications are possible but rare, for instance, when we insert a new header. The majority of the modifications are located in the code outside the preamble.
+
+The primary idea for performance optimization is to cache the preamble AST and reuse it for any compilation of a modified document.
+
+\mySamllsection{AST build at Clangd}
+
+The performance optimization made in Clangd involves a two-part compilation process. In the first part, the preamble that contains all included header files is compiled into a precompiled header; see Section 10.2, Precompiled headers. This precompiled header is then used in the second stage of the compilation process to build the AST.
+
+This complex process serves as a performance optimization, especially when a user makes changes to a file that requires recompilation. Although a significant portion of compilation time is spent on header files, these files are typically not modified frequently. To address this, Clangd caches the AST for header files within the precompiled header file.
+
+As a result, when modifications are made outside header files, Clangd does not need to rebuild them from scratch. Instead, it can reuse the cached AST for headers, significantly improving compilation performance and reducing the time needed for recompilation when working with header files. If a user modification affects header files, then the entire AST should be rebuilt, resulting in a cache miss in such cases. It's worth noting that modifications to headers are not as common as modifications to the primary source code (outside the included headers). Therefore, we can expect a pretty good cache hit rate for ordinary document modifications.
+
+The precompiled header can be stored on a disk as a temporary file but can also reside in memory, which can also be considered a performance optimization.
+
+The cached preamble is a powerful tool that significantly improves Clangd's performance in processing document changes made by a user. On the other hand, we should always consider edge cases that involve preamble modification. The preamble can be modified in two main ways:
+
+\begin{itemize}
+\item
+Explicitly: When the user explicitly modifies the preamble, for instance, by inserting a new header into it or deleting an existing one
+
+\item
+Implicitly: When the user implicitly modifies the preamble, for instance, by modifying the headers that are included in the preamble
+\end{itemize}
+
+The first one can be easily detected via a "textDocument/didChange" notification that affects the range where the preamble is located. The second one is tricky, and Clangd should monitor the modifications in the included headers to correctly process navigation requests.
+
+Clangd also has some modifications aimed at making preamble compilation faster. Some of these modifications required specific processing in Clang. Let's delve into it in detail.
+
+\mySubsubsection{8.6.2.}{Building preamble optimization}
+
+An interesting optimization can be applied to function bodies. A function body can be considered an essential part of primary indexing because it contains symbols that a user can click on, such as getting a definition for the symbol. This primarily applies to function bodies that are visible to the user in the IDE. On the other hand, many functions and their implementations (bodies) are hidden from the user in included headers. As a result, the user cannot request information about symbols from such function bodies. However, these bodies are visible to the compiler because it resolves include directives and parses the header files from the directives. The time spent by the compiler can be significant, considering that a complex project can have numerous dependencies, resulting in many header files being included in the document opened by the user. One obvious optimization is to skip function bodies when parsing header files from the preamble. This can be achieved using a special frontend option:
+
+\begin{cpp}
+/// FrontendOptions - Options for controlling the behavior of the frontend.
+class FrontendOptions {
+  ...
+  /// Skip over function bodies to speed up parsing in cases where you do not need
+  /// them (e.g., with code completion).
+  unsigned SkipFunctionBodies : 1;
+  ...
+};
+\end{cpp}
+
+\begin{center}
+Figure 8.39: The FrontendOptions class from clang/Frontend/FrontendOptions.h
+\end{center}
+
+Clangd utilizes this option when building the preamble in the following manner:
+
+\begin{cpp}
+std::shared_ptr<const PreambleData>
+buildPreamble(PathRef FileName, CompilerInvocation CI,
+              const ParseInputs &Inputs, bool StoreInMemory,
+              PreambleParsedCallback PreambleCallback,
+              PreambleBuildStats *Stats) {
+  ...
+  // Skip function bodies when building the preamble to speed up building
+  // the preamble and make it smaller.
+  assert(!CI.getFrontendOpts().SkipFunctionBodies);
+  CI.getFrontendOpts().SkipFunctionBodies = true;
+  ...
+  auto BuiltPreamble = PrecompiledPreamble::Build(...);
+  ...
+  // When building the AST for the main file, we do want the function
+  // bodies.
+  CI.getFrontendOpts().SkipFunctionBodies = false;
+  ...
+};
+\end{cpp}
+
+\begin{center}
+Figure 8.40: buildPreamble from clang-tools-extra/clangd/Preamble.cpp
+\end{center}
+
+As we can see, Clangd uses the frontend option to skip function bodies in headers but disables it just before building the AST for the main document; see Lines 10 and 16 in Figure 8.40.
+
+Such optimization can significantly improve the document readiness time (when the opened document is ready for navigation requests from the user) for complex C++ source files.
+
+While the performance optimizations discussed here offer valuable insights into Clangd's efficiency, it's important to note that Clangd employs a multitude of other techniques to ensure its reliability and speed. Clangd serves as an excellent platform for experimenting with and implementing various optimization strategies, making it a versatile environment for performance enhancements and innovations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

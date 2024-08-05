@@ -1,6 +1,6 @@
-We are going to use the knowledge gained in Section 5.4, Custom Clang-Tidy check to create a custom CFG check. As mentioned previously, the check will use Clang’s CFG to calculate cyclomatic complexity. The check should issue a warning if the calculated
+We are going to use the knowledge gained in Section 5.4, Custom Clang-Tidy check to create a custom CFG check. As mentioned previously, the check will use Clang's CFG to calculate cyclomatic complexity. The check should issue a warning if the calculated
 
-complexity exceeds a threshold. This threshold will be set up as a configuration parameter, allowing us to change it during our tests. Let’s start with the creation of the project skeleton.
+complexity exceeds a threshold. This threshold will be set up as a configuration parameter, allowing us to change it during our tests. Let's start with the creation of the project skeleton.
 
 
 \mySubsubsection{6.4.1.}{Creating the project skeleton}
@@ -99,7 +99,7 @@ Figure 6.7: Modifications to CyclomaticcomplexityCheck.cpp: calculateCyclomaticC
 
 We iterate over all CFG blocks at Lines 42-45. The number of blocks corresponds to the number of nodes, denoted as N in Figure 6.2. We sum up the number of successors for each block to calculate the number of edges, denoted as E. We assume that the number of connected components, denoted as P, is equal to one for our simplified example.
 
-After implementing the check, it’s time to build and run our new check on our example; see Figure 6.1.
+After implementing the check, it's time to build and run our new check on our example; see Figure 6.1.
 
 \mySubsubsection{6.4.3.}{Building and testing the cyclomatic complexity check}
 
@@ -121,7 +121,7 @@ We will run our check on the example program shown in Figure 6.1. As we previous
 $ <...>/llvm-project/install/bin/clang-tidy                         \
   -checks="-*,misc-cyclomaticcomplexity"                            \
   -config="{CheckOptions:                                           \
-         [{key: misc-cyclomaticcomplexity.Threshold, value: ’1’}]}" \
+         [{key: misc-cyclomaticcomplexity.Threshold, value: '1'}]}" \
    max.cpp                                                          \
    -- -std=c++17
 \end{shell}
@@ -135,7 +135,7 @@ Line 2 in Figure 6.8 indicates that we want to run only one Clang-Tidy check: mi
 We will get the following output if we run the command from Figure 6.8:
 
 \begin{shell}
-max.cpp:1:5: warning: function ’max’ has high cyclomatic complexity (2) ...
+max.cpp:1:5: warning: function 'max' has high cyclomatic complexity (2) ...
 int max(int a, int b) {
     ^
 \end{shell}

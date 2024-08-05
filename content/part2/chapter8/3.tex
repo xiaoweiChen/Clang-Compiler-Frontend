@@ -2,7 +2,7 @@ We will begin our environment setup by building Clangd. Then, we will install VS
 
 \mySubsubsection{8.3.1.}{Clangd build}
 
-It’s worth building Clangd in release mode, as we did for LLDB in Section 1.3.3, The LLVM debugger, its build, and usage. This is because performance is crucial in IDEs. For instance, Clangd requires building an AST to provide code navigation functionality. If a user modifies a document, the document should be rebuilt, and the navigation functionality will not be available until the rebuild process is completed. This can result in delays in IDE responses. To prevent IDE slowness in responses, we should ensure that Clangd is built with all the required optimizations. You can use the following project configuration command:
+It's worth building Clangd in release mode, as we did for LLDB in Section 1.3.3, The LLVM debugger, its build, and usage. This is because performance is crucial in IDEs. For instance, Clangd requires building an AST to provide code navigation functionality. If a user modifies a document, the document should be rebuilt, and the navigation functionality will not be available until the rebuild process is completed. This can result in delays in IDE responses. To prevent IDE slowness in responses, we should ensure that Clangd is built with all the required optimizations. You can use the following project configuration command:
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" ../llvm
@@ -28,7 +28,7 @@ After building the Clangd binary, our next step will include installing VS Code 
 
 You can download and install VS Code from the VS Code website: \url{https://code.visualstudio.com/download}.
 
-The first step after running VS Code is to install the Clangd extension. An open source extension is available to work with Clangd via LSP. The extension’s source code can be found on GitHub: https://github.com/clangd/vscode-clangd. However, we can easily install the latest version of the extension directly from within VS Code.
+The first step after running VS Code is to install the Clangd extension. An open source extension is available to work with Clangd via LSP. The extension's source code can be found on GitHub: https://github.com/clangd/vscode-clangd. However, we can easily install the latest version of the extension directly from within VS Code.
 
 To do this, press Ctrl+Shift+X (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png}+Shift+X for macOS) to open the extensions panel. Search for Clangd and click the Install button.
 
@@ -36,7 +36,7 @@ To do this, press Ctrl+Shift+X (or \includegraphics[width=0.02\textwidth]{conten
 
 After installing the extension, we need to set it up. The main step is to specify the path to the Clangd executable.
 
-You can access this setting via the File — Preferences — Settings menu or by pressing Ctrl + , (or\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +, for macOS), as shown in the following screenshot:
+You can access this setting via the File — Preferences — Settings menu or by pressing Ctrl + , (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +, for macOS), as shown in the following screenshot:
 
 \myGraphic{0.5}{content/part2/chapter8/images/5.png}{Figure 8.5: Setting up the Clangd extension}
 
@@ -48,7 +48,7 @@ You can open your favorite C/C++ source file and try to navigate through it. For
 Our setup works only for simple projects that do not require special compilation flags. If your project requires special configuration to build, then you have to use a generated compile\_commands.json file that should be placed at the root of your project. This file should contain a Compilation Database (CDB) in JSON format, specifying compilation flags for each file in your project. For more information about the setup, please refer to Figure 9.5, Clangd Setup for Large Projects.
 \end{myNotic}
 
-With the required components installed, we are now ready for an LSP demo where we will emulate typical development activities in an IDE (open and modify a document, jump to a token definition, etc.) and explore how it’s represented via LSP.
+With the required components installed, we are now ready for an LSP demo where we will emulate typical development activities in an IDE (open and modify a document, jump to a token definition, etc.) and explore how it's represented via LSP.
 
 
 

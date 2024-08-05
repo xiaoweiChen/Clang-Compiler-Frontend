@@ -1,0 +1,283 @@
+Modules, or Precompiled Modules (PCMs), can be considered the next step in the evolution of precompiled headers. They also represent a parsed AST in binary form but form a DAG (tree), meaning one module can include more than one other module.
+
+This is a major improvement compared to precompiled headers, where only one precompiled header can be introduced for each compilation unit.
+
+The C++20 standard introduced two concepts related to modules. The first one is ordinary modules, described in section 10 of \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}.}. The other one is the so-called header unit , mostly described in section 15.5. Header units can be considered an intermediate step between ordinary headers and modules and allow the use of the import directive to import ordinary headers.
+
+We will focus on Clang modules, which can be considered an implementation of header units from the C++ standard. There are two different options to use Clang modules. The first one is called explicit modules. The second is called implicit modules. We will explore both cases but will start with a description of a test project for which we want to use the modules.
+
+Test project description
+For experiments with modules, we will consider an example with two header files: header1.h and header2.h , which define the void foo1() and void foo2() functions, respectively, as shown:
+
+\begin{cpp}
+#pragma once
+
+void foo1() {}
+\end{cpp}
+
+Header file: header1.h
+
+\begin{cpp}
+#pragma once
+
+void foo2() {}
+\end{cpp}
+
+Header file: header2.h
+
+\begin{center}
+Figure 10.6: Header files to be used for the tests
+\end{center}
+
+
+These header files will be used in the following source file:
+
+\begin{cpp}
+#include "header1.h"
+#include "header2.h"
+
+int main() {
+  foo1();
+  foo2();
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 10.7: Source file: main.cpp
+\end{center}
+
+We are going to organize our header files into modules. Clang uses a special file that contains the logical structure, which is called a modulemap file. Let's see what the file looks like for our test project.
+
+\mySamllsection{Modulemap file}
+
+The modulemap file for our project will be named module.modulemap and has the following content:
+
+\begin{cpp}
+module header1 {
+  header "header1.h"
+  export *
+}
+module header2 {
+  header "header2.h"
+  export *
+}
+\end{cpp}
+
+\begin{center}
+Figure 10.8: Modulemap file: module.modulemap
+\end{center}
+
+As shown in Figure 10.8, we have defined two modules, header1 and header2.
+
+Each of them contains only one header and exports all symbols from it.
+
+Now that we have collected all the necessary parts, we are ready to build and use the modules. Modules can be built explicitly or implicitly. Let's start with explicit builds.
+
+\mySamllsection{Explicit modules}
+
+The module's structure is described by the modulemap file, as seen in Figure 10.8. Each of our modules has only one header, but a real module might include several headers. Thus, to build a module, we have to specify the structure of the modules (the modulemap file) and the module name we want to build. For instance, for the header1 module, we can use the following build command:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1            \
+        -emit-module -o header1.pcm                    \
+        -fmodules module.modulemap -fmodule-name=header1 \
+        -x c++-header -fno-implicit-modules
+\end{shell}
+
+There are several important aspects in the compile command. The first one is the -cc1 option, which indicates that we are calling only the compiler frontend. For more information, please refer to Section 2.3, Clang driver overview. Additionally, we specify that we want to create a build artifact (module) named header1.pcm by using the following option: -emit-module -o header1.pcm . The logical structure and the required modules to be built are specified in the module.modulemap file, which has to be specified as a compile argument with the -fmodule-name=header1 option. Enabling the modules functionality is done using the -fmodules flag, and we also specify that our headers are C++ headers with the -x c++-header option. To explicitly disable implicit modules, we include -fno-implicit-modules in the command because implicit modules, which we will investigate later in Figure 10.9, Implicit modules, are enabled by default, but we don't want to use them at the moment.
+
+The second module (header2 ) has a similar compilation command:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1            \
+        -emit-module -o header2.pcm                    \
+        -fmodules module.modulemap -fmodule-name=header2 \
+        -x c++-header -fno-implicit-modules
+\end{shell}
+
+The next step is to compile main.cpp using the generated modules, which can be done as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1       \
+       -emit-obj main.cpp                         \
+       -fmodules -fmodule-map-file=module.modulemap \
+       -fmodule-file=header1=header1.pcm          \
+       -fmodule-file=header2=header2.pcm          \
+       -o main.o -fno-implicit-modules
+\end{shell}
+
+As we can see, both the module name and build artifacts (PCM files) are specified using the -fmodule-file compile option. The format used, such as header1=header1.pcm , indicates that header1.pcm corresponds to the header1 module. We also specify the modulemap file with the -fmodule-map-file option. It's worth noting that we created two build artifacts: header1.pcm and header2.pcm , and used them together for the compilation. This is impossible in the case of precompiled headers because only one precompiled header is allowed, as mentioned in Section 10.2, Precompiled headers.
+
+We emitted an object file, main.o , as a result of the compilation command. The object file can be linked as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang main.o -o main -lstdc++
+\end{shell}
+
+Let's verify that the modules were loaded during compilation. This can be done with LLDB as follows:
+
+\begin{shell}
+$ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj main.cpp -fmodules -fmodule-map-file=module.modulemap -fmodule-file=header1=header1.pcm -fmodule-file=header2=header2.pcm -o main.o -fno-implicit-modules
+ ...
+ (lldb) b clang::CompilerInstance::findOrCompileModuleAndReadAST
+ ...
+ (lldb) r
+ ...
+ Process 135446 stopped
+ * thread #1, name = 'clang', stop reason = breakpoint 1.1
+     frame #0: ... findOrCompileModuleAndReadAST(..., ModuleName=(Data = "header1", Length = 7), ...
+ ...
+ (lldb) c
+ Process 135446 stopped
+ * thread #1, name = 'clang', stop reason = breakpoint 1.1
+     frame #0: ... findOrCompileModuleAndReadAST(..., ModuleName=(Data = "header2", Length = 7), ....
+ ...
+ (lldb) c
+ Process 135446 resumed
+ Process 135446 exited with status = 0 (0x00000000)
+\end{shell}
+
+\begin{center}
+Figure 10.9: Explicit module load
+\end{center}
+
+We set a breakpoint at clang::CompilerInstance::findOrCompileModuleAndReadAST, as shown in Line 3 of Figure 10.9. We hit the breakpoint twice: first at Line 9 for the module named header1 , and then at Line 14 for the module named header2 .
+
+You must explicitly define the build artifacts and specify the path where they will be stored in all compile commands when using explicit modules, as we have just discovered. However, all the required information is stored within the modulemap file (refer to Figure 10.8). The compiler can utilize this information to create all the necessary build artifacts automatically. The answer to the question is affirmative, and this functionality is provided by implicit modules. Let's explore it.
+
+\mySamllsection{Implicit modules}
+
+As mentioned earlier, the modulemap file contains all the information required to build all modules (header1 and header2 ) and use them for dependent file (main.cpp ) building. Thus, we have to specify a path to the modulemap file and a folder where the build artifacts will be stored. This can be done as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1 \
+      -emit-obj main.cpp                  \
+      -fmodules                           \
+      -fmodule-map-file=module.modulemap  \
+      -fmodules-cache-path=./cache        \
+      -o main.o
+\end{shell}
+
+As we can see, we didn't specify -fno-implicit-modules , and we also specified the path for build artifacts with -fmodules-cache-path=./cache . If we examine the path, we will be able to see the created modules:
+
+\begin{shell}
+$ tree ./cache
+./cache
+|-- 2AL78TH69W6HR
+    |-- header1-R65CPR1VCRM1.pcm
+    |-- header2-R65CPR1VCRM1.pcm
+    |-- modules.idx
+2  directories, 3 files
+\end{shell}
+
+\begin{center}
+Figure 10.10: The cache generated by Clang for implicit modules
+\end{center}
+
+Clang will monitor the cache folder (./cache in our case) and delete build artifacts that have not been used for a long time. It will also rebuild the modules if their dependencies (for instance, included headers) have changed.
+
+Modules are a very powerful tool, but like every powerful tool, they can introduce non-trivial problems. Let's explore the most interesting problem that can be caused by modules.
+
+Some problems related to modules
+The code that uses modules can introduce some non-trivial behavior into your program. Consider a project that consists of two headers, as shown:
+
+\begin{cpp}
+#pragma once
+
+int h1 = 1;
+\end{cpp}
+
+Header file: header1.h
+
+\begin{cpp}
+#pragma once
+
+int h2 = 2;
+\end{cpp}
+
+Header file: header2.h
+
+\begin{center}
+Figure 10.11: Header files that will be used for the test
+\end{center}
+
+The only header1.h is included in main.cpp , as follows
+
+\begin{cpp}
+#include "header1.h"
+
+int main() {
+  int h = h1 + h2;
+  return 0;
+}
+\end{cpp}
+
+\begin{center}
+Figure 10.12: Source file: main.cpp
+\end{center}
+
+The code will not compile:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang  main.cpp -o main -lstdc++
+main.cpp:4:16: error: use of undeclared identifier 'h2'
+  int h = h1 + h2;
+               ^
+1  error generated.
+\end{shell}
+
+\begin{center}
+Figure 10.13: Compilation error generated due to a missing header file
+\end{center}
+
+The error is obvious because we didn't include the second header that contains a definition for the h2 variable.
+
+The situation would be different if we were using implicit modules. Consider the following module.modulemap file:
+
+\begin{cpp}
+module h1 {
+  header "header1.h"
+  export *
+  module h2 {
+    header "header2.h"
+    export *
+  }
+}
+\end{cpp}
+
+\begin{center}
+Figure 10.14: Modulemap file that introduces implicit dependencies
+\end{center}
+
+This file creates two modules, h1 and h2 . The second module is included within the first one.
+
+If we compile it as follows, the compilation will be successful:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang -cc1 \
+        -emit-obj main.cpp                \
+        -fmodules                         \
+        -fmodule-map-file=module.modulemap\
+        -fmodules-cache-path=./cache      \
+        -o main.o
+$ <...>/llvm-project/install/bin/clang main.o -o main -lstdc++
+\end{shell}
+
+\begin{center}
+Figure 10.15: Successful compilation for a file with a missing header but with implicit modules enabled
+\end{center}
+
+The compilation completed without any errors because the modulemap implicitly added header2.h to the used module (h1 ). We also exported all symbols using the export * directive. Thus, when Clang encounters \#include "header1.h", it loads the corresponding h1 module, and therefore implicitly loads symbols defined in the h2 module and header2.h header.
+
+The example illustrates how the visibility scope can be leaked when modules are used in the project. This can lead to unexpected behavior for the project build, when it builds with modules enabled and disabled.
+
+
+
+
+
+
+
+
+
+

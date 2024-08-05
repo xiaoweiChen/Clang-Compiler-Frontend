@@ -428,12 +428,12 @@ Figure 5.33: Exclude implicit declaration from the check report
 If we run the modified check on the file that contains compilation errors, we will get the following output:
 
 \begin{shell}
-error.cpp:6:15: error: out-of-line definition of ’doSometing’ ...
+error.cpp:6:15: error: out-of-line definition of 'doSometing' ...
 [clang-diagnostic-error]
 void MyClass::doSometing() {}
               ^~~~~~~~~~
 doSomething
-error.cpp:3:8: note: ’doSomething’ declared here
+error.cpp:3:8: note: 'doSomething' declared here
   void doSomething();
        ^
 Found compiler error(s).
@@ -445,7 +445,7 @@ Figure 5.34: Running a fixed misc-classchecker check on a file containing compil
 
 As we can see, the compiler error is reported, but our check does not trigger any warnings.
 
-Despite the fact that we correctly processed the unusual clang-tidy result, it’s worth noting that not every compilation error can be correctly processed. As mentioned in Section 3.7, Processing AST in the case of errors, the Clang compiler tries to produce an AST even when encountering compilation errors. This approach is because it’s designed for use by IDEs and other tools that benefit from as much information as possible, even in the presence of errors. However, this ”error-recovery” mode of the AST can produce structures that Clang-Tidy might not anticipate. Therefore, we should adhere to the following rule:
+Despite the fact that we correctly processed the unusual clang-tidy result, it's worth noting that not every compilation error can be correctly processed. As mentioned in Section 3.7, Processing AST in the case of errors, the Clang compiler tries to produce an AST even when encountering compilation errors. This approach is because it's designed for use by IDEs and other tools that benefit from as much information as possible, even in the presence of errors. However, this "error-recovery" mode of the AST can produce structures that Clang-Tidy might not anticipate. Therefore, we should adhere to the following rule:
 
 
 \begin{myTip}{Tip}

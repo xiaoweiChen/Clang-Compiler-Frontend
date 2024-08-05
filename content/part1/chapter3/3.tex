@@ -195,7 +195,7 @@ Figure 3.11: Configure and build commands for the DeclVisitor test tool
 As you may notice, we used the -DCMAKE\_BUILD\_TYPE=Debug option for CMake. The option we are using will slow down the overall performance, but we use it because we might want to investigate the resulting program under debugger.
 
 \begin{myNotic}{Important note}
-The build command we used for our tool assumes that the required libraries are installed under the <...>/llvm-project/install folder, which was specified with the-DCMAKE\_INSTALL\_PREFIX option during the CMake configure command, as described in Section 1.4, Test project – syntax check with a Clang tool. See Figure 1.12:
+The build command we used for our tool assumes that the required libraries are installed under the <...>/llvm-project/install folder, which was specified with the -DCMAKE\_INSTALL\_PREFIX option during the CMake configure command, as described in Section 1.4, Test project – syntax check with a Clang tool. See Figure 1.12:
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm

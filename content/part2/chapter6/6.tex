@@ -1,6 +1,5 @@
-\begin{markdown}
-As mentioned earlier, the CFG is foundational for other analysis tools in Clang, several of which have been created atop the CFG. These tools also employ advanced mathematics to analyze various cases. The most notable tools are as follows ^[Kristóf Umann. A Survey of Dataflow Analyses in Clang. October 2020. URL <https://lists.llvm.org/pipermail/cfe-dev/2020-October/066937.html>.]:
-\end{markdown}
+
+As mentioned earlier, the CFG is foundational for other analysis tools in Clang, several of which have been created atop the CFG. These tools also employ advanced mathematics to analyze various cases. The most notable tools are as follows \footnote{Kristóf Umann. A Survey of Dataflow Analyses in Clang. October 2020. URL \url{https://lists.llvm.org/pipermail/cfe-dev/2020-October/066937.html}.}:
 
 \begin{itemize}
 \item
@@ -21,9 +20,7 @@ Forward analysis is a method used in programming to check how data moves through
 
 UninitializedVariables analysis in Clang, designed to detect the use of variables before initialization, operates as a forward "must" analysis. It involves multiple passes, including initial code scanning for statement classification and subsequent use of a fix-point algorithm to propagate information through the CFG. Handling more sophisticated scenarios than LivenessAnalysis, it faces challenges such as lacking support for record fields and non-reusable analysis results, limiting its efficiency in certain situations.
 
-\begin{markdown}
-Thread Safety Analysis in Clang, a forward analysis, focuses on ensuring proper synchronization in multithreaded code. It computes sets of locked mutexes for each statement in a block and utilizes annotations to indicate guarded variables or functions. Translating Clang expressions into TIL (Typed Intermediate Language)^[Kristóf Umann. A Survey of Dataflow Analyses in Clang. October 2020. URL <https://lists.llvm.org/pipermail/cfe-dev/2020-October/066937.html>.], it effectively handles the complexity of C++ expressions and annotations. Despite strong C++ support and a sophisticated understanding of variable interactions, it faces limitations, such as lack of support for aliasing, which can lead to false positives.
-\end{markdown}
+Thread Safety Analysis in Clang, a forward analysis, focuses on ensuring proper synchronization in multithreaded code. It computes sets of locked mutexes for each statement in a block and utilizes annotations to indicate guarded variables or functions. Translating Clang expressions into TIL (Typed Intermediate Language) \footnote{Kristóf Umann. A Survey of Dataflow Analyses in Clang. October 2020. URL \url{https://lists.llvm.org/pipermail/cfe-dev/2020-October/066937.html}.}, it effectively handles the complexity of C++ expressions and annotations. Despite strong C++ support and a sophisticated understanding of variable interactions, it faces limitations, such as lack of support for aliasing, which can lead to false positives.
 
 
 

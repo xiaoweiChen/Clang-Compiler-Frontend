@@ -4,9 +4,7 @@ More generally, static analysis aims to check a specific property of a computer 
 
 Our Clang-Tidy check from the previous chapter (see Section 5.4, Custom Clang-Tidy check) is a good example of such a property. In reality, it takes C++ code with a class definition and decides whether the class is complex or not based on the number of methods it has.
 
-\begin{markdown}
-It's worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem ^[Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.].
-\end{markdown}
+It's worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem \footnote{Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.}.
 
 \begin{myNotic}{Important note}
 The halting problem can be formulated as follows: Given a program P and an input I, determine whether P halts or continues to run indefinitely when executed with I.

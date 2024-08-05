@@ -1,6 +1,6 @@
-\begin{markdown}
-It's worth mentioning some limitations of the analysis that can be conducted with Clang's AST and CFG. The most notable ones are mentioned here ^[Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL <https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319>.]:
-\end{markdown}
+
+It's worth mentioning some limitations of the analysis that can be conducted with Clang's AST and CFG. The most notable ones are mentioned here \footnote{Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}.}:
+
 
 \begin{itemize}
 \item
@@ -10,8 +10,7 @@ Limitations of Clang's AST: Clang's AST is unsuitable for data flow analysis and
 Issues with Clang's CFG: While Clang's CFG aims to bridge the gap between AST and LLVM IR, it encounters known problems, has limited interprocedural capabilities, and lacks adequate testing coverage.
 \end{itemize}
 
-\begin{markdown}
-One example mentioned in ^[Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL <https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319>.] relates to C++ coroutines, a new feature introduced in C++20. Some aspects of this functionality are implemented outside the Clang frontend and are not visible with tools such as Clang's AST and CFG. This limitation makes analysis, especially lifetime analysis, tricky for such functionalities.
 
-Despite these limitations, Clang's CFG remains a powerful tool widely used in compiler and compiler tool development. There is also active development of other tools ^[Bruno Cardoso Lopes. [RFC] Upstreaming ClangIR. January 2024. URL <https://discourse.llvm.org/t/rfc-upstreaming-clangir/76587>.] that aim to close the gaps in Clang's CFG capabilities.
-\end{markdown}
+One example mentioned in \footnote{Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}.} relates to C++ coroutines, a new feature introduced in C++20. Some aspects of this functionality are implemented outside the Clang frontend and are not visible with tools such as Clang's AST and CFG. This limitation makes analysis, especially lifetime analysis, tricky for such functionalities.
+
+Despite these limitations, Clang's CFG remains a powerful tool widely used in compiler and compiler tool development. There is also active development of other tools \footnote{Bruno Cardoso Lopes. [RFC] Upstreaming ClangIR. January 2024. URL \url{https://discourse.llvm.org/t/rfc-upstreaming-clangir/76587}.} that aim to close the gaps in Clang's CFG capabilities.

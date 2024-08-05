@@ -61,7 +61,7 @@ The are several LLVM/cmake options specified:
 We used -DLLVM\_USE\_SPLIT\_DWARF=ON to save some space on the disk. For instance, the Clang build (ninja clang build command) with the option enabled takes up 20 GB, but it takes up 27 GB space with the option disabled. Note that the option requires a compiler used for the build to support it. You might also notice that we create the build for one specific architecture: X86 . This option also saved some space for us because otherwise, all supported architecture will be built and the required space will also increase from 20 GB to 27 GB.
 
 \begin{myNotic}{Important note}
-You might want to avoid using the -DLLVM\_TARGETS\_TO\_BUILD="X86" setting if your host platform is different from X86, for instance, ARM. For ARM, you can use the following configuration: -DLLVM\_TARGETS\_TO\_BUILD="ARM;X86;AArch64" [LLVM Community. How To Build On ARM. 2024. URL \url{https://llvm.org/docs/HowToBuildOnARM.html}.]. The full list of supported platforms can be found in [LLVM Community. Building LLVM with CMake. 2023. URL \url{https://llvm.org/docs/CMake.html}.] and includes (as of March 2023) 19 different targets.
+You might want to avoid using the -DLLVM\_TARGETS\_TO\_BUILD="X86" setting if your host platform is different from X86, for instance, ARM. For ARM, you can use the following configuration: -DLLVM\_TARGETS\_TO\_BUILD="ARM;X86;AArch64" \footnote{LLVM Community. How To Build On ARM. 2024. URL \url{https://llvm.org/docs/HowToBuildOnARM.html}.}. The full list of supported platforms can be found in \footnote{LLVM Community. Building LLVM with CMake. 2023. URL \url{https://llvm.org/docs/CMake.html}.} and includes (as of March 2023) 19 different targets.
 \end{myNotic}
 
 

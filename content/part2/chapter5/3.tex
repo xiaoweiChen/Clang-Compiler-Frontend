@@ -1,30 +1,39 @@
 
 
-\begin{markdown}
+Clang-Tidy is built on top of Clang. At its core, Clang-Tidy leverages Clang's ability to parse and analyze source code into an AST. Each check in Clang-Tidy essentially involves defining patterns or conditions to match against this AST. When a match is found, a diagnostic can be raised, and in many cases, an automatic fix can be suggested. The tool operates on the basis of individual "checks" that target specific issues or coding styles. Checks are implemented as plugins, making Clang-Tidy extensible. The ASTMatchers library facilitates writing these checks by providing a domain-specific language to query the AST; see Section 3.5, AST matchers and the official documentation \footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} for more info. This ensures that checks are both concise and expressive. Clang-Tidy also has support for analyzing the code base using a compilation database, which provides context such as compile flags (see Chapter 9, Appendix 1: Compilation Database for more info). This comprehensive integration with Clang's internals makes Clang-Tidy a powerful static analysis tool with precise code transformation capabilities.
 
-Clang-Tidy is built on top of Clang. At its core, Clang-Tidy leverages Clang's ability to parse and analyze source code into an AST. Each check in Clang-Tidy essentially involves defining patterns or conditions to match against this AST. When a match is found, a diagnostic can be raised, and in many cases, an automatic fix can be suggested. The tool operates on the basis of individual "checks" that target specific issues or coding styles. Checks are implemented as plugins, making Clang-Tidy extensible. The ASTMatchers library facilitates writing these checks by providing a domain-specific language to query the AST; see Section 3.5, AST matchers and the official documentation ^[LLVM Community. AST Matcher Reference. 2024. URL <https://clang.llvm.org/docs/LibASTMatchersReference.html>.] for more info. This ensures that checks are both concise and expressive. Clang-Tidy also has support for analyzing the code base using a compilation database, which provides context such as compile flags (see Chapter 9, Appendix 1: Compilation Database for more info). This comprehensive integration with Clang's internals makes Clang-Tidy a powerful static analysis tool with precise code transformation capabilities.
-
-#### 5.3.1 Internal organization
+\mySubsubsection{5.3.1.}{Internal organization}
 
 The internal organization of clang-tidy within the Clang code base can be complex due to its deep integration with the Clang libraries, but at a high level, the organization can be broken down as follows:
 
-1. Source and headers: The main source code and headers for clang-tidy are located in the clang-tools-extra repository, specifically within the clang-tidy directory.
+\begin{enumerate}
+\item
+Source and headers: The main source code and headers for clang-tidy are located in the clang-tools-extra repository, specifically within the clang-tidy directory.
 
-2. Main driver: The ClangTidyMain.cpp file, located in the tool subfolder, serves as the main driver for the Clang-Tidy tool.
+\item
+Main driver: The ClangTidyMain.cpp file, located in the tool subfolder, serves as the main driver for the Clang-Tidy tool.
 
-3. Core infrastructure: Files such as ClangTidy.cpp , ClangTidy.h manage the core functionalities and options.
+\item
+Core infrastructure: Files such as ClangTidy.cpp , ClangTidy.h manage the core functionalities and options.
 
-4. Checks: Checks are organized into subdirectories based on categories (e.g., bugprone or modernize ).
+\item
+Checks: Checks are organized into subdirectories based on categories (e.g., bugprone or modernize ).
 
-5. Utilities: The utils directory contains utility classes and functions.
+\item
+Utilities: The utils directory contains utility classes and functions.
 
-6. AST Matchers: The ASTMatchers library, which we explored previously in Section 3.5, AST matchers, is integral for querying the AST.
+\item
+AST Matchers: The ASTMatchers library, which we explored previously in Section 3.5, AST matchers, is integral for querying the AST.
 
-7. Clang diagnostics: Clang-Tidy actively uses the Clang diagnostics subsystem to print diagnostics messages and suggest fixes (see Section 4.4.2, Diagnostics support).
+\item
+Clang diagnostics: Clang-Tidy actively uses the Clang diagnostics subsystem to print diagnostics messages and suggest fixes (see Section 4.4.2, Diagnostics support).
 
-8. Tests: Tests are located in the test directory and use LLVM's LIT framework (see Section 4.5.2, LLVM test framework). It's worth noting that the test folder is shared with other projects inside the clang-tools-extra folder.
+\item
+Tests: Tests are located in the test directory and use LLVM's LIT framework (see Section 4.5.2, LLVM test framework). It's worth noting that the test folder is shared with other projects inside the clang-tools-extra folder.
 
-9. Documentation: The docs directory contains documentation for Clang-Tidy. As well as the tests, the documentation is a part of other projects inside the clang-tools-extra folder.
+\item
+Documentation: The docs directory contains documentation for Clang-Tidy. As well as the tests, the documentation is a part of other projects inside the clang-tools-extra folder.
+\end{enumerate}
 
 These relationships are schematically illustrated in the following figure:
 
@@ -32,7 +41,7 @@ These relationships are schematically illustrated in the following figure:
 
 Now that we have gained an understanding of Clang-Tidy's internals and its relationship with other parts of Clang/LLVM, it's time to explore components external to the Clang-Tidy binary: its configuration and other tools that leverage the functionality provided by Clang-Tidy.
 
-#### 5.3.2 Configuration and integration
+\mySubsubsection{5.3.2.}{Configuration and integration}
 
 The Clang-Tidy binary can interact with other components, as shown in Figure 5.12.
 
@@ -52,11 +61,16 @@ The .clang-tidy file is written in YAML format. It typically contains two main k
 
 We will begin with the Checks key, which allows us to specify which checks to enable or disable:
 
-* Use - to disable a check
+\begin{itemize}
+\item
+Use - to disable a check
 
-* Use * as a wildcard to match multiple checks
+\item
+Use * as a wildcard to match multiple checks
 
-* Checks are comma-separated
+\item
+Checks are comma-separated
+\end{itemize}
 
 Here's an example:
 
@@ -70,13 +84,13 @@ Figure 5.13: Checks key of a .clang-tidy config file
 
 The next key is CheckOptions . This key allows us to set options for specific checks, with each option specified as a key-value pair. An example is provided here:
 
-```shell
+\begin{shell}
 CheckOptions:
 - key: readability-identifier-naming.NamespaceCase
   value: CamelCase
 - key: readability-identifier-naming.ClassCase
   value: CamelCase
-```
+\end{shell}
 
 \begin{center}
 Figure 5.14: CheckOptions key of a .clang-tidy config file
@@ -86,8 +100,6 @@ When Clang-Tidy is run, it searches for the .clang-tidy file in the directory of
 
 Now that we have an understanding of Clang-Tidy's internal design, it's time to create our first custom Clang-Tidy check using the information we've gathered from this and previous chapters of the book.
 
-
-\end{markdown}
 
 
 

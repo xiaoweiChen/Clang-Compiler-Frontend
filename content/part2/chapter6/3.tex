@@ -2,14 +2,16 @@ A CFG is a fundamental data structure in compiler design and static program anal
 
 A CFG consists of the following key components:
 
-\begin{markdown}
+\begin{itemize}
+\item
+Nodes: Correspond to basic blocks, a straight-line sequence of operations with one entry and one exit point
 
-* Nodes: Correspond to basic blocks, a straight-line sequence of operations with one entry and one exit point
+\item
+Edges: Represent the flow of control from one block to another, including both conditional and unconditional branches
 
-* Edges: Represent the flow of control from one block to another, including both conditional and unconditional branches
-
-* Start and end nodes: Every CFG has a unique entry node and one or more exit nodes
-\end{markdown}
+\item
+Start and end nodes: Every CFG has a unique entry node and one or more exit nodes
+\end{itemize}
 
 As an example of a CFG, consider the function to calculate the maximum of two integer numbers that we used as an example before; see Figure 2.5:
 
@@ -31,7 +33,6 @@ The corresponding CFG can be represented as follows:
 
 The diagram shown in Figure 6.2 visually represents a CFG for the max function (from Figure 6.1) with a series of connected nodes and directed edges:
 
-\begin{markdown}
 
 \begin{itemize}
 \item
@@ -56,30 +57,35 @@ Exit node: Below both the "Return a" and "Return b" nodes, converging at a point
 
 This CFG effectively illustrates how the max function processes input and reaches a decision on which value to return based on the comparison.
 
-The CFG representation can also be used to estimate function complexity. In brief, a more complex picture corresponds to a more complex system. We will use a precise definition of complexity known as cyclomatic complexity, or M ^[Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.], which can be calculated as follows:
-\end{markdown}
+The CFG representation can also be used to estimate function complexity. In brief, a more complex picture corresponds to a more complex system. We will use a precise definition of complexity known as cyclomatic complexity, or M \footnote{Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.}, which can be calculated as follows:
 
 $M = E - N + 2P$
 
 where:
 
-\begin{markdown}
-* E is the number of edges in the graph
+\begin{itemize}
+\item
+E is the number of edges in the graph
 
-* N is the number of nodes in the graph
+\item
+N is the number of nodes in the graph
 
-* P is the number of connected components (for a single CFG, P is usually 1)
-\end{markdown}
+\item
+P is the number of connected components (for a single CFG, P is usually 1)
+\end{itemize}
 
 For the max function discussed earlier, the CFG can be analyzed as follows:
 
-\begin{markdown}
-* Nodes (N): There are five nodes (Entry, a > b, Return a, b, Exit)
+\begin{itemize}
+\item
+Nodes (N): There are five nodes (Entry, a > b, Return a, b, Exit)
 
-* Edges (E): There are five edges (from Entry to a > b, from a > b to Return a, from a > b to Return b, from Return a to Exit, and from Return b to Exit)
+\item
+Edges (E): There are five edges (from Entry to a > b, from a > b to Return a, from a > b to Return b, from Return a to Exit, and from Return b to Exit)
 
-* Connected components (P): As it's a single function, P = 1
-\end{markdown}
+\item
+Connected components (P): As it's a single function, P = 1
+\end{itemize}
 
 Substituting these values into the formula, we get the following:
 

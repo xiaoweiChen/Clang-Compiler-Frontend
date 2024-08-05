@@ -212,13 +212,13 @@ implicit __int128_t '__int128'
 Figure 2.34: Clang AST dump output
 \end{center}
 
-Clang utilizes a hand-written recursive-descent parser [LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}.]. This parser can be considered simple, and this simplicity was one key reason for its selection. Additionally, the complex rules specified for the C/C++ languages necessitated an ad hoc parser with easily adaptable rules.
+Clang utilizes a hand-written recursive-descent parser \footnote{LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}.}. This parser can be considered simple, and this simplicity was one key reason for its selection. Additionally, the complex rules specified for the C/C++ languages necessitated an ad hoc parser with easily adaptable rules.
 
-Let's explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate]:
+Let's explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}:
 
 A source file together with all the headers (16.5.1.2) and source files included (15.3) via the preprocessing directive \#include, less any source lines skipped by any of the conditional inclusion (15.2) preprocessing directives, is called a translation unit.
 
-The parser first recognizes that the initial tokens from the source code correspond to a function definition, as defined in the C++ standard [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general]:
+The parser first recognizes that the initial tokens from the source code correspond to a function definition, as defined in the C++ standard \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
 
 \begin{shell}
 function-definition :
@@ -242,7 +242,7 @@ int max(...) {
 Figure 2.36: Part of the example code corresponding to function definition from C++ standard
 \end{center}
 
-The function definition necessitates a declarator and function body. We'll start with the declarator, defined in the C++ standard as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general]:
+The function definition necessitates a declarator and function body. We'll start with the declarator, defined in the C++ standard as \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general}:
 
 \begin{shell}
 declarator:
@@ -274,7 +274,7 @@ In other words, the declarator specifies a list of parameter declarations within
 Figure 2.38: Part of the example code corresponding to declarator from C++ standard
 \end{center}
 
-The function definition, as stated above, also requires a function body. The C++ standard specifies the function body as follows: [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general]
+The function definition, as stated above, also requires a function body. The C++ standard specifies the function body as follows: \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}
 
 \begin{shell}
 function-body:
@@ -286,7 +286,7 @@ function-body:
 Figure 2.39: Function body definition for C++ standard
 \end{center}
 
-Thus the function body consists of a compound statement, which is defined as follows in the C++ standard [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block]:
+Thus the function body consists of a compound statement, which is defined as follows in the C++ standard \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block}:
 
 \begin{shell}
 compound-statement:
@@ -302,7 +302,7 @@ Figure 2.40: Compound statement definition for C++ standard
 
 Therefore, it describes a sequence of statements enclosed within \{... brackets.
 
-Our program has two types of statements: the conditional (if ) statement and the return statement. These are represented in the C++ grammar definition as follows [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre]:
+Our program has two types of statements: the conditional (if ) statement and the return statement. These are represented in the C++ grammar definition as follows \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre}:
 
 \begin{shell}
 statement:
@@ -319,7 +319,7 @@ Figure 2.41: Statement definition for C++ standard
 
 In this context, the selection statement corresponds to the if condition in our program, while the jump statement corresponds to the return operator.
 
-Let's examine the jum statement in more detail [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general]:
+Let's examine the jum statement in more detail \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general}:
 
 \begin{shell}
 jump-statement:
@@ -332,7 +332,7 @@ jump-statement:
 Figure 2.42: jump statement definition for C++ standard
 \end{center}
 
-where expr-or-braced-init-list is defined as [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general]:
+where expr-or-braced-init-list is defined as \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general}:
 
 \begin{shell}
 expr-or-braced-init-list:
@@ -352,7 +352,7 @@ It can be enlightening to examine the parser's operation through the LLDB debugg
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 \end{shell}
 
-The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we've set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the 'bt' command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in [International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate].
+The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we've set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the 'bt' command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}.
 
 \begin{shell}
 1  (lldb) b clang::Parser::ParseReturnStatement
@@ -435,7 +435,7 @@ The beginning of the return statement parser can be located in frame 4:
 Figure 2.46: Return statement parsing at debugger
 \end{center}
 
-As we can observe, there is a reference to the C99 standard for the corresponding statement. The standard [International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.] provides a detailed description of the statement and the process for handling it.
+As we can observe, there is a reference to the C99 standard for the corresponding statement. The standard \footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.} provides a detailed description of the statement and the process for handling it.
 
 The code assumes that the current token is of type tok::kw\_return, and in this case, the parser invokes the relevant clang::Parser::ParseReturnStatement method.
 

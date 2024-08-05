@@ -4,7 +4,7 @@ Let's begin by covering some foundational information about LLVM, including the 
 \mySubsubsection{1.2.1.}{Short LLVM history}
 
 
-The Clang compiler is a part of the LLVM project. The project was started in 2000 by Chris Lattner and Vikram Adve as their project at the University of Illinois at Urbana–Champaign [26].
+The Clang compiler is a part of the LLVM project. The project was started in 2000 by Chris Lattner and Vikram Adve as their project at the University of Illinois at Urbana–Champaign \footnote{Chris Lattner and Vikram Adve. LLVM: A Compilation Framework for Lifelong Program Analysis \& Transformation. Proceedings of the 2004 International Symposium on Code Generation and Optimization (CGO'04), Mar 2004.}.
 
 LLVM was originally designed to be a next-generation code generation infrastructure that could be used to build optimizing compilers for many programming languages. However, it has since evolved into a full-featured platform that can be used to build a wide variety of tools, including debuggers, profilers, and static analysis tools.
 
@@ -47,7 +47,7 @@ $ sudo port install cmake
 
 On Windows, Clang can be used as a command-line compiler or as part of a larger development environment such as Visual Studio. Clang on Windows includes support for the Microsoft Visual C++ (MSVC) ABI, so you can use Clang to compile programs that use the Microsoft C runtime library (CRT) and the C++ Standard Template Library (STL). Clang also supports many of the same language features as GCC, so it can be used as a drop-in replacement for GCC on Windows in many cases.
 
-It's worth mentioning clang-cl [LLVM Community. MSVC compatibility. 2023. URL \url{https://clang.llvm.org/docs/MSVCCompatibility.html}.]. It is a command-line compiler driver for Clang that is designed to be used as a drop-in replacement for the MSVC compiler, cl.exe . It was introduced as part of the Clang compiler, and is created to be used with the LLVM toolchain.
+It's worth mentioning clang-cl \footnote{LLVM Community. MSVC compatibility. 2023. URL \url{https://clang.llvm.org/docs/MSVCCompatibility.html}.}. It is a command-line compiler driver for Clang that is designed to be used as a drop-in replacement for the MSVC compiler, cl.exe . It was introduced as part of the Clang compiler, and is created to be used with the LLVM toolchain.
 
 Like cl.exe , clang-cl is designed to be used as part of the build process for Windows programs, and it supports many of the same command-line options as the MSVC compiler. It can be used to compile C, C++, and Objective-C code on Windows, and it can also be used to link object files and libraries to create executable programs or dynamic link libraries (DLLs).
 
@@ -57,7 +57,7 @@ The development process for Windows is different from that of Unix-like systems,
 \mySubsubsection{1.2.3.}{LLVM/Clang project structure}
 
 
-The Clang source is a part of the LLVM monolithic repository (monorepo). LLVM started to use the monorepo in 2019 as a part of its transition to Git [LLVM Community. Moving LLVM Projects to GitHub. 2019. URL \url{https://llvm.org/docs/Proposals/GitHubMove.html}.]. The decision was driven by several factors, such as better code reuse, improved efficiency, and collaboration. Thus you can find all the LLVM projects in one place. As mentioned in the Preface, we will be using LLVM version 18.x in this book. The following command will allow you to download it:
+The Clang source is a part of the LLVM monolithic repository (monorepo). LLVM started to use the monorepo in 2019 as a part of its transition to Git \footnote{LLVM Community. Moving LLVM Projects to GitHub. 2019. URL \url{https://llvm.org/docs/Proposals/GitHubMove.html}.}. The decision was driven by several factors, such as better code reuse, improved efficiency, and collaboration. Thus you can find all the LLVM projects in one place. As mentioned in the Preface, we will be using LLVM version 18.x in this book. The following command will allow you to download it:
 
 \begin{shell}
 $ git clone https://github.com/llvm/llvm-project.git -b release/18.x

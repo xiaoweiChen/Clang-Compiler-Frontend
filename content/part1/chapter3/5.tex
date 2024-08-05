@@ -1,4 +1,4 @@
-AST matchers [LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.] provide another approach for locating specific AST nodes. They can be particularly useful in linters when searching for improper pattern usage or in refactoring tools when identifying AST nodes for modification.
+AST matchers \footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} provide another approach for locating specific AST nodes. They can be particularly useful in linters when searching for improper pattern usage or in refactoring tools when identifying AST nodes for modification.
 
 We will create a simple program to test AST matches. The program will identify a function definition with the name max. We will use a slightly modified CMakeLists.txt file from the previous examples to include the libraries required to support AST matches:
 

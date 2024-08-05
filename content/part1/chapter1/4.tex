@@ -101,7 +101,7 @@ Line 11: We load the LLVM CMake package from the paths specified on Line 10.
 Line 14: We specify our source file that should be compiled.
 
 \item
-Line 16: We set up an additional flag for compilation: -fno-rtti. The flag is required as soon as LLVM is built without RTTI. This is done in an effort to reduce code and executable size [LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}.].
+Line 16: We set up an additional flag for compilation: -fno-rtti. The flag is required as soon as LLVM is built without RTTI. This is done in an effort to reduce code and executable size \footnote{LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}.}.
 
 \item
 Lines 18-22 We specify the required libraries to be linked to our program.
@@ -144,7 +144,7 @@ The most important part of the file are as follows:
 
 \begin{itemize}
 \item
-Lines 7-9: The majority of compiler tools have the same set of command line arguments. The LLVM command-line library [LLVM Community. CommandLine 2.0 Library Manual. 2023. URL \url{https://llvm.org/docs/CommandLine.html}.] provides some APIs to process compiler command options. We set up the library on Line 7. We also set up additional help messages on lines 8-10.
+Lines 7-9: The majority of compiler tools have the same set of command line arguments. The LLVM command-line library \footnote{LLVM Community. CommandLine 2.0 Library Manual. 2023. URL \url{https://llvm.org/docs/CommandLine.html}.} provides some APIs to process compiler command options. We set up the library on Line 7. We also set up additional help messages on lines 8-10.
 
 \item
 Lines 13-18: We parse command-line arguments.

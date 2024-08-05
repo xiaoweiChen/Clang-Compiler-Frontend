@@ -1,20 +1,21 @@
 
-\begin{markdown}
 In this part of the chapter, we will transform our plugin example (see Section 4.6, Clang plugin project) into a Clang-Tidy check. This check will estimate the complexity of a C++ class based on the number of methods it contains. We will define a threshold as a parameter for the check.
 
 Clang-Tidy offers a tool designed to aid in the creation of checks. Let's begin by creating a skeleton for our check.
 
-#### 5.4.1. Creating a skeleton for the check
+\mySubsubsection{5.4.1}{Creating a skeleton for the check}
 
-Clang-Tidy provides a specific Python script, add_new_check.py , to assist in creating new checks. This script is located in the clang-tools-extra/clang-tidy directory. The script requires two positional parameters:
+Clang-Tidy provides a specific Python script, add\_new\_check.py , to assist in creating new checks. This script is located in the clang-tools-extra/clang-tidy directory. The script requires two positional parameters:
 
-* module : This refers to the module directory where the new tidy check will be placed. In our case, this will be misc .
+\begin{itemize}
+\item
+module : This refers to the module directory where the new tidy check will be placed. In our case, this will be misc.
 
-* check : This is the name of the new tidy check to add. For our purposes, we will name it classchecker .
+\item
+check : This is the name of the new tidy check to add. For our purposes, we will name it classchecker.
+\end{itemize}
 
 By running the script in the llvm-project directory (which contains the cloned LLVM repository), we receive the following output:
-
-\end{markdown}
 
 \begin{shell}
 $ ./clang-tools-extra/clang-tidy/add_new_check.py misc classchecker
@@ -31,34 +32,40 @@ Updating clang-tools-extra/docs/clang-tidy/checks/list.rst...
 Done. Now it's your turn!
 \end{shell}
 
-\begin{markdown}
-
 \begin{center}
 Figure 5.15: Creating a skeleton for the misc-classchecker check
 \end{center}
 
-From the output, we can observe that several files under the `clang-tools-extra/clang-tidy` directory have been updated. These files pertain to checks registration, such as `misc/MiscTidyModule.cpp`, or build configuration, such as `misc/CMakeLists.txt` . The script also generated several new files, which we need to modify in order to implement our check's desired logic:
+From the output, we can observe that several files under the clang-tools-extra/clang-tidy directory have been updated. These files pertain to checks registration, such as misc/MiscTidyModule.cpp, or build configuration, such as misc/CMakeLists.txt. The script also generated several new files, which we need to modify in order to implement our check's desired logic:
 
-* `misc/ClasscheckerCheck.h` : This is the header file for our check
-* `misc/ClasscheckerCheck.cpp` : This file will house the implementation of our check
+\begin{itemize}
+\item
+misc/ClasscheckerCheck.h : This is the header file for our check
 
-Additionally, the script has generated a LIT test for our check, named `ClassChecker.cpp`. This test can be found in the `clang-tools-extra/test/clang-tidy/checkers/misc` directory.
+\item
+misc/ClasscheckerCheck.cpp : This file will house the implementation of our check
+\end{itemize}
+
+Additionally, the script has generated a LIT test for our check, named ClassChecker.cpp. This test can be found in the clang-tools-extra/test/clang-tidy/checkers/misc directory.
 
 Apart from the source files, the script also modifies some documentation files in the clang-tools-extra/docs directory:
 
-* `ReleaseNotes.rst` : This file contains updated release notes with placeholder entries for our new check
+\begin{itemize}
+\item
+ReleaseNotes.rst : This file contains updated release notes with placeholder entries for our new check
 
-* `clang-tidy/checks/misc/classchecker.rst` : This serves as the primary documentation for our check
+\item
+clang-tidy/checks/misc/classchecker.rst : This serves as the primary documentation for our check
 
-* `clang-tidy/checks/list.rst` : The list of checks has been updated to include our new check alongside other checks from the 'misc ' module
+\item
+clang-tidy/checks/list.rst : The list of checks has been updated to include our new check alongside other checks from the 'misc' module
+\end{itemize}
 
 We will now turn our attention to implementing the check and the subsequent build process.
 
-#### 5.4.2. Clang-Tidy check implementation
+\mySubsubsection{5.4.2}{Clang-Tidy check implementation}
 
-We'll begin by modifying `ClasscheckerCheck.cpp`. The generated file can be found in the `clang-tools-extra/clang-tidy/misc` directory. Let's replace the generated code with the following (note: the generated comment containing the license info has been omitted for brevity):
-
-\end{markdown}
+We'll begin by modifying ClasscheckerCheck.cpp. The generated file can be found in the clang-tools-extra/clang-tidy/misc directory. Let's replace the generated code with the following (note: the generated comment containing the license info has been omitted for brevity):
 
 \begin{cpp}
 #include "ClasscheckerCheck.h"
@@ -91,18 +98,15 @@ void ClasscheckerCheck::check(const MatchFinder::MatchResult &Result) {
 } // namespace clang::tidy::misc
 \end{cpp}
 
-\begin{markdown}
-
 \begin{center}
 Figure 5.16: Modifications to ClasscheckerCheck.cpp
 \end{center}
 
 We replaced the original stub with Lines 15-35 to implement the necessary changes.
 
-To integrate our check into the Clang-Tidy binary, we can execute the standard build procedure from the `build` directory within the LLVM source tree; see Figure 5.2.
+To integrate our check into the Clang-Tidy binary, we can execute the standard build procedure from the build directory within the LLVM source tree; see Figure 5.2.
 
-The name of our check is defined in the modified `MiscTidyModule.cpp` file in `clang-tools-extra/clang-tidy/misc` folder:
-\end{markdown}
+The name of our check is defined in the modified MiscTidyModule.cpp file in clang-tools-extra/clang-tidy/misc folder:
 
 \begin{cpp}
 class MiscModule : public ClangTidyModule {
@@ -178,18 +182,15 @@ class Simple {
     ^
 \end{shell}
 
-\begin{markdown}
-
 \begin{center}
 Figure 5.21: Output of the misc-classchecker check for the test.cpp test file
 \end{center}
 
 After testing the file with custom source code, it's time to create an LIT test for our check.
 
-#### 5.4.3. LIT test
+\mySubsubsection{5.4.3}{LIT test}
 
-For the LIT test, we will use the slightly modified code from Figure 4.43. Let's modify `classchecker.cpp`, located in the `clang-tools-extra/test/clang-tidy/checkers/misc` folder, as follows:
-\end{markdown}
+For the LIT test, we will use the slightly modified code from Figure 4.43. Let's modify classchecker.cpp, located in the clang-tools-extra/test/clang-tidy/checkers/misc folder, as follows:
 
 \begin{cpp}
 // RUN: %check_clang_tidy %s misc-classchecker %t
@@ -247,9 +248,7 @@ We can also use the command shown in Figure 5.3 to run all clang-tidy checks, i
 
 When we run our check on a real code base, as opposed to synthetic tests, we may encounter unexpected results. One such issue has already been discussed in Section 3.7, Processing AST in the case of errors and pertains to the impact of compilation errors on Clang-Tidy results. Let's delve into this problem using a specific example.
 
-\begin{markdown}
-#### 5.4.4. Results in the case of compilation errors
-\end{markdown}
+\mySubsubsection{5.4.4}{Results in the case of compilation errors}
 
 Clang-Tidy uses AST as the information provider for checks, and the checks can produce wrong results if the information source is broken. The typical case is when the analyzed code has compilation errors (see Section 3.7, Processing AST in the case of errors).
 
@@ -295,9 +294,7 @@ Our check seems to be working incorrectly with this code. It assumes the class h
 
 The case of compilation errors can be considered an edge case, and we can process it correctly. Before addressing these cases, we should investigate the produced AST to examine the issue.
 
-\begin{markdown}
-#### 5.4.5. Compilation errors as edge cases
-\end{markdown}
+\mySubsubsection{5.4.5}{Compilation errors as edge cases}
 
 Let's use clang-query (see Section 3.6, Explore Clang AST with clang-query) to explore what has happened with the AST. The program with the error fixed is shown in the following figure:
 

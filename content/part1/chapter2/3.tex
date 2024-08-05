@@ -193,7 +193,7 @@ As we can see from Line 7, the breakpoint was set but the process finished succe
 Understanding the internals of the Clang driver can help us identify the problem at hand. As mentioned earlier, the clang executable acts as a driver in this context, running two separate processes (refer to Figure 2.21). Therefore, if we wish to debug the compiler, we need to run it using the -cc1 option.
 
 \begin{myNotic}{Important note}
-It's worth mentioning a certain optimization implemented in Clang in 2019 [Alexandre Ganea. [Clang][Driver] Re-use the calling process instead of creating a new process for the cc1 invocation. 2019. URL \url{https://reviews.llvm.org/D69825}.]. When using the -c option, the Clang driver doesn't spawn a new process for the compiler:
+It's worth mentioning a certain optimization implemented in Clang in 2019 \footnote{Alexandre Ganea. [Clang][Driver] Re-use the calling process instead of creating a new process for the cc1 invocation. 2019. URL \url{https://reviews.llvm.org/D69825}.}. When using the -c option, the Clang driver doesn't spawn a new process for the compiler:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -c hello.cpp  \

@@ -3,21 +3,6 @@
 
 \documentclass[11pt,a4paper,UTF8]{book}
 
-%from https://liam.page/2020/03/30/writing-manuscript-in-Markdown-and-typesetting-with-LaTeX/
-\usepackage{markdown}
-\ExplSyntaxOn
-\markdownSetup{
-    fencedCode = true,
-    hybrid = true,
-    inlineFootnotes = true,
-    renderers = {
-        link = {
-            \href{#3}{#1}
-        },
-    }
-}
-\ExplSyntaxOff
-
 \interfootnotelinepenalty=10000
 
 \usepackage{textcomp}
@@ -27,15 +12,25 @@
 \usepackage{authblk}
 
 \usepackage{fontspec}                  %引入字体设置宏包
-\setmainfont{Times New Roman}             %设置英文正文字体
+%\setmainfont{Times New Roman}             %设置英文正文字体
 % Courier New
 % Book Antique
-\setsansfont{Arial}                    %英文无衬线字体
-\setmonofont{Courier New}              %英文等宽字体
+%\setmainfont{Courier New}
+% https://github.com/source-foundry/Hack-windows-installer/releases/tag/v1.6.0
+\setmainfont{Hack}
+%\setsansfont{Arial}                    %英文无衬线字体
+%\setmonofont{Courier New}              %英文等宽字体
 
 \usepackage{ctex} %导入中文包
 %\usepackage{ulem}
 \usepackage{tocvsec2}
+
+% https://github.com/notofonts/noto-cjk/releases
+% https://github.com/adobe-fonts/source-han-serif/releases
+% 解压完成后放至texlive的字体目录下，例如 D:\Program Files\texlive\2023\texmf-dist\fonts\opentype\public dir
+% 查看可用的中文字体的命令： fc-list :lang=zh
+% https://blog.amito.me/2015/10/Setup-Chinese-Environment-with-XeTeX/
+\setCJKmainfont{SourceHanSerifSC-SemiBold} % "SC" 表示简体中文版本
 
 \usepackage{tabularx}
 \usepackage{longtable}

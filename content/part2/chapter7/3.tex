@@ -1,0 +1,23 @@
+We plan to investigate FixItHint, which is a part of the Clang Diagnostics subsystem (see Section 4.4.2, Diagnostics support). FixItHint can be integrated with clang::Rewriter and clang::tooling::Replacement explored previously, providing advanced diagnostics that are used in powerful tools such as Clang-Tidy.
+
+
+\mySubsubsection{7.3.1.}{FixItHint}
+
+clang::FixItHint is a class in the Clang compiler that significantly enhances its diagnostic capabilities. Its primary role is to provide automated suggestions for correcting code errors or issues that the compiler detects. These suggestions, known as ”fix-its,” are a part of Clang’s diagnostic messages and are intended to guide developers in resolving identified issues in their code.
+
+When Clang encounters a coding error, warning, or stylistic issue, it generates a FixItHint. This hint contains specific recommendations for changes in the source code. For instance, it may suggest replacing a snippet of text with a corrected version or inserting or removing code at a particular location.
+
+For example, consider the following source code:
+
+\begin{cpp}
+void foo() {
+  constexpr int a = 0;
+  constexpr const int *b = &a;
+}
+\end{cpp}
+
+\begin{center}
+Figure 7.13: Test file foo.cpp
+\end{center}
+
+If we run a compilation for the file, we will get the following error:

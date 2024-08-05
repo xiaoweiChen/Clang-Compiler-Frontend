@@ -1,0 +1,35 @@
+
+Clang is renowned for its ability to provide suggestions for code fixes. For instance, if you miss a semicolon, Clang will suggest that you insert it. The ability to modify source code goes beyond the compilation process and is widely used in various tools for code modifications, particularly in refactoring tools. The ability to offer fixes is a powerful feature that extends the capabilities of a linter framework, such as Clang-Tidy, which not only detects issues but also provides suggestions for fixing them.
+
+In this chapter, we will explore refactoring tools. We will begin by discussing the fundamental classes used for code modification, notably clang::Rewriter. We will use Rewriter to build a custom refactoring tool that changes method names within a class. Later in the chapter, we will reimplement the tool using Clang-Tidy and delve into clang::FixItHint, a component of the Clang Diagnostics subsystem that is employed by both Clang-Tidy and the Clang compiler to modify source code.
+
+To conclude the chapter, we will introduce a crucial Clang tool called Clang-Format. This tool is widely employed for code formatting. We will explore the functionality offered by the tool, delve into its design, and understand the rationale behind specific design decisions made during its development.
+
+The chapter covers the following topics:
+
+\begin{itemize}
+\item
+How to create a custom Clang tool for code refactoring
+
+\item
+How to integrate code modifications into a Clang-Tidy check
+
+\item
+An overview of Clang-Format and how it can be integrated with Clang-Tidy
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,152 @@
+We are going to use the knowledge gained in Section 5.4, Custom Clang-Tidy check to create a custom CFG check. As mentioned previously, the check will use Clang’s CFG to calculate cyclomatic complexity. The check should issue a warning if the calculated
+
+complexity exceeds a threshold. This threshold will be set up as a configuration parameter, allowing us to change it during our tests. Let’s start with the creation of the project skeleton.
+
+
+\mySubsubsection{6.4.1.}{Creating the project skeleton}
+
+We will use cyclomaticcomplexity as the name for our check, and our project skeleton can be created as follows:
+
+\begin{shell}
+$ ./clang-tools-extra/clang-tidy/add_new_check.py misc cyclomaticcomplexity
+\end{shell}
+
+\begin{center}
+Figure 6.3: Creating a skeleton for the misc-cyclomaticcomplexity check
+\end{center}
+
+As a result of the run, we will get a number of modified and new files. The most important ones for us are the following two files located in the clang-tools-extra/clang-tidy/misc/ folder:
+
+\begin{itemize}
+\item
+misc/CyclomaticcomplexityCheck.h : This is the header file for our check
+
+\item
+misc/CyclomaticcomplexityCheck.cpp : This file will house the implementation of our check
+\end{itemize}
+
+These files need to be modified to achieve the required functionality for the check.
+
+\mySubsubsection{6.4.2.}{Check implementation}
+For the header file, we aim to add a private function to calculate the cyclomatic complexity. Specifically, the following code needs to be inserted:
+
+\begin{cpp}
+private:
+  unsigned calculateCyclomaticComplexity(const CFG *cfg);
+\end{cpp}
+
+\begin{center}
+Figure 6.4: Modifications to CyclomaticcomplexityCheck.h
+\end{center}
+
+More substantial modifications are required in the .cpp file. We will begin with the implementation of the registerMatchers method, as follows:
+
+\begin{cpp}
+void CyclomaticcomplexityCheck::registerMatchers(MatchFinder *Finder) {
+  Finder->addMatcher(functionDecl().bind("func"), this);
+}
+\end{cpp}
+
+\begin{center}
+Figure 6.5: Modifications to CyclomaticcomplexityCheck.cpp: registerMatchers implementation
+\end{center}
+
+Based on the code, our check will be applied only to function declarations, clang::FunctionDecl. The code can also be extended to support other C++ constructs.
+
+The implementation of the check method is presented in Figure 6.6. At Lines 22-23, we perform basic checks on the matched AST node, clang::FunctionDecl in our case. At Lines 25-26, we create the CFG object using the CFG::buildCFG method. The first two parameters specify the declaration (clang::Decl) and the statement for the declaration (clang::Stmt). At Line 30, we calculate the cyclomatic complexity using the threshold, which can be obtained as the "Threshold" option of our check. This provides flexibility in testing for different input programs. Lines 31-34 contain the implementation of the check result printout.
+
+\begin{cpp}
+void CyclomaticcomplexityCheck::check(const MatchFinder::MatchResult &Result) {
+  const auto *Func = Result.Nodes.getNodeAs<FunctionDecl>("func");
+  if (!Func || !Func->hasBody()) return;
+
+  std::unique_ptr<CFG> cfg =
+    CFG::buildCFG(Func, Func->getBody(), Result.Context, CFG::BuildOptions());
+  if (!cfg) return;
+  unsigned Threshold = Options.get("Threshold", 5);
+  unsigned complexity = calculateCyclomaticComplexity(cfg.get());
+  if (complexity > Threshold) {
+    diag(Func->getLocation(), "function %0 has high cyclomatic complexity (%1)")
+      << Func << complexity;
+  }
+}
+\end{cpp}
+
+\begin{center}
+Figure 6.6: Modifications to CyclomaticcomplexityCheck.cpp: check implementation
+\end{center}
+
+The calculateCyclomaticComplexity method is used to calculate the cyclomatic complexity. It takes the created clang::CFG object as an input parameter. The implementation is shown in the following figure:
+
+\begin{cpp}
+unsigned CyclomaticcomplexityCheck::calculateCyclomaticComplexity(
+    const CFG *cfg) {
+  unsigned edges = 0;
+  unsigned nodes = 0;
+
+  for (const auto *block : *cfg) {
+    edges += block->succ_size();
+    ++nodes;
+  }
+
+  return edges - nodes + 2;  // Simplified formula
+}
+\end{cpp}
+
+\begin{center}
+Figure 6.7: Modifications to CyclomaticcomplexityCheck.cpp: calculateCyclomaticComplexity implementation
+\end{center}
+
+We iterate over all CFG blocks at Lines 42-45. The number of blocks corresponds to the number of nodes, denoted as N in Figure 6.2. We sum up the number of successors for each block to calculate the number of edges, denoted as E. We assume that the number of connected components, denoted as P, is equal to one for our simplified example.
+
+After implementing the check, it’s time to build and run our new check on our example; see Figure 6.1.
+
+\mySubsubsection{6.4.3.}{Building and testing the cyclomatic complexity check}
+
+We will use the basic build configuration specified in Figure 1.4 and build Clang-Tidy using the standard command from Figure 5.2:
+
+\begin{shell}
+$ ninja install-clang-tidy
+\end{shell}
+
+Assuming the build configuration from Figure 1.4, this command will install the Clang-Tidy binary in the <...>/llvm-project/install/bin folder.
+
+\begin{myNotic}{Important note}
+If you use a build configuration with shared libraries (with the BUILD\_SHARED\_LIBS flag set to ON ), as shown in Figure 1.12, then you might need to install and built all artifacts with ninja install .
+\end{myNotic}
+
+We will run our check on the example program shown in Figure 6.1. As we previously calculated, the cyclomatic complexity for the test is 2, which is lower than the default value of 5 specified at Line 29 in our check method implementation, as seen in Figure 6.6. Thus, we need to override the default value to 1 to be able to see a warning in our test program. This can be done using the -config option, which we previously used for classchecker check tests, as shown in Figure 5.20. The command for the test will look as follows:
+
+\begin{shell}
+$ <...>/llvm-project/install/bin/clang-tidy                         \
+  -checks="-*,misc-cyclomaticcomplexity"                            \
+  -config="{CheckOptions:                                           \
+         [{key: misc-cyclomaticcomplexity.Threshold, value: ’1’}]}" \
+   max.cpp                                                          \
+   -- -std=c++17
+\end{shell}
+
+\begin{center}
+Figure 6.8: Testing cyclomatic complexity on the max.cpp example
+\end{center}
+
+Line 2 in Figure 6.8 indicates that we want to run only one Clang-Tidy check: misc-cyclomaticcomplexity . At lines 3-4, we set up the required threshold. Line 5 specifies the name of the file being tested (max.cpp in our case), and the final line, Line 6, contains some compilation flags for our program.
+
+We will get the following output if we run the command from Figure 6.8:
+
+\begin{shell}
+max.cpp:1:5: warning: function ’max’ has high cyclomatic complexity (2) ...
+int max(int a, int b) {
+    ^
+\end{shell}
+
+\begin{center}
+Figure 6.9: Testing cyclomatic complexity on the max.cpp example: output
+\end{center}
+
+The following question might arise: How does Clang build the CFG? We can use a debugger to investigate the process.
+
+
+
+
+

@@ -1,14 +1,14 @@
-In this chapter, we will examine the internal architecture of Clang and its relationship with other LLVM components. We will begin with an overview of the overall compiler architecture, with a specific focus on the clang driver. As the backbone of the compiler, the driver runs all compilation phases and controls their execution. Finally, we will concentrate on the frontend portion of the Clang compiler, which includes lexical and semantic analysis, and produces an Abstract Syntax Tree (AST ) as its primary output. The AST forms the foundation for most Clang tools, and we will examine it more closely in the next chapters.
+在本章中，我们将研究Clang的内部架构及其与其他LLVM组件的关系。我们将从整体编译器架构的概述开始，特别关注Clang驱动程序。作为编译器的骨干，驱动程序运行所有编译阶段并控制它们的执行。最后，我们将专注于Clang编译器的前端部分，包括词法分析和语义分析，并产生抽象语法树（AST）作为其主要输出。AST是大多数Clang工具的基础，我们将在下一章中更详细地研究它。
 
-The following topics will be covered in this chapter:
+本章将涵盖以下主题：
 
 \begin{itemize}
 \item
-Compiler overview
+编译器概述
 
 \item
-Clang driver overview, including an explanation of the compilation phases and their execution
+Clang驱动程序概述，包括编译阶段及其执行的解释
 
 \item
-Clang frontend overview covering the preprocessing step, parsing, and semantic analysis
+Clang前端概述，涵盖预处理步骤、解析和语义分析
 \end{itemize}

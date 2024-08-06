@@ -1,55 +1,55 @@
-For our first test project, we will create a simple Clang tool that runs the compiler and checks the syntax for the provided source file. We will create a so-called out-of-tree LLVM project, that is, a project that will use LLVM but will be located outside the main LLVM source tree.
+为了我们的第一个测试项目，我们将创建一个简单的Clang工具，该工具运行编译器并检查提供的源文件的语法。我们将创建一个所谓的树外LLVM项目，即一个将使用LLVM但位于主LLVM源树外的项目。
 
-Several actions are required to create the project:
+创建项目需要执行以下几项操作：
 
 \begin{itemize}
 \item
-The required LLVM libraries and headers have to be built and installed
+必须构建和安装所需的LLVM库和头文件
 
 \item
-We have to create a build configuration file for our test project
+需要为测试项目创建一个构建配置文件
 
 \item
-The source code that uses LLVM has to be created
+使用LLVM的源代码必须创建
 \end{itemize}
 
-We will start with the first step and install the Clang support libraries and headers. We will use the following configuration command for CMake:
+从第一步开始，并安装Clang支持库和头文件。我们将使用以下CMake配置命令：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
 \end{shell}
 
 \begin{center}
-Figure 1.12: LLVM CMake configuration for a simple syntax checking Clang tool
+图 1.12: LLVM CMake配置，用于简单的语法检查Clang工具
 \end{center}
 
-As you may have noticed, we enabled only one project: clang. All other options are standard for our debug build. The command has to be run from a created build folder inside the LLVM source tree, as was suggested in Section 1.3.1, Configuration with CMake.
+如您所注意到的，我们只启用了一个项目：clang。所有其他选项都是我们调试构建的标准配置。该命令必须从LLVM源树中创建的构建文件夹中运行，如在第1.3.1节"使用CMake进行配置"中建议的那样。
 
-\begin{myNotic}{Important note}
-The configuration specified in Figure 1.12 will be the default build configuration used throughout the book.
+\begin{myNotic}{重要提示}
+图1.12中指定的配置将在整本书中作为默认构建配置使用。
 \end{myNotic}
 
-The configuration with shared libraries, in addition to the reduced size, has the advantage of simplifying the specification of dependencies. You only need to specify the shared libraries that your project directly depends on, and the dynamic linker takes care of the rest.
+使用共享库的配置，除了减少大小外，还有简化依赖项指定的优点。您只需要指定您的项目直接依赖的共享库，动态链接器将处理其余部分。
 
-The required libraries and headers can be installed with the following command:
+所需的库和头文件可以通过以下命令安装：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-The libraries and headers will be installed into install folder, as was specified by the CMAKE\_INSTALL\_PREFIX option.
+库和头文件将被安装到通过CMAKE\_INSTALL\_PREFIX选项指定的安装文件夹中。
 
-We have to create two files for our project:
+我们需要为我们的项目创建两个文件：
 
 \begin{itemize}
 \item
-CMakeLists.txt: The project configuration file
+CMakeLists.txt: 项目配置文件
 
 \item
-TestProject.cpp: The project source code
+TestProject.cpp: 项目源代码
 \end{itemize}
 
-The project configuration file, CMakeLists.txt , will accept a path to the LLVM install folder via the LLVM\_HOME environment variable. The file is as follows:
+项目配置文件，CMakeLists.txt，将通过LLVM\_HOME环境变量接受LLVM安装文件夹的路径。该文件如下所示：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -79,35 +79,35 @@ endif()
 \end{cmake}
 
 \begin{center}
-Figure 1.13: CMake file for simple syntax check Clang Tool
+图 1.13: 用于简单语法检查Clang工具的CMake文件
 \end{center}
 
-The most important parts of the file are as follows:
+文件中最重要的部分如下：
 
 \begin{itemize}
 \item
-Line 2: We specify the project name (syntax-check). That is also the name of our executable.
+第2行：我们指定了项目名称（syntax-check）。这同时也是我们可执行文件的名称。
 
 \item
-Lines 4-7: Test for the LLVM\_HOME environment variable.
+第4-7行：测试LLVM\_HOME环境变量。
 
 \item
-Line 10: We set a path to the LLVM CMake helpers.
+第10行：我们设置了LLVM CMake帮助器的路径。
 
 \item
-Line 11: We load the LLVM CMake package from the paths specified on Line 10.
+第11行：我们从第10行指定的路径加载LLVM CMake包。
 
 \item
-Line 14: We specify our source file that should be compiled.
+第14行：我们指定了我们应该编译的源文件。
 
 \item
-Line 16: We set up an additional flag for compilation: -fno-rtti. The flag is required as soon as LLVM is built without RTTI. This is done in an effort to reduce code and executable size \footnote{LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}.}.
+第16行：我们设置了额外的编译标志：-fno-rtti。当LLVM没有构建RTTI时，这个标志是必需的。这是为了减少代码和可执行文件大小而进行的努力 \footnote{LLVM社区. LLVM编码标准. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}。}。
 
 \item
-Lines 18-22 We specify the required libraries to be linked to our program.
+第18-22行：我们指定要链接到我们程序的必需库
 \end{itemize}
 
-The source code for our tool is as follows:
+我们的工具源代码如下：
 
 \begin{cpp}
 #include "clang/Frontend/FrontendActions.h" // clang::SyntaxOnlyAction
@@ -137,26 +137,26 @@ int main(int argc, const char **argv) {
 \end{cpp}
 
 \begin{center}
-Figure 1.14: SyntaxCheck.cpp
+图 1.14: SyntaxCheck.cpp
 \end{center}
 
-The most important part of the file are as follows:
+文件中最重要的部分如下：
 
 \begin{itemize}
 \item
-Lines 7-9: The majority of compiler tools have the same set of command line arguments. The LLVM command-line library \footnote{LLVM Community. CommandLine 2.0 Library Manual. 2023. URL \url{https://llvm.org/docs/CommandLine.html}.} provides some APIs to process compiler command options. We set up the library on Line 7. We also set up additional help messages on lines 8-10.
+第7-9行：大多数编译器工具都有一套相同的命令行参数。LLVM命令行库 \footnote{LLVM社区. CommandLine 2.0库手册. 2023. URL \url{https://llvm.org/docs/CommandLine.html}。} 提供了一些API来处理编译器命令选项。我们在第7行设置了该库。我们在第8-10行设置了额外的帮助信息。
 
 \item
-Lines 13-18: We parse command-line arguments.
+第13-18行：我们解析命令行参数。
 
 \item
-Lines 19-24: We create and run our Clang tool.
+第19-24行：我们创建并运行我们的Clang工具。
 
 \item
-Lines 22-23: We use the clang::SyntaxOnlyAction frontend action, which will run syntax and semantic checks on the input file. You can get more info about frontend actions in Section 2.4.1, Frontend action.
+第22-23行：我们使用clang::SyntaxOnlyAction前端动作，它将在输入文件上运行语法和语义检查。
 \end{itemize}
 
-We have to specify a path to the LLVM install folder to build our tool. As was mentioned earlier, the path has to be specified via the LLVM\_HOME environment variable. Our configuration command (see Figure 1.12) specifies the path as the install folder inside the LLVM project source tree. Thus we can build our tool as follows:
+我们必须指定LLVM安装文件夹的路径来构建我们的工具。如之前所述，路径必须通过LLVM\_HOME环境变量指定。我们的配置命令（见图1.12）将路径指定为LLVM项目源树中的安装文件夹。因此，我们可以按照以下方式构建我们的工具：
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -167,10 +167,10 @@ ninja
 \end{shell}
 
 \begin{center}
-Figure 1.15: The syntax-check build commands
+图 1.15: syntax-check构建命令
 \end{center}
 
-We can run the tool as follows:
+我们可以按照以下方式运行工具：
 
 \begin{shell}
 $ cd build
@@ -180,10 +180,10 @@ USAGE: syntax-check [options] <source0> [... <sourceN>]
 \end{shell}
 
 \begin{center}
-Figure 1.16: The syntax-check –help output
+图 1.16: The syntax-check –help 输出
 \end{center}
 
-The program will successively terminate if we run it on a valid C++ source file, but it will produce an error message if it's run on a broken C++ file:
+如果我们在一个有效的C++源文件上运行程序，它将依次退出；但如果在一个有语法错误的C++文件上运行，它会产生一个错误消息：
 
 \begin{shell}
 $ ./syntax-check mainbroken.cpp -- -std=c++17
@@ -196,12 +196,12 @@ Error while processing mainbroken.cpp.
 \end{shell}
 
 \begin{center}
-Figure 1.17: The syntax-check run on a file with a syntax error
+图 1.17: 在语法错误文件上运行syntax-check
 \end{center}
 
-We used '- -' to pass additional arguments to the compiler in Figure 1.17, specifically indicating that we want to use C++17 with the option '-std=c++17'.
+我们在图1.17中使用'-{}-'将附加参数传递给编译器，具体指定我们想要使用C++17，选项'-std=c++17'。
 
-We can also run our tool with the LLDB debugger:
+我们还可以使用LLDB调试器运行我们的工具：
 
 \begin{shell}
 $  <...>/llvm-project/install/bin/lldb \
@@ -212,12 +212,12 @@ $  <...>/llvm-project/install/bin/lldb \
 \end{shell}
 
 \begin{center}
-Figure 1.18: The syntax-check run under debugger
+图 1.18: 在调试器下运行syntax-check
 \end{center}
 
-We run syntax-check as the primary binary and set main.cpp source file as an argument for the tool (Figure 1.18). We also pass additional compilation flags (-std=c++17) to the syntax-check executable.
+我们以syntax-check为主程序，将main.cpp源文件作为工具的参数（图1.18）。我们还向syntax-check可执行文件传递了附加的编译标志(-std=c++17)。
 
-We can set a breakpoint and run the program as follows:
+我们可以设置断点并按照以下方式运行程序：
 
 \begin{shell}
 1  (lldb) b clang::ParseAST
@@ -242,13 +242,13 @@ We can set a breakpoint and run the program as follows:
 \end{shell}
 
 \begin{center}
-Figure 1.19: LLDB session for Clang Tool test project
+图 1.19: LLDB交互会话，用于Clang工具测试项目
 \end{center}
 
 
-We set a breakpoint in the clang::ParseAST function (Figure 1.19, line 1). The function is the primary entry point for source code parsing. We run the program on Line 3 and continue the execution after the breakpoint on Line 16.
+我们在clang::ParseAST函数中设置了一个断点（图1.19，第1行）。该函数是源代码解析的主要入口点。我们在第3行运行程序，并在第16行继续执行断点后的程序。
 
-We will use the same debugging techniques later in the book when we investigate Clang's source code.
+在本书的后续章节中，我们将使用相同的调试技术来调查Clang的源代码。
 
 
 

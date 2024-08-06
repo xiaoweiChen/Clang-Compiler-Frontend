@@ -64,7 +64,7 @@ Figure 2.16: Compilation phases for hello.cpp
 
 We can visualize the output as shown in Figure 2.17.
 
-\myGraphic{0.4}{content/part1/chapter2/images/17.png}{Figure 2.17: Clang driver phases}
+\myGraphic{0.6}{content/part1/chapter2/images/17.png}{Figure 2.17: Clang driver phases}
 
 As we can see in Figure 2.17, the driver receives an input file, hello.cpp , which is a C++ file. The file is processed by the preprocessor and we obtain the preprocessor output (marked as c++-cpp-output ). The result is compiled into IR form by the compiler, and then the backend converts it into assembly form. This form is later transformed into an object file. The final object file is combined with another object (libstdc++ ) to produce the final binary (image ).
 

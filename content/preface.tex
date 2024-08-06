@@ -1,87 +1,85 @@
-Low Level Virtual Machine (LLVM), is a collection of modular and reusable compiler and toolchain technologies used to develop compilers and compiler tools, such as linters and refactoring tools. LLVM is written in C++ and can be considered a good example of a well-structured project that uses interesting techniques aimed at making it reusable and efficient. The project can also be considered an excellent example of compiler architecture; diving into it will give you a sense of how compilers are organized and how they function. This should help to understand usage patterns and apply them accordingly.
+Low Level Virtual Machine (LLVM)是一套模块化和可重用的编译器及工具链技术，用于开发编译器和编译器工具，例如:代码检查器和重构工具。LLVM是用C++编写的，是一个结构良好项目的典范，它使用了有趣的技术，旨在使其可重用且高效。该项目也可视为编译器架构的杰出示例；深入研究，将了解编译器的组织方式和功能，这有助于理解使用模式并应用。
 
-One of the key components of LLVM is the C/C++ compiler known as Clang. This compiler is widely used across various companies and has been designated as the default compiler for certain development environments, notably for macOS development. Clang will be the primary focus of our investigation in this book, with particular attention to its frontend—the part that is closest to the C/C++ programming language. Specifically, the book will include examples demonstrating how the C++ standard is implemented within the compiler.
+LLVM的关键组件之一是名为Clang的C/C++编译器。这款编译器在多家公司中得到了广泛使用，并指定为某些开发环境中的默认编译器，尤其是在macOS开发中。Clang将是我们在本书中的主要研究对象，特别关注其前端——即与C/C++编程语言最接近的部分。具体来说，书中将包括示例，展示C++标准如何在编译器中实现。
 
-A pivotal aspect of LLVM's design is its modularity, which facilitates the creation of custom tools that exploit the compiler's comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project's needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
+LLVM设计的核心要素是其模块性，这便于创建利用编译器全面能力的定制工具。书中涵盖的一个显著示例是Clang-Tidy代码检查器框架，旨在识别不良的代码模式并更正。尽管它包含了数百项检查，但可能找不到特定于自己项目需求的检查，所以这本书将提供从头开始开发此类检查所需的基础知识。
 
-LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book's content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
+LLVM是一个积极发展的项目，每年会有两个主要版本发布。撰写本书时，最新的稳定版本是17版。与此同时，18版的发布候选版本已于2024年1月推出，预计其正式发布将与本书的出版同步。本书的内容已经针对最新的编译器版本18进行了验证，确保内容是基于当前最新编译器实现的见解。
 
-\myChapterNoFile{}{Who this book is for}
+\myChapterNoFile{}{关于本书}
 
-The book is written for C++ engineers who don't have prior knowledge of compilers but wish to gain this knowledge and apply it to their daily activities. It provides an overview of the Clang compiler frontend, an essential yet often underestimated part of LLVM. This section of the compiler, along with a collection of powerful tools, enables programmers to enhance code quality and the overall development process. For example, Clang-Tidy offers more than 500 different lint checks that detect anti-patterns in code (such as use after move) and help maintain code style and standards. Another notable tool is Clang-Format, which allows specifying various formatting rules suitable for your project. These tools can also be considered an integral part of the development process. For instance, the language server (Clangd) is a critical service providing navigation and refactoring support for your IDE.
+阅读前，需要具备C++的理解，尤其是C++17，因为LLVM和书中示例使用C++17编写。提供的示例假设在类Unix操作系统中运行，其中Linux和Darwin（Mac OS）为本书主要实践的操作系统。我们将使用Git来克隆LLVM源代码树并开始工作。还需要安装一些工具，例如CMake和Ninja，它们将用于构建示例和LLVM源代码。
 
-Understanding compiler internals might be crucial for anyone wanting to create and use such tools. The book provides the necessary foundation to begin this journey, covering basic LLVM architecture and offering a detailed description of Clang internals. It includes examples from LLVM source code and custom tools that extend the basic functionality provided by the compiler. Additionally, the book addresses compilation databases and various performance optimizations that can enhance the build speed of your projects. This knowledge should help C++ developers correctly apply the compiler to their work activities.
+如果使用的是这本书的数字版本，我们建议亲自输入代码，或者从书的GitHub仓库中访问代码（下一节将提供链接）。这样做可以帮助避免与复制粘贴代码相关的任何问题。
 
-\myChapterNoFile{}{What this book covers}
+\myChapterNoFile{}{适读人群}
 
-Chapter 1, Environment Setup, describes the basic steps required to set up the environment for future experiments with Clang, suitable for Unix-based systems such as Linux and Darwin (macOS). In addition, readers will learn how to download, configure, and build LLVM source code. We will also create a simple Clang Tool to verify the syntax of the provided source code.
+本书是为那些没有编译器知识背景，但希望获得这些知识，并将其应用于日常活动的C++工程师编写。提供了Clang编译器前端的总览，这是LLVM中至关重要，但常常被低估的一部分。编译器的这一部分以及一系列强大的工具，使开发者能够提高代码质量和整体开发过程。例如，Clang-Tidy提供了超过500种不同的lint检查，用于检测代码中的反模式（例如：移动后使用）并帮助维护代码风格和标准。另一个值得注意的工具是Clang-Format，允许指定项目的各种格式化规则。这些工具也可以认为是开发过程的一个组成部分。例如，语言服务器（Clangd）是一项关键服务，为IDE提供导航和重构支持。
 
-Chapter 2, Clang Architecture, examines the internal architecture of the Clang compiler. Starting with the basic concept of a compiler, we will explore how it is implemented in Clang. We will look at various parts of the compiler, including the driver, preprocessor (lexer), and parser. We will also examine examples that show how the C++ standard is implemented in Clang.
+对于想要创建和使用此类工具的人来说，理解编译器内部结构可能是至关重要的。这本书提供了开始这段旅程所需的坚实基础，涵盖了基本的LLVM架构，并详细描述了Clang的内部结构，包括LLVM源代码的示例和自定义工具，这些工具扩展了编译器提供的基本功能。此外，这本书还讨论了编译数据库和各种性能优化，这些优化可以提高项目构建速度。这些知识应该帮助C++开发者，正确地将编译器应用于工作中。
 
-Chapter 3, Clang AST, talks about Clang Abstract Syntax Tree (AST), which is the basic data structure produced by the parser. We will explore how the AST is organized in Clang and how it can be traversed. We will also delve into AST Matchers — a powerful tool provided by Clang for locating specific AST nodes.
+\myChapterNoFile{}{内容简介}
 
-Chapter 4, Basic Libraries and Tools, explores basic LLVM libraries and tools, including the LLVM Abstract Data Type (ADT) library, used across all LLVM code. We will investigate TableGen, a Domain-Specific Language (DSL) used to generate C++ code in various parts of LLVM. Additionally, we will explore LLVM Integrated Tester (LIT) tool used for creating powerful end-to-end tests. Using the knowledge gained, we will create a simple Clang plugin to estimate source code complexity.
+第1章, 环境搭建, 描述了为未来使用Clang进行实验所需的基本环境设置步骤，适用于基于 Unix 的系统，如 Linux 和 Darwin（macOS）。此外，读者将学习如何下载、配置和构建 LLVM 源代码。我们还会创建一个简单的 Clang 工具，来验证提供的源代码的语法。
 
-Chapter 5, Clang-Tidy Linter Framework, covers Clang-Tidy, a linter framework based on Clang AST, and creates a simple Clang-Tidy check. We will also discuss how compilation errors affect the AST and the results provided by different Clang Tools, such as Clang-Tidy.
+第 2 章, Clang 架构, 探讨了 Clang 编译器的内部架构。从编译器的基本概念开始，我们将探索编译器在 Clang 中如何实现，研究编译器的不同部分，包括驱动程序、预处理器（词法分析器）和解析器。我们还会通过示例来展示如何在Clang 中实现 C++ 标准。
 
-Chapter 6, Advanced Code Analysis, goes further and considers another advanced data structure used for code analysis: Control Flow Graphs (CFG). We will investigate typical cases for its application and create a simple Clang-Tidy check that utilizes this data structure.
+第 3 章, Clang 抽象语法树, 讨论了 Clang 抽象语法树 (AST)，这是解析器产生的基本数据结构。我们将探讨 Clang 中 AST 的组织方式及其遍历方法，还将深入研究 AST Matchers —— Clang 提供的一个强大的工具，用于定位特定的 AST 节点。
 
-Chapter 7, Refactoring Tools, Clang provides advanced tools for code modification and refactoring. We will explore different ways to create a custom refactoring tool, including one based on the Clang-Tidy linter framework. We will also explore Clang-Format, an extremely fast utility for automatic code formatting.
+第 4 章, 基础库与工具, 探讨基础的 LLVM 库和工具，包括在整个 LLVM 代码中广泛使用的 LLVM 抽象数据类型 (ADT) 库。我们将研究 TableGen，这是一种领域特定语言 (DSL)，用于生成 LLVM 各个部分中的 C++ 代码。此外，还将探索 LLVM 集成测试器 (LIT) 工具，该工具用于创建强大的端到端测试。利用所学知识，创建一个简单的 Clang 插件来估计源代码的复杂度。
 
-Chapter 8, IDE Support and Clangd, presents Clangd - a Language Server used in various IDEs, such as Visual Studio Code (VS Code), to provide intelligent support, including navigation and code modification. Clangd exemplifies the utility of the powerful modular architecture of LLVM. It utilizes various Clang tools, such as Clang-Tidy and Clang-Format, to enhance the development experience in VS Code. Compiler performance is crucial for this tool, and we will explore several techniques Clangd employs to improve its performance, thereby offering the best experience to developers.
+第 5 章, Clang-Tidy 代码检查框架, 涵盖了基于 Clang AST 的 Clang-Tidy 代码检查框架，创建一个简单的 Clang-Tidy 检查。我们还将讨论编译错误如何影响 AST ，以及不同的 Clang 工具（如 Clang-Tidy）提供的结果。
 
-Appendix 1: Compilation Database, describes the Compilation Database—a method for providing complex compilation commands to different Clang Tools. This functionality is crucial for integrating Clang Tools such as Clangd and Clang-Tidy into real C/C++ projects.
+第 6 章, 高级代码分析, 进一步探讨用于代码分析的另一种高级数据结构：控制流图 (CFG)。我们将研究其典型应用场景，并创建一个利用这种数据结构的简单 Clang-Tidy 检查。
 
-Appendix 2: Build Speed Optimizations, covers several compiler performance optimizations that can be used to enhance compiler performance. We will cover Clang precompiled headers and Clang modules, which represent a serialized AST that can be loaded much faster than building it from scratch.
+第 7 章, 重构工具, Clang 提供了高级的代码修改和重构工具。我们将探索创建自定义重构工具的不同方法，包括基于 Clang-Tidy 代码检查框架的方法，还将探讨 Clang-Format，这是一个极其快速的自动代码格式化工具。
+
+第 8 章, 集成开发环境支持与 Clangd, 介绍 Clangd —— 一种用于各种集成开发环境 (IDE) 的语言服务器，例如 Visual Studio Code (VS Code)，以提供智能支持，包括导航和代码修改。Clangd 是 LLVM 强大模块化架构的一个实例。利用了各种 Clang 工具，如 Clang-Tidy 和 Clang-Format，以增强 VS Code 中的开发体验。编译器性能对于此工具至关重要，我们将探讨几种 Clangd 使用的技术来提高其性能，从而为开发者提供最佳体验。
+
+附录 1: 编译数据库, 描述了编译数据库 —— 一种向不同的 Clang 工具提供复杂的编译命令的方法。此功能对于将 Clang 工具（如 Clangd 和 Clang-Tidy）集成到实际的 C/C++ 项目中至关重要。
+
+附录 2: 优化构建速度, 涵盖了几种可用于增强编译器性能的优化技术。我们将涵盖 Clang 预编译头文件和 Clang 模块，其代表了一个可序列化的 AST，加载速度远快于从头构建。
+
+\myChapterNoFile{}{源码下载}
+
+本书的代码包也托管在GitHub上，地址为 \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt}。如果代码有更新，它将在现有的GitHub仓库中进行更新。
+
+我们还有其他来自我们丰富的书籍和视频目录的代码包，都在 \url{https://github.com/PacktPublishing/}。去看看吧！
 
 
-\myChapterNoFile{}{To get the most out of this book}
+\myChapterNoFile{}{文本约定}
 
-You will need to have an understanding of C++, especially C++17, which is used for LLVM and throughout the examples in the book. The provided examples are assumed to be run on a Unix-like operating system, with Linux and Darwin (Mac OS) being considered the operating system requirements for the book. We will use Git to clone the LLVM source tree and start working on it. Some tools also need to be installed, such as CMake and Ninja, which will be actively used to build the examples and the LLVM source code.
+本书中使用了许多文本约定。
 
-If you are using the digital version of this book, we advise you to type the code yourself or access the code from the book's GitHub repository (a link is available in the next section). Doing so will help you avoid any potential errors related to the copying and pasting of code.
+​CodeInText:表示文本中的码字、数据库表名、文件夹名、文件名、文件扩展名、路径名、虚拟URL和用户输入。下面是一个例子:“前两个参数指定声明(clang::Decl)和声明的语句(clang::Stmt)。”
 
-\myChapterNoFile{}{Download the example code files}
-
-The code bundle for the book is also hosted on GitHub at \url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt}. In case there's an update to the code, it will be updated on the existing GitHub repository.
-
-We also have other code bundles from our rich catalog of books and videos available at \url{https://github.com/PacktPublishing/}. Check them out!
-
-
-\myChapterNoFile{}{Conventions used}
-
-There are a number of text conventions used throughout this book.
-
-CodeInText: Indicates code words in text, database table names, folder names, filenames, file extensions, pathnames, dummy URLs, and user input. Here is an example: "The first two parameters specify the declaration (clang::Decl) and the statement for the declaration (clang::Stmt)."
-
-A block of code is set as follows:
+代码块如下所示:
 
 \begin{cpp}
 int main() {
   return 0;
- }
+}
 \end{cpp}
 
-Any command-line input or output is written as follows:
+命令行输入或输出如下所示:
 
 \begin{shell}
 $ ninja clang
 \end{shell}
 
-We use <...> as a placeholder for the folder where the LLVM source code was cloned.
+用<…>作为LLVM源代码克隆文件夹的占位符。
 
-Some code examples will be representing input of shells. You can recognize them by specific prompt characters:
-
+​一些代码示例将表示shell的输入，可以通过特定的提示字符来识别:
 
 \begin{itemize}
 \item
-(lldb) for interactive LLDB shell
+(lldb) 表示交互式LLDB shell
 
 \item
-\$ for Bash shell (macOS and Linux)
+\$ 表示Bash shell (macOS和Linux)
 
 \item
-> for interactive shell provided by different Clang Tools, such as Clang-Query
+> 用于不同Clang工具(如Clang-Query)提供的交互式shell
 \end{itemize}
 
 

@@ -1,31 +1,33 @@
-The goal of the test project is to create a clang plugin that will estimate class complexity. Specifically, a class is deemed complex if the number of its methods exceeds a certain threshold. We will leverage all the knowledge we have acquired thus far for this project. This will include the use of a recursive visitor and Clang diagnostics. Additionally, we will create a LIT test for our project. Developing the plugin will necessitate a unique build configuration for LLVM, which will be our initial step.
+测试项目的目标是创建一个Clang插件，用于估算类的复杂性。具体来说，如果一个类的方法数量超过某个阈值，那么这个类就被认为是复杂的。我们将利用到目前为止所获得的所有知识来完成这个项目。这包括使用递归访问者和Clang诊断。此外，我们还将为我们的项目创建一个LIT测试。开发插件将需要一个独特的LLVM构建配置，这将是我们首先要做的事情。
 
 
-\mySubsubsection{4.6.1.}{Environment setup}
+\mySubsubsection{4.6.1.}{环境设置}
 
-The plugin will be created as a shared object, and our LLVM installation should be built with support for shared libraries (see Section 1.3.1, Configuration with CMake):
+插件将作为一个共享对象创建，我们的LLVM安装应该支持共享库（见第1.3.1节，使用CMake配置）：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
 \end{shell}
 
 \begin{center}
-Figure 4.31: CMake configuration used for the Clang plugin project
+图4.31：用于Clang插件项目的CMake配置
 \end{center}
 
-As can be seen, we use the build configuration from Section 1.4, Test project – syntax check with a Clang tool, as shown in Figure 1.12. In the configuration, we set up a folder for installing artifacts into ../install, limit our build targets to the X86 platform, and enable only the clang project. Additionally, we enable size optimization for debug symbols and use shared libraries instead of static linkage.
+如图所示，我们使用了第1.4节中的构建配置，如图1.12所示。在配置中，我们为安装工件设置了一个文件夹 ../install，将构建目标限制为X86平台，并只启用clang项目。此外，我们启用了调试符号的大小优化，并使用共享库而不是静态链接。
 
-The next step involves building and installing clang. This can be achieved with the following command:
+接下来，我们需要构建和安装clang。这可以通过以下命令完成：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-As soon as we are done with the clang build and installation, we can proceed with the CMakeLists.txt file for our project.
+一旦我们完成了clang的构建和安装，我们就可以继续编写我们的项目CMakeLists.txt文件。
 
-\mySubsubsection{4.6.2.}{CMake build configuration for plugin}
+\mySubsubsection{4.6.2.}{插件的CMake构建配置}
 
-We will use Figure 3.20 as the foundation for our plugin build configuration. We will change the project name to classchecker , and ClassComplexityChecker.cpp will serve as our primary source file. The main portion of the file is displayed in Figure 4.32. As can be observed, we will construct a shared library (Lines 18-20) rather than an executable, as in our previous test projects. Another modification is in Line 12, where we set up a config parameter for the LLVM build folder. This parameter is necessary to locate the LIT executable, which is not included in the standard installation process, as mentioned earlier in Section 4.5.2, LLVM test framework. Some additional modifications need to be made to support LIT test invocations, but we will discuss the details later in Section 4.6.8, LIT tests for clang plugin (see Figure 4.44).
+我们将使用图3.20作为我们的插件构建配置的基础。我们将更改项目名称为classchecker，而ClassComplexityChecker.cpp将作为我们的主要源文件。文件的主要部分如图4.32所示。如图所示，我们将构建一个共享库（第18-20行），而不是之前的测试项目中的可执行文件。另一个修改是在第12行，我们设置了一个配置参数来定位LLVM构建文件夹。这个参数是必要的，以便找到LIT可执行文件，正如之前在第4.5.2节，LLVM测试框架中提到的，LIT可执行文件不包括在标准安装过程中。为了支持LIT测试的调用，我们还需要进行一些额外的修改，但我们会稍后在图4.44中讨论这些细节。
+
+
 
 \begin{cmake}
 message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
@@ -52,14 +54,14 @@ target_link_libraries(classchecker
 \end{cmake}
 
 \begin{center}
-Figure 4.32: CMakeLists.txt file for class complexity plugin
+图4.32：class complexity插件的CMakeLists.txt文件
 \end{center}
 
-After completing the build configuration, we can start writing the primary code for the plugin. The first component we'll create is a recursive visitor class named ClassVisitor.
+完成构建配置后，我们可以开始编写插件的主要代码。我们将创建的第一个组件是一个递归访问者类，名为ClassVisitor。
 
-\mySubsubsection{4.6.3.}{Recursive visitor class}
+\mySubsubsection{4.6.3.}{递归访问者类}
 
-Our visitor class is located in the ClassVisitor.hpp file (see Figure 4.33). This is a recursive visitor that handles clang::CXXRecordDecl, which are the AST nodes for C++ class declarations. We calculate the number of methods in Lines 13-16 and emit diagnostics in Lines 19-25 if the threshold is exceeded.
+我们的访问者类位于ClassVisitor.hpp文件中（见图4.33）。这是一个递归访问者，处理clang::CXXRecordDecl，这是C++类声明的AST节点。我们在第13-16行计算方法的数量，并在超过阈值时在第19-25行发出诊断。
 
 \begin{cpp}
 #include "clang/AST/ASTContext.h"
@@ -101,20 +103,20 @@ private:
 
 
 \begin{center}
-Figure 4.33: Source code for ClassVisitor.hpp
+图4.33：ClassVisitor.hpp的源代码
 \end{center}
 
-It's worth noting the diagnostic calls. The diagnostic message is constructed in Lines 20-22. Our diagnostic message accepts two parameters: the class name and the number of methods for the class. These parameters are encoded with the '\%1' and '\%2' placeholders in Line 22. The actual values for these parameters are passed in Line 25, where the diagnostic message is constructed using the DiagBuild object. This object is an instance of the clang::DiagnosticBuilder class, which implements the Resource Acquisition Is Initialization (RAII) pattern. It emits the actual diagnostics upon its destruction.
+值得注意的诊断调用。诊断消息在行20-22中构建。我们的诊断消息接受两个参数：类名和类的函数数量。这些参数在第22行以'\%1'和'\%2'占位符编码。这些参数的实际值在第25行传递，在那里使用DiagBuild对象构建诊断消息。这个对象是clang::DiagnosticBuilder类的实例，它实现了资源获取即初始化（RAII）模式。当对象超出作用域时，它会自动调用其析构函数，并在此时发出实际的诊断信息。
 
-\begin{myNotic}{Important note}
-In C++, the RAII principle is a common idiom used to manage resource lifetimes by tying them to the lifetime of an object. When an object goes out of scope, its destructor is automatically called, and this provides an opportunity to release the resource that the object holds.
+\begin{myNotic}{重要提示}
+在C++中，RAII原则是一种常见的习惯用法，用于通过将资源与对象的生存期联系起来来管理资源生命周期。当对象超出作用域时，其析构函数会自动被调用，这为释放对象持有的资源提供了机会。
 \end{myNotic}
 
-ClassVisitor is created within an AST consumer class, which will be our next topic.
+ClassVisitor是在AST消费者类中创建的，这是我们的下一个主题。
 
-\mySubsubsection{4.6.4.}{Plugin AST consumer class}
+\mySubsubsection{4.6.4.}{插件AST消费者类}
 
-The AST consumer class is implemented in ClassConsumer.hpp and represents the standard AST consumer, as seen in our AST visitor test projects (refer to Figure 3.9). The code is presented in Figure 4.35.
+AST消费者类在ClassConsumer.hpp中实现，并在我们的AST访问者测试项目中代表标准AST消费者（参见图3.9）。代码在图4.35中展示。
 
 \begin{cpp}
 namespace clangbook {
@@ -136,24 +138,24 @@ private:
 \end{cpp}
 
 \begin{center}
-Figure 4.34: Source code for ClassConsumer.hpp
+图4.34：ClassConsumer.hpp的源代码
 \end{center}
 
-The code initializes Visitor at Line 10 and utilizes the Visitor class at Line 13 to traverse the declarations, starting with the top one (translation unit declaration). The consumer must be created from a special AST action class, which we will discuss next.
+代码在第10行初始化Visitor，并在第13行使用Visitor类遍历声明，从最顶层的声明（翻译单元声明）开始。消费者必须从特殊的AST动作类创建，这是我们接下来要讨论的。
 
-\mySubsubsection{4.6.5.}{Plugin AST action class}
+\mySubsubsection{4.6.5.}{插件AST动作类}
 
-The code for the AST action is shown in Figure 4.35. Several important parts can be observed:
+插件AST动作的代码如图4.35所示。我们可以观察到几个重要的部分：
 
 \begin{itemize}
 \item
-Line 7: We inherit our ClassAction from clang::PluginASTAction
+第7行：我们从clang::PluginASTAction派生我们的ClassAction。
 
 \item
-Lines 10-13: We instantiate ClassConsumer and utilize MethodCountThreshold, which is derived from an optional plugin argument
+第10-13行：我们实例化ClassConsumer并利用MethodCountThreshold，这是从可选插件参数派生的。
 
 \item
-Lines 15-25: We process the optional threshold argument for our plugin
+第15-25行：我们处理插件的可选阈值参数
 \end{itemize}
 
 \begin{cpp}
@@ -188,14 +190,14 @@ private:
 \end{cpp}
 
 \begin{center}
-Figure 4.35: Source code for ClassAction.hpp
+图4.35：ClassAction.hpp的源代码
 \end{center}
 
-We are almost done and ready to initialize our plugin.
+我们几乎完成了，并准备初始化我们的插件。
 
-\mySubsubsection{4.6.6.}{Plugin code}
+\mySubsubsection{4.6.6.}{插件代码}
 
-Our plugin registration is carried out in the ClassChecker.cpp file, shown in Figure 4.36.
+我们的插件注册在ClassChecker.cpp文件中，如图4.36所示。
 
 \begin{cpp}
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -208,16 +210,16 @@ X("classchecker", "Checks the complexity of C++ classes");
 
 
 \begin{center}
-Figure 4.36: Source code for ClassChecker.cpp
+图4.36：ClassChecker.cpp的源代码
 \end{center}
 
-As we can observe, the majority of the initialization is hidden by helper classes, and we only need to pass our implementation to lang::FrontendPluginRegistry::Add.
+如我们所观察到的，大多数初始化都隐藏在辅助类中，我们只需要将我们的实现传递给lang::FrontendPluginRegistry::Add。
 
-Now we are ready to build and test our clang plugin.
+现在我们准备构建和测试我们的Clang插件。
 
-\mySubsubsection{4.6.7.}{Building and running plugin code}
+\mySubsubsection{4.6.7.}{构建和运行插件代码}
 
-We need to specify a path to the installation folder for our LLVM project. The rest of the procedure is the standard one that we have previously used, see Figure 3.11:
+我们需要指定LLVM项目的安装文件夹的路径。其余的步骤是我们之前使用过的标准步骤，见图3.11：
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -228,10 +230,10 @@ ninja classchecker
 \end{shell}
 
 \begin{center}
-Figure 4.37: Configure and build commands for the Clang plugin
+图4.37：为Clang插件配置和构建命令
 \end{center}
 
-The build artifacts will be located in the build folder. We can then run our plugin on a test file as follows, where <filepath> is the file we want to compile:
+构建工件将位于build文件夹中。然后，我们可以像以下这样在测试文件上运行我们的插件，其中是要编译的文件路径：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only \
@@ -240,10 +242,10 @@ $ <...>/llvm-project/install/bin/clang -fsyntax-only \
 \end{shell}
 
 \begin{center}
-Figure 4.38: How to run the Clang plugin on a test file
+图4.38：如何在测试文件上运行Clang插件
 \end{center}
 
-For example, if we use a test file named test.cpp that defines a class with three methods (see Figure 4.39), we will not receive any warnings.
+例如，如果我们使用一个定义了具有三个方法的类的测试文件test.cpp（见图4.39），我们将不会收到任何警告。
 
 \begin{cpp}
 class Simple {
@@ -255,10 +257,10 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 4.39: Test for the clang plugin: test.cpp
+图4.39：Clang插件的测试：test.cpp
 \end{center}
 
-However, if we specify a smaller threshold, we will receive a warning for the file:
+然而，如果我们指定一个更小的阈值，我们将为该文件收到警告：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only \
@@ -273,31 +275,31 @@ test.cpp:1:7: warning: class Simple is too complex: method count = 3
 
 
 \begin{center}
-Figure 4.40: Clang plugin run on test.cpp
+图4.40:Clang插件在test.cpp上运行
 \end{center}
 
-It's now time to create a LIT test for our plugin.
+现在是时候为我们的插件创建一个LIT测试了。
 
-\mySubsubsection{4.6.8.}{LIT tests for clang plugin}
+\mySubsubsection{4.6.8.}{LIT测试用于Clang插件}
 
-We'll begin with a description of the project organization. We'll adopt the common pattern used in the clang source code and place our tests in the test folder. This folder will contain the following files:
+我们将从一个项目组织描述开始。我们将采用Clang源代码中常用的模式，并将我们的测试放在test文件夹中。这个文件夹将包含以下文件：
 
 \begin{itemize}
 \item
-lit.site.cfg.py.in : This is the main configuration file, a CMake config file. It replaces patterns marked as '@...@' with corresponding values defined during the CMake configuration. Additionally, this file loads lit.cfg.py .
+lit.site.cfg.py.in : 这是主要的配置文件，一个CMake配置文件。它将标记为’@…@'的模式替换为在CMake配置中定义的相应值。此外，这个文件还加载了lit.cfg.py。
 
 \item
-lit.cfg.py : This serves as the primary configuration file for LIT tests.
+lit.cfg.py : 这是LIT测试的主要配置文件。
 
 \item
-simple\_test.cpp : This is our LIT test file.
+simple\_test.cpp : 这是我们的LIT测试文件。
 \end{itemize}
 
-The basic workflow is as follows: CMake takes lit.site.cfg.py.in as a template and generates the corresponding lit.site.cfg.py in the build/test folder. This file is then utilized by LIT tests as a seed to execute the tests.
+基本工作流程如下：CMake将lit.site.cfg.py.in作为模板，并在build/test文件夹中生成相应的lit.site.cfg.py。这个文件然后被LIT测试用作执行测试的种子。
 
-\mySamllsection{LIT config files}
+\mySamllsection{LIT配置文件}
 
-There are two configuration files for LIT tests. The first one is shown in Figure 4.41.
+有两个LIT测试配置文件。第一个在图4.41中显示。
 
 \begin{python}
 config.ClassComplexityChecker_obj_root = "@CMAKE_CURRENT_BINARY_DIR@"
@@ -310,12 +312,12 @@ lit_config.load_config(
 \end{python}
 
 \begin{center}
-Figure 4.41: lit.site.cfg.py.in file
+图4.41：lit.site.cfg.py.in文件
 \end{center}
 
-This file is a CMake template that will be converted into a Python script. The most crucial part is shown in Lines 6-7, where the main LIT config is loaded. It is sourced from the main source tree and is not copied to the build folder.
+这个文件是一个CMake模板，将被转换成Python脚本。最关键的部分是第6-7行，其中主要LIT配置被加载。它来自主源树，并且不会被复制到build文件夹。
 
-The subsequent configuration is displayed in Figure 4.42. It is a Python script containing the primary configuration for LIT tests.
+随后的配置在图4.42中显示。这是一个Python脚本，包含LIT测试的主要配置。
 
 \begin{python}
 # lit.cfg.py
@@ -332,14 +334,47 @@ config.substitutions.append(('%file-check-binary', config.FileCheck))
 \end{python}
 
 \begin{center}
-Figure 4.42: lit.cfg.py file
+图4.42：lit.cfg.py文件
 \end{center}
 
-Lines 4-7 define the fundamental configuration; for example, Line 6 determines which files should be utilized for tests. All files with the '.cpp' extension in the test folder will be employed as LIT tests.
+第4-7行定义了基本配置；例如，第6行决定了哪些文件应该用于测试。测试文件夹中的所有以'.cpp'扩展名的文件都将被用作LIT测试。
 
-Lines 9-11 detail the substitutions that will be employed in the LIT tests. These include the path to the clang binary (Line 9), the path to the shared library with the plugin (Line 10), and the path to the FileCheck utility (Line 11).
+第9-11行详细说明了LIT测试中将使用的替换。这些包括clang二进制文件的路径（第9行）、包含插件的共享库的路径（第10行）以及FileCheck实用程序的路径（第11行）。
 
-We have defined only one basic LIT test, simple\_test.cpp , as shown in Figure 4.43.
+我们只定义了一个基本的LIT测试，simple\_test.cpp，如图4.43所示。
+
+\begin{cpp}
+// RUN: %clang-binary -fplugin=%path-to-plugin -fsyntax-only %s 2>&1 | %file-check-binary %s
+
+class Simple {
+public:
+  void func1() {}
+  void func2() {}
+};
+
+// CHECK: :[[@LINE+1]]:{{[0-9]+}}: warning: class Complex is too complex: method count = 6
+class Complex {
+public:
+  void func1() {}
+  void func2() {}
+  void func3() {}
+  void func4() {}
+  void func5() {}
+  void func6() {}
+};
+\end{cpp}
+
+\begin{center}
+图 4.43: simple\_test.cpp 文件
+\end{center}
+
+在这个文件中，我们可以观察到第1行中使用的替换。路径指向clang二进制文件、插件共享库和FileCheck实用程序。在第9行中使用了特殊模式，这些模式被工具识别。
+
+最后一块拼图是CMake配置。这将设置lit.site.cfg.py.in中所需的变量，以便进行替换，并且定义了一个自定义目标来运行LIT测试。
+
+\mySamllsection{LIT测试的CMake配置}
+
+为了支持LIT测试，CMakeLists.txt文件需要进行一些调整。必要的变化在图4.44中显示。
 
 \begin{cmake}
 find_program(LIT_COMMAND llvm-lit PATH ${LLVM_BUILD}/bin)
@@ -367,16 +402,16 @@ endif()
 \end{cmake}
 
 \begin{center}
-Figure 4.44: LIT tests configuration at CMakeLists.txt
+图4.44：在CMakeLists.txt中的LIT测试配置
 \end{center}
 
-In Lines 31 and 32, we search for the necessary utilities, llvm-lit and FileCheck . It's worth noting that they rely on the \$LLVM\_BUILD environment variable, which we also verify in Line 12 of the config (see Figure 4.32). The steps in Lines 41-43 are essential for generating lit.site.cfg.py from the provided template file, lit.site.cfg.py.in . Lastly, we establish a custom target to execute the LIT tests in Lines 46-49.
+在第31行和第32行，我们搜索必要的实用程序，llvm-lit和FileCheck。值得注意的是，它们依赖于\$LLVM\_BUILD环境变量，我们在配置文件（见图4.32的第12行）中也验证了这个变量。第41-43行是生成lit.site.cfg.py的关键步骤，该文件来自提供的模板文件lit.site.cfg.py.in。最后，在第46-49行，我们建立了一个自定义目标来执行LIT测试。
 
-Now we are ready to start the LIT tests.
+现在我们准备开始LIT测试。
 
-\mySamllsection{Running LIT tests}
+\mySamllsection{运行LIT测试}
 
-To initiate the LIT tests, we must set an environment variable that points to the build folder, compile the project, and then execute the custom target, check-classchecker. Here's how this can be done:
+要启动LIT测试，我们必须设置一个环境变量，该变量指向构建文件夹，编译项目，然后执行自定义目标check-classchecker。以下是执行这些操作的方法：
 
 \begin{shell}
 xport LLVM_BUILD=<...>/llvm-project/build
@@ -388,10 +423,10 @@ ninja check-classchecker
 \end{shell}
 
 \begin{center}
-Figure 4.45: Configure, build and check commands for the Clang plugin
+图4.45：Clang插件的配置、构建和检查命令
 \end{center}
 
-Upon executing these commands, you may observe the following output:
+执行这些命令后，您可能会看到以下输出：
 
 \begin{shell}
 ...
@@ -405,10 +440,10 @@ Passed: 1
 \end{shell}
 
 \begin{center}
-Figure 4.46: LIT test execution
+图4.46：LIT测试执行
 \end{center}
 
-With this, we conclude our first comprehensive project, which encompasses a practical clang plugin that can be tailored via supplemental plugin arguments. Additionally, it includes the respective tests that can be executed to verify its functionality.
+通过这个，我们完成了我们的第一个综合项目，它包含了一个实用的Clang插件，可以通过补充插件参数进行定制。此外，它还包括相应的测试，可以执行以验证其功能。
 
 
 

@@ -1,10 +1,10 @@
-LLVM adheres to specific code-style rules [11]. The primary objective of these rules is to promote proficient C++ practices with a special focus on performance. As previously mentioned, LLVM employs C++17 and prefers using data structures and algorithms from the STL (short for, Standard Template Library). On the other hand, LLVM offers many optimized versions of data structures that mirror those in the STL. For example, llvm::SmallVector<> can be regarded as an optimized version of std::vector<>, especially for small sizes of the vector, a common trait for data structures used in compilers.
+LLVM遵循特定的代码风格规则\footnote{LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}}。这些规则的主要目标是促进熟练的C++实践，特别关注性能。如前所述，LLVM使用C++17，并倾向于使用STL（标准模板库）中的数据结构和算法。另一方面，LLVM提供了许多优化版本的数据结构，这些数据结构模仿了STL中的对应结构。例如，llvm::SmallVector<>可以被视为std::vector<>的优化版本，特别是对于小尺寸的向量，这是编译器中使用的数据结构的常见特征。
 
-Given a choice between an STL object/algorithm and its corresponding LLVM version, the LLVM coding standard advises favoring the LLVM version.
+在STL对象/算法及其对应的LLVM版本之间进行选择时，LLVM编码标准建议优先使用LLVM版本。
 
-Additional rules pertain to concerns regarding performance limitations. For instance, both run-time type information (RTTI) and C++ exceptions are disallowed. However, there are situations where RTTI could prove beneficial; thus, LLVM offers alternatives such as llvm::isa<> and other similar template helper functions. More information on this can be found in Section 4.3.1, RTTI replacement and cast operators. Instead of C++ exceptions, LLVM frequently employs C-style asserts.
+额外的规则涉及到性能限制的问题。例如，运行时类型信息（RTTI）和C++异常都是不允许的。然而，有些情况下RTTI可能会证明是有益的；因此，LLVM提供了替代方案，如llvm::isa<>以及其他类似的模板辅助函数。有关更多信息，请参见第4.3.1节，RTTI替换和强制转换运算符。LLVM经常使用C风格的断言来替代C++异常。
 
-Sometimes, asserts are not sufficiently informative. LLVM recommends adding textual messages to them to simplify debugging. Here's a typical example from Clang's code:
+有时，断言并不足够信息丰富。LLVM建议向它们添加文本消息以简化调试。以下是Clang代码中的一个典型示例：
 
 \begin{cpp}
 static bool unionHasUniqueObjectRepresentations(const ASTContext &Context,
@@ -16,14 +16,14 @@ static bool unionHasUniqueObjectRepresentations(const ASTContext &Context,
 \end{cpp}
 
 \begin{center}
-Figure 4.1: Usage of assert() in clang/lib/AST/ASTContext.cpp
+图4.1：在clang/lib/AST/ASTContext.cpp中使用assert()
 \end{center}
 
-In the code, we check if the second parameter (RD) is a union and raise an assert with a corresponding message if it's not.
+在代码中，我们检查第二个参数（RD）是否为联合体，并在不是的情况下使用相应的消息引发断言。
 
-Besides performance considerations, LLVM also introduces some additional requirements. One of these requirements concerns comments. Code comments are very important. Furthermore, both LLVM and Clang have comprehensive documentation generated from the code. They use Doxygen (\url{https://www.doxygen.nl/}) for this purpose. This tool is the de facto standard for commenting in C/C++ programs, and you have most likely encountered it before.
+除了性能考虑之外，LLVM还引入了一些额外的要求。其中之一涉及到注释。代码注释非常重要。此外，LLVM和Clang都有从代码生成的全面文档。它们使用Doxygen（\url{https://www.doxygen.nl/}）来实现这一点。这个工具是C/C++程序中注释的事实标准，您可能之前已经遇到过。
 
-Clang and LLVM are not monolithic pieces of code; instead, they are implemented as a set of libraries. This design provides advantages in terms of code and functionality reuse, as we will explore in Chapter 8, IDE Support and Clangd. These libraries also serve as excellent examples of LLVM code style enforcement. Let's examine these libraries in detail.
+Clang和LLVM不是单一的大块代码；相反，它们被实现为一组库。这种设计在代码和功能重用方面提供了优势，我们将在第8章"IDE支持和Clangd"中探讨这一点。这些库也是LLVM代码风格执行的优秀示例。让我们详细检查这些库。
 
 
 

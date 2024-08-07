@@ -1,88 +1,90 @@
 
 
-Clang-Tidy is built on top of Clang. At its core, Clang-Tidy leverages Clang's ability to parse and analyze source code into an AST. Each check in Clang-Tidy essentially involves defining patterns or conditions to match against this AST. When a match is found, a diagnostic can be raised, and in many cases, an automatic fix can be suggested. The tool operates on the basis of individual "checks" that target specific issues or coding styles. Checks are implemented as plugins, making Clang-Tidy extensible. The ASTMatchers library facilitates writing these checks by providing a domain-specific language to query the AST; see Section 3.5, AST matchers and the official documentation \footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} for more info. This ensures that checks are both concise and expressive. Clang-Tidy also has support for analyzing the code base using a compilation database, which provides context such as compile flags (see Chapter 9, Appendix 1: Compilation Database for more info). This comprehensive integration with Clang's internals makes Clang-Tidy a powerful static analysis tool with precise code transformation capabilities.
 
-\mySubsubsection{5.3.1.}{Internal organization}
+Clang-Tidy是建立在Clang之上的。在其核心部分，Clang-Tidy利用Clang将源代码解析和分析成抽象语法树（AST）的能力。Clang-Tidy中的每个检查本质上都涉及定义与这个AST匹配的模式或条件。当找到匹配项时，可以提出诊断，在许多情况下，还可以建议自动修复。该工具基于针对特定问题或编码风格的单独“检查”进行操作。检查以插件的形式实现，使得Clang-Tidy具有可扩展性。ASTMatchers库通过提供一种特定领域的语言来查询AST，从而简化了这些检查的编写。这确保了检查既简洁又有表现力。Clang-Tidy还支持使用编译数据库来分析代码库，该数据库提供了编译标志等上下文信息（更多信息请参见第9章，附录1：编译数据库）。这种与Clang内部机制的全面集成，使得Clang-Tidy成为一个具有精确代码转换能力的强大静态分析工具。
 
-The internal organization of clang-tidy within the Clang code base can be complex due to its deep integration with the Clang libraries, but at a high level, the organization can be broken down as follows:
+
+\mySubsubsection{5.3.1.}{内部组织}
+
+Clang-Tidy在Clang代码库中的内部组织可能因为其与Clang库的深度集成而复杂，但从高层次来看，组织可以分解如下：
 
 \begin{enumerate}
 \item
-Source and headers: The main source code and headers for clang-tidy are located in the clang-tools-extra repository, specifically within the clang-tidy directory.
+源代码和头文件：clang-tidy的主要源代码和头文件位于clang-tools-extra仓库中的clang-tidy目录。
 
 \item
-Main driver: The ClangTidyMain.cpp file, located in the tool subfolder, serves as the main driver for the Clang-Tidy tool.
+主驱动程序：位于工具子文件夹中的ClangTidyMain.cpp文件，是Clang-Tidy工具的主驱动程序。
 
 \item
-Core infrastructure: Files such as ClangTidy.cpp , ClangTidy.h manage the core functionalities and options.
+核心基础设施：如ClangTidy.cpp、ClangTidy.h等文件，管理核心功能和选项。
 
 \item
-Checks: Checks are organized into subdirectories based on categories (e.g., bugprone or modernize ).
+检查：检查按类别（例如bugprone或modernize）组织成子目录。
 
 \item
-Utilities: The utils directory contains utility classes and functions.
+实用工具：utils目录包含实用类和函数。
 
 \item
-AST Matchers: The ASTMatchers library, which we explored previously in Section 3.5, AST matchers, is integral for querying the AST.
+AST 匹配器：我们在第3.5节中探索的ASTMatchers库对于查询AST至关重要。
 
 \item
-Clang diagnostics: Clang-Tidy actively uses the Clang diagnostics subsystem to print diagnostics messages and suggest fixes (see Section 4.4.2, Diagnostics support).
+Clang诊断：Clang-Tidy积极使用Clang的诊断子系统来打印诊断消息和建议修复。
 
 \item
-Tests: Tests are located in the test directory and use LLVM's LIT framework (see Section 4.5.2, LLVM test framework). It's worth noting that the test folder is shared with other projects inside the clang-tools-extra folder.
+测试：测试位于测试目录中，并使用LLVM的LIT框架。值得注意的是，测试文件夹在clang-tools-extra文件夹内与其他项目共享。
 
 \item
-Documentation: The docs directory contains documentation for Clang-Tidy. As well as the tests, the documentation is a part of other projects inside the clang-tools-extra folder.
+文档：docs目录包含Clang-Tidy的文档。与测试一样，文档是clang-tools-extra文件夹中其他项目的一部分。
 \end{enumerate}
 
-These relationships are schematically illustrated in the following figure:
+这些关系在以下图中进行了示意性说明：
 
-\myGraphic{0.7}{content/part2/chapter5/images/1.png}{Figure 5.11: Clang-Tidy's internal organization}
+\myGraphic{0.7}{content/part2/chapter5/images/1.png}{图5.11：Clang-Tidy的内部组织}
 
-Now that we have gained an understanding of Clang-Tidy's internals and its relationship with other parts of Clang/LLVM, it's time to explore components external to the Clang-Tidy binary: its configuration and other tools that leverage the functionality provided by Clang-Tidy.
+现在我们已经了解了Clang-Tidy的内部设计和与其他Clang/LLVM部分的关联，是时候探索与Clang-Tidy二进制文件外部相关的组件：它的配置和其他利用Clang-Tidy提供的功能的工具。
 
-\mySubsubsection{5.3.2.}{Configuration and integration}
+\mySubsubsection{5.3.2.}{配置和集成}
 
-The Clang-Tidy binary can interact with other components, as shown in Figure 5.12.
+Clang-Tidy二进制文件可以与其他组件交互，如图5.12所示。
 
-\myGraphic{0.7}{content/part2/chapter5/images/2.png}{Figure 5.12: Clang-Tidy external components: configuration and integrations}
+\myGraphic{0.5}{content/part2/chapter5/images/2.png}{图5.12：Clang-Tidy外部组件：配置和集成}
 
-Clang-Tidy can be seamlessly integrated with various Integrated Development Environments (IDEs), such as Visual Studio Code, CLion, and Eclipse, to provide real-time feedback during coding. We will explore this possibility later in Section 8.5.2, Clang-Tidy.
+Clang-Tidy可以无缝集成到各种集成开发环境（IDE）中，例如Visual Studio Code、CLion和Eclipse，以在编码过程中提供实时反馈。我们将在第8.5.2节中探索这一可能性。
 
-It can also be incorporated into build systems such as CMake and Bazel to run checks during builds. Continuous Integration (CI) platforms, such as Jenkins and GitHub Actions, often employ Clang-Tidy to ensure code quality on pull requests. Code review platforms, such as Phabricator, utilize Clang-Tidy for automated reviews. Additionally, custom scripts and static analysis platforms can harness Clang-Tidy's capabilities for tailored workflows and combined analyses.
+它还可以集成到构建系统，如CMake和Bazel，以便在构建过程中运行检查。持续集成（CI）平台，如Jenkins和GitHub Actions，经常使用Clang-Tidy来确保拉请求上的代码质量。代码审查平台，如Phabricator，利用Clang-Tidy进行自动化审查。此外，自定义脚本和静态分析平台可以利用Clang-Tidy的功能进行定制的工作流程和组合分析。
 
-Another important part of Clang-Tidy shown in Figure 5.12 is its configuration. Let's explore it in detail.
+图5.12中另一个重要的部分是Clang-Tidy的配置。让我们详细探讨它。
 
-\mySamllsection{Clang-Tidy configuration}
+\mySamllsection{Clang-Tidy 配置}
 
-Clang-Tidy uses a configuration file to specify which checks to run and to set options for those checks. This configuration is done using a .clang-tidy file.
+Clang-Tidy使用配置文件来指定要运行哪些检查以及为这些检查设置选项。这个配置是通过.clang-tidy文件完成的。
 
-The .clang-tidy file is written in YAML format. It typically contains two main keys: Checks and CheckOptions .
+.clang-tidy文件采用YAML格式编写。它通常包含两个主要键：Checks和CheckOptions。
 
-We will begin with the Checks key, which allows us to specify which checks to enable or disable:
+我们将从Checks键开始，它允许我们指定要启用或禁用的检查：
 
 \begin{itemize}
 \item
-Use - to disable a check
+使用 - 来禁用一个检查
 
 \item
-Use * as a wildcard to match multiple checks
+使用 * 作为通配符来匹配多个检查
 
 \item
-Checks are comma-separated
+检查之间用逗号分隔
 \end{itemize}
 
-Here's an example:
+这里有一个例子：
 
 \begin{shell}
 Checks: '-*,modernize-*'
 \end{shell}
 
 \begin{center}
-Figure 5.13: Checks key of a .clang-tidy config file
+图5.13：.clang-tidy配置文件中的Checks键
 \end{center}
 
-The next key is CheckOptions . This key allows us to set options for specific checks, with each option specified as a key-value pair. An example is provided here:
+下一个键是CheckOptions。这个键允许我们为特定检查设置选项，每个选项以键值对的形式指定。这里提供了一个例子：
 
 \begin{shell}
 CheckOptions:
@@ -93,12 +95,12 @@ CheckOptions:
 \end{shell}
 
 \begin{center}
-Figure 5.14: CheckOptions key of a .clang-tidy config file
+图5.14：.clang-tidy配置文件中的CheckOptions键
 \end{center}
 
-When Clang-Tidy is run, it searches for the .clang-tidy file in the directory of the file being processed and its parent directories. The search stops when the file is found.
+当Clang-Tidy运行时，它会在正在处理的文件及其父目录中搜索.clang-tidy文件。当找到文件时，搜索停止。
 
-Now that we have an understanding of Clang-Tidy's internal design, it's time to create our first custom Clang-Tidy check using the information we've gathered from this and previous chapters of the book.
+现在我们已经了解了Clang-Tidy的内部设计，是时候使用我们从本书的这一章和之前的章节中收集的信息来创建我们第一个自定义的Clang-Tidy检查了。
 
 
 

@@ -1,14 +1,14 @@
-One of the most interesting aspects of Clang pertains to error processing. Error processing encompasses error detection, the display of corresponding error messages, and potential error recovery. The latter is particularly intriguing in terms of the Clang AST. Error recovery occurs when Clang doesn't halt upon encountering a compilation error but continues to compile in order to detect additional issues.
+Clang处理错误的一个最有趣的方面涉及错误处理。错误处理包括错误检测、显示相应的错误消息以及可能的错误恢复。后者在Clang AST方面特别引人入胜。当Clang在遇到编译错误时不停止，而是继续编译以检测其他问题，这时就会发生错误恢复。
 
-Such behavior is beneficial for various reasons. The most evident one is user convenience. When programmers compile a program, they typically prefer to be informed about as many errors as possible in a single compilation run. If the compiler were to stop at the first error, the programmer would have to correct that error, recompile, then address the subsequent error, and recompile again, and so forth. This iterative process can be tedious and frustrating, especially with larger code bases or intricate errors. While this behavior is particularly useful for compiled languages such as C/C++, it's worth noting that interpreted languages also exhibit this behavior, which can assist users in handling errors step by step.
+这种行为之所以有益，有几个原因。最明显的一个是为了用户方便。当程序员编译程序时，他们通常希望在单次编译运行中被告知尽可能多的错误。如果编译器在第一个错误处停止，程序员将不得不纠正该错误，然后重新编译，接着解决后续的错误，再重新编译，如此往复。这种迭代过程对于较大的代码库或复杂的错误来说可能会很繁琐和令人沮丧。虽然这种行为对于C/C++等编译型语言特别有用，但值得注意的是，解释型语言也表现出这种行为，这可以帮助用户逐步处理错误。
 
-Another compelling reason centers on IDE integration, which will be discussed in more detail in Chapter 8, IDE Support and Clangd. IDEs offer navigation support coupled with an integrated compiler. We will explore clangd as one such tool. Editing code in IDEs often leads to compilation errors. Most errors are confined to specific sections of the code, and it might be suboptimal to cease navigation in such cases.
+另一个令人信服的原因是IDE集成，这将在第8章“IDE支持与Clangd”中详细讨论。IDE提供了导航支持，并集成了编译器。我们将探讨clangd作为这样一个工具。在IDE中编辑代码常常会导致编译错误。大多数错误都局限于代码的特定部分，在这种情况下停止导航可能不是最佳选择。
 
-Clang employs various techniques for error recovery. For the syntax stage of parsing, it utilizes heuristics; for instance, if a user forgets to insert a semicolon, Clang may attempt to add it as part of the recovery process. The Recovery Phase can be abbreviated as DIRT where D stands for Delete a character (for example, an extra semicolon), I stands for Insert a character (as in the example presented), R stands for Replace (which replaces a character to match a particular token), and T stands for Transpose (rearranging two characters to match a token).
+Clang采用了各种技术来进行错误恢复。在解析的语法阶段，它使用启发式方法；例如，如果用户忘记插入分号，Clang可能会尝试在恢复过程中添加它。恢复阶段可以简称为DIRT，其中D代表删除一个字符（例如，多余的分号），I代表插入一个字符（如上面例子所示），R代表替换（替换一个字符以匹配特定的标记），T代表转置（重新排列两个字符以匹配标记）。
 
-Clang performs full recovery if it's possible and produces an AST that corresponds to the modified file with all compilation errors fixed. The most interesting case is when full recovery is not possible, and Clang implements unique techniques to manage recovery while AST is created.
+如果可能，Clang会执行完全恢复，并生成一个与修改后文件相对应的AST，其中所有编译错误都已修复。最有趣的情况是在无法进行完全恢复时，Clang在创建AST时实施独特的恢复技术。
 
-Consider a program (maxerr.cpp) that is syntactically correct but has a semantic error. For example, it might use an undeclared variable. In this program, refer to Line 3 where the undeclared variable ab is used:
+考虑一个程序（maxerr.cpp），它在语法上是正确的，但有一个语义错误。例如，它可能使用了未声明的变量。在这个程序中，请参考第3行，其中使用了未声明的变量ab：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -20,10 +20,10 @@ int max(int a, int b) {
 \end{cpp}
 
 \begin{center}
-Figure 3.33: The maxerr.cpp test program with a semantic error – undeclared variable
+图3.33：带有语义错误的maxerr.cpp测试程序 - 未声明的变量
 \end{center}
 
-We are interested in the AST result produced by Clang, and we will use clang-query to examine it, which can be run as follows:
+我们感兴趣的是Clang产生的AST结果，我们将使用clang-query来检查它，可以按以下方式运行：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-query maxerr.cpp
@@ -34,12 +34,12 @@ maxerr.cpp:3:12: error: use of undeclared identifier 'ab'
 \end{shell}
 
 \begin{center}
-Figure 3.34: Compilation error example
+图3.34：编译错误示例
 \end{center}
 
-From the output, we can see that clang-query displayed a compilation error detected by the compiler. It's worth noting that, despite this, an AST was produced for the program, and we can examine it. We are particularly interested in the return statements and can use the corresponding matcher to highlight the relevant parts of the AST.
+从输出中我们可以看到，clang-query显示了编译器检测到的编译错误。值得注意的是，尽管如此，程序还是生成了一个AST，我们可以检查它。我们特别感兴趣的是return语句，并可以使用相应的匹配器来突出显示AST的相关部分。
 
-We will also set up the output to produce the AST and search for return statements that are of interest to us:
+我们还将设置输出以产生AST，并搜索我们感兴趣return语句：
 
 \begin{shell}
 clang-query> set output dump
@@ -47,10 +47,10 @@ clang-query> match returnStmt()
 \end{shell}
 
 \begin{center}
-Figure 3.35: Setting the matcher for return statement
+图3.35：设置return语句的匹配器
 \end{center}
 
-The resulting output identifies two return statements in our program: the first match on Line 5 and the second match on Line 3:
+结果的输出识别了我们程序中的两个return语句：第一个匹配在第5行，第二个匹配在第3行：
 
 \begin{shell}
 Match #1:
@@ -69,10 +69,10 @@ ReturnStmt 0x6b631b0 <maxerr.cpp:3:5, col:12>
 \end{shell}
 
 \begin{center}
-Figure 3.36: ReturnStmt node matches at maxerr.cpp test program
+图3.36：maxerr.cpp测试程序中的ReturnStmt节点匹配
 \end{center}
 
-As we can see, the first match corresponds to semantically correct code on Line 5 and contains a reference to the a parameter. The second match is for Line 3, which has a compilation error. Notably, Clang has inserted a special type of AST node: RecoveryExpr. It's worth noting that, in certain situations, Clang might produce an incomplete AST. This can cause issues with Clang tools, such as lint checks. In instances of compilation errors, lint checks might yield unexpected results because Clang couldn't recover accurately from the compilation errors. We will revisit the problem when exploring the clang-tidy lint check framework in Chapter 5, Clang-Tidy Linter Framework.
+正如我们所看到的，第一个匹配对应于第5行语义上正确的代码，并包含对参数a的引用。第二个匹配是第3行的，它有一个编译错误。值得注意的是，Clang已经插入了一种特殊的AST节点：RecoveryExpr。值得注意的是，在某些情况下，Clang可能会产生不完整的AST。这可能会导致Clang工具出现问题，例如lint检查。在编译错误的实例中，lint检查可能会产生意外的结果，因为Clang无法从编译错误中准确恢复。
 
 
 

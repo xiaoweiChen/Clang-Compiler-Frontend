@@ -1,35 +1,35 @@
 
 
 
-Clang-Tidy is a linter and static analysis tool for C and C++ code. It is a part of the Clang and LLVM project. The tool is built on top of the Clang frontend, which means it understands your code in depth, giving it the ability to catch a wide range of issues.
+Clang-Tidy是一个用于C和C++代码的linter和静态分析工具。它是Clang和LLVM项目的一部分。这个工具建立在Clang前端之上，这意味着它深入理解你的代码，从而能够捕捉到一系列问题。
 
-Here are some key points to understand about Clang-Tidy:
+以下是关于Clang-Tidy的一些关键要点：
 
 \begin{itemize}
 \item
-Checks: Clang-Tidy contains a series of "checks" that identify various issues or suggest enhancements. These checks range from performance improvements and potential bugs to coding style and modern C++ best practices. For instance, it might suggest using emplace\_back instead of push\_back for certain cases or identify areas where you might be accidentally using integer overflow.
+检查：Clang-Tidy包含一系列"检查"，用于识别各种问题或提出改进建议。这些检查从性能改进和潜在错误到编码风格和现代C++最佳实践。例如，它可能会建议在某些情况下使用emplace\_back而不是push\_back，或者识别你可能无意中使用整数溢出的区域。
 
 \item
-Extensibility: New checks can be added to Clang-Tidy, making it a highly extensible tool. If you have specific coding guidelines or practices you want to enforce, you can write a check for it.
+可扩展性：可以向Clang-Tidy添加新的检查，使其成为一个高度可扩展的工具。如果你有特定的编码指南或实践想要执行，你可以为它编写一个检查。
 
 \item
-Integration: Clang-Tidy is often used within CI/CD pipelines or integrated with development environments. Many IDEs support Clang-Tidy directly or via plugins, so you can get real-time feedback on your code as you write it.
+集成：Clang-Tidy经常在CI/CD管道中使用或在开发环境中集成。许多IDE直接支持Clang-Tidy或通过插件支持，因此你可以在编写代码时实时获得反馈。
 
 \item
-Automatic fixes: One of the powerful features of Clang-Tidy is its ability to not only identify issues but also automatically fix many of them. This is done with the -fix option. It is, however, important to review the proposed changes, as automatic fixes might not always be perfect.
+自动修复：Clang-Tidy的一个强大功能是它不仅能识别问题，还能自动修复许多问题。这是通过-fix选项实现的。然而，重要的是要审查建议的更改，因为自动修复可能并不总是完美的。
 
 \item
-Configuration: You can configure which checks Clang-Tidy performs using a configuration file or command-line options. This allows teams to enforce specific coding standards or prioritize certain types of issues. For example, the -checks='-*,modernize-*' command-line option will disable all checks but not the checks from modernize set.
+配置：你可以使用配置文件或命令行选项配置Clang-Tidy执行哪些检查。这允许团队强制执行特定的编码标准或优先处理某些类型的问题。例如，-checks='-,modernize-'命令行选项将禁用所有检查，但不禁用modernize集合中的检查。
 
 \item
-Modern C++ best practices: One of the often-appreciated features of Clang-Tidy is its emphasis on modern C++ idioms and best practices. It can guide developers to write safer, more performant, and more idiomatic C++ code.
+现代C++最佳实践：Clang-Tidy的一个经常受到赞赏的功能是它强调现代C++习惯用语和最佳实践。它可以指导开发者编写更安全、性能更好、更符合习惯用法的C++代码。
 \end{itemize}
 
-After acquiring basic knowledge about Clang-Tidy, let's examine how it can be built.
+在获得关于Clang-Tidy的基本知识后，让我们看看如何构建它。
 
-\mySubsubsection{5.2.1}{Building and testing Clang-Tidy}
+\mySubsubsection{5.2.1}{构建和测试Clang-Tidy}
 
-We will use the basic build configuration specified in Figure 1.4 and build Clang-Tidy with the following Ninja command:
+我们将使用图1.4中指定的基本构建配置来构建Clang-Tidy，使用以下Ninja命令：
 
 \begin{shell}
 $ ninja clang-tidy
@@ -37,10 +37,10 @@ $ ninja clang-tidy
 
 
 \begin{center}
-Figure 5.1: Using the Ninja command to build Clang-Tidy
+图5.1：使用Ninja命令构建Clang-Tidy
 \end{center}
 
-We can install the Clang-Tidy binary to the designated install folder using the following command:
+我们可以使用以下命令将Clang-Tidy二进制文件安装到指定的安装文件夹：
 
 \begin{shell}
 $ ninja install-clang-tidy
@@ -48,27 +48,27 @@ $ ninja install-clang-tidy
 
 
 \begin{center}
-Figure 5.2: Using the Ninja command to install Clang-Tidy
+图5.2：使用Ninja命令安装Clang-Tidy
 \end{center}
 
-Using the build configuration from Figure 1.4, the command will install the Clang-Tidy binary under the <...>/llvm-project/install/bin folder. Here, <...>/llvm-project refers to the path where the LLVM code base was cloned (see Figure 1.1).
+使用图1.4中的构建配置，命令会将Clang-Tidy二进制文件安装到<…>/llvm-project/install/bin文件夹。在这里，<…>/llvm-project指的是克隆LLVM代码库的路径（见图1.1）。
 
-\begin{myNotic}{Important note}
-If you use a build configuration with shared libraries (with the BUILD\_SHARED\_LIBS flag set to ON ), as shown in Figure 1.12, then you might need to install and built all artifacts with ninja install.
+\begin{myNotic}{重要提示}
+如果你使用了一个带有共享库（BUILD\_SHARED\_LIBS标志设置为ON）的构建配置，如图1.12所示，那么你可能需要使用ninja install命令来安装和构建所有工件。
 \end{myNotic}
 
-Clang-Tidy is part of Clang-Tools-Extra, and its tests are a part of the clang-tools CMake target. Thus, we can run the tests with the following command:
+Clang-Tidy是Clang-Tools-Extra的一部分，其测试是clang-tools CMake目标的一部分。因此，我们可以使用以下命令运行测试：
 
 \begin{shell}
 $ ninja check-clang-tools
 \end{shell}
 
 \begin{center}
-Figure 5.3: Using the Ninja command to run Clang-Tidy tests
+图5.3：使用Ninja命令运行Clang-Tidy测试
 \end{center}
 
 
-The command will run LIT tests (see Section 4.5.2, LLVM test framework) for all Clang-Tidy checks, and will also run unit tests for the Clang-Tidy core system. You can also run a specific LIT test separately; for example, if we want to run the LIT test for the modernize-loop-convert check, we can use the following command:
+该命令将运行LIT测试（见第4.5.2节，LLVM测试框架）的所有Clang-Tidy检查，还将运行Clang-Tidy核心系统的单元测试。你也可以单独运行特定的LIT测试；例如，如果我们想运行modernize-loop-convert检查的LIT测试，我们可以使用以下命令：
 
 \begin{shell}
 $ cd <...>/llvm-project
@@ -77,10 +77,10 @@ $ build/bin/llvm-lit -v \
 \end{shell}
 
 \begin{center}
-Figure 5.4: Testing the modernize-loop-convert clang-tidy check
+图5.4：测试modernize-loop-convert Clang-Tidy检查
 \end{center}
 
-The command will produce the following output:
+该命令将产生以下输出：
 
 \begin{shell}
 -- Testing: 1 tests, 1 workers --
@@ -92,15 +92,15 @@ Testing Time: 1.38s
 \end{shell}
 
 \begin{center}
-Figure 5.5: LIT test output for the cppcoreguidelines-owning-memory clang-tidy check
+图5.5：cppcoreguidelines-owning-memory Clang-Tidy检查的LIT测试输出
 \end{center}
 
-After building and testing Clang-Tidy, it's now time to run it on some code examples.
+在构建和测试Clang-Tidy之后，现在是时候在某些代码示例上运行它了。
 
 
-\mySubsubsection{5.2.2.}{Clang-Tidy usage}
+\mySubsubsection{5.2.2.}{Clang-Tidy的用法}
 
-To test Clang-Tidy, we will use the following test program:
+为了测试Clang-Tidy，我们将使用以下测试程序：
 
 \begin{cpp}
 #include <iostream>
@@ -117,10 +117,10 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 5.6: Test program for Clang-Tidy: loop-convert.cpp
+图5.6：Clang-Tidy测试程序：loop-convert.cpp
 \end{center}
 
-The program is correctly written in the older C++ code style, that is, before C++11. Clang-Tidy has a set of checks that encourage adopting the modern C++ code style and using new C++ idioms available in the latest C++ standard. These checks can be run on the program as follows:
+该程序以旧式的C++代码风格编写，即在C++11之前。Clang-Tidy有一系列检查鼓励采用现代C++代码风格和使用最新C++标准中可用的新的C++习语。这些检查可以按以下方式在程序上运行：
 
 \begin{shell}
 1  $ <...>/llvm-project/install/bin/clang-tidy \
@@ -130,26 +130,26 @@ The program is correctly written in the older C++ code style, that is, before C+
 \end{shell}
 
 \begin{center}
-Figure 5.7: Running Clang-Tidy modernize checks on loop-convert.cpp
+图5.7：在loop-convert.cpp上运行Clang-Tidy modernize检查
 \end{center}
 
-The most important parts of Figure 5.7 are as follows:
+图5.7中最重要的部分如下：
 
 \begin{itemize}
 \item
-Line 1: The path to the Clang-Tidy binary is specified here.
+第1行：在这里指定了Clang-Tidy二进制文件的路径。
 
 \item
-Line 2: We remove all checks using the '-*' option. Then, we enable all checks with the 'modernize' prefix by using the '-*,modernize-*' value for the '--checks' argument.
+第2行：我们使用'-*'选项移除了所有检查。然后，我们通过使用'–checks'参数的'-*,modernize'值来启用所有以'modernize'前缀开头的检查。
 
 \item
-Line 3: We specify the path to the code to be tested.
+第3行：我们指定要测试的代码路径。
 
 \item
-Line 4: We pass additional arguments to the compiler, notably specifying that we want the compiler to use C++17 as the C++ standard.
+第4行：我们向编译器传递额外的参数，特别是指定我们希望编译器使用C++17作为C++标准。
 \end{itemize}
 
-The output of the program will be as follows:
+程序的输出将是：
 
 \begin{shell}
 loop-convert.cpp:4:5: warning: use a trailing return type for this function
@@ -178,10 +178,10 @@ note: this fix will not be applied because it overlaps with another fix
 \end{shell}
 
 \begin{center}
-Figure 5.8: Output from running Clang-Tidy on loop-convert.cpp
+图5.8：在loop-convert.cpp上运行Clang-Tidy的输出
 \end{center}
 
-As we can see, several issues were detected, and Clang-Tidy suggested some fixes. Unfortunately, some of them conflict with each other, especially modernize-loop-convert and modernize-use-auto , and cannot be applied together. On the other hand, we can apply the fix suggested by modernize-loop-convert by running only this specific check to avoid any conflicts, as follows:
+如我们所见，检测到了几个问题，Clang-Tidy建议了一些修复方案。不幸的是，其中一些相互冲突，特别是modernize-loop-convert和modernize-use-auto，不能同时应用。另一方面，我们可以单独运行modernize-loop-convert检查，避免任何冲突，并应用该检查提出的修复方案，如下所示：
 
 
 \begin{shell}
@@ -193,10 +193,10 @@ As we can see, several issues were detected, and Clang-Tidy suggested some fixes
 \end{shell}
 
 \begin{center}
-Figure 5.9: Running a modernize-loop-convert check on loop-convert.cpp
+图5.9：在loop-convert.cpp上运行modernize-loop-convert检查
 \end{center}
 
-As we can see, the second line has changed compared to Figure 5.7, and another line (3) has been added. The latter instructs Clang-Tidy to apply the fixes suggested by the check. The resulting code can be found in the original file:
+如我们所见，第2行与图5.7中的第2行不同，并添加了另一行（第3行）。后者指示Clang-Tidy应用检查提出的修复方案。修复后的代码可以在原始文件中找到：
 
 \begin{cpp}
 #include <iostream>
@@ -212,16 +212,14 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 5.10: Fixed test program for Clang-Tidy: loop-convert.cpp
+图5.10：Clang-Tidy修复后的测试程序：loop-convert.cpp
 \end{center}
 
+如我们所见，与图5.6中的原始代码相比，第6行和第7行已发生变化。这使得Clang-Tidy成为一个强大的工具，不仅可以检测问题，还可以修复它们。我们将在第7.3节“Clang-Tidy作为代码修改工具”中更深入地探讨这一可能性。
 
+\mySubsubsection{5.2.3.}{Clang-Tidy 检查}
 
-As we can see, Lines 6 and 7 have changed compared to the original code from Figure 5.6. This functionality makes Clang-Tidy a powerful tool that can not only detect issues but also fix them. We will explore this possibility in greater depth later in Section 7.3, Clang-Tidy as a code modification tool.
-
-\mySubsubsection{5.2.3.}{Clang-Tidy checks}
-
-Clang-Tidy has a wide variety of checks grouped into different categories. Here's a concise list of some of the main categories, with an example check from each and a brief description:
+Clang-Tidy有多种检查，分为不同的类别。以下是主要类别的一些简短列表，每个类别都包含一个示例检查和简要描述：
 
 
 \begin{enumerate}
@@ -230,7 +228,7 @@ boost-*:
 
 \begin{itemize}
 \item
-boost-use-to-string: Suggests replacing boost::lexical\_cast<std::string> with boost::to\_string
+boost-use-to-string: 建议将 boost::lexical\_cast<std::string> 替换为 boost::to\_string
 \end{itemize}
 
 \item
@@ -238,55 +236,55 @@ bugprone-*:
 
 \begin{itemize}
 \item
-bugprone-integer-division: Warns when integer division in a floating-point context is likely to cause unintended loss of precision
+bugprone-integer-division: 当整数除法在浮点数上下文中可能导致精度意外丢失时发出警告
 \end{itemize}
 
 \item
-cert-* (Checks related to the CERT C++ Secure Coding Standard):
+cert-* (与CERT C++安全编码标准相关的检查):
 
 \begin{itemize}
 \item
-cert-dcl03-c: Ensures that macros are not used in unsafe contexts
+cert-dcl03-c: 确保宏不被用于不安全上下文
 \end{itemize}
 
 \item
-cppcoreguidelines-* (Checks from C++ Core Guidelines):
+cppcoreguidelines-* (来自C++核心指南的检查):
 
 \begin{itemize}
 \item
-cppcoreguidelines-slicing: Warns on slicing (object slicing, where a derived object is assigned to a base object, cutting off the derived parts)
+cppcoreguidelines-slicing: 警告切片（对象切片，其中派生对象被赋值给基对象，切掉派生部分）
 \end{itemize}
 
 \item
-google-* (Google's coding conventions):
+google-* (Google的编码规范):
 
 \begin{itemize}
 \item
-google-build-using-namespace: Flags using-directives
+google-build-using-namespace: 标记 using-directives
 \end{itemize}
 
 \item
-llvm-* (LLVM coding conventions):
+llvm-* (LLVM编码规范):
 
 \begin{itemize}
 \item
-llvm-namespace-comment: Ensures that namespaces have closing comments
+llvm-namespace-comment: 确保命名空间有结束注释
 \end{itemize}
 
 \item
-misc-* (Miscellaneous checks):
+misc-* (杂项检查):
 
 \begin{itemize}
 \item
-misc-unused-parameters: Flags parameters that are unused
+misc-unused-parameters: 标记未使用的参数
 \end{itemize}
 
 \item
-modernize-* (Modernization checks for C++):
+modernize-* (C++现代化检查):
 
 \begin{itemize}
 \item
-modernize-use-auto: Recommends the use of auto for variable declarations when appropriate
+modernize-use-auto: 建议在适当的情况下使用auto进行变量声明
 \end{itemize}
 
 \item
@@ -294,7 +292,7 @@ performance-*:
 
 \begin{itemize}
 \item
-performance-faster-string-find: Suggests faster alternatives for string searching
+performance-faster-string-find: 建议使用更快的字符串搜索替代方案
 \end{itemize}
 
 \item
@@ -302,13 +300,13 @@ readability-*:
 
 \begin{itemize}
 \item
-readability-identifier-naming: Ensures consistent identifier naming
+readability-identifier-naming: 确保标识符命名一致
 \end{itemize}
 \end{enumerate}
 
-This list is just a representation of a subset of the checks available. Each category contains multiple checks, and there are additional categories in the tool as well. For a complete, up-to-date list of checks and their detailed descriptions, refer to the official Clang-Tidy documentation \footnote{LLVM Community. Extra Clang Tools documentation: Clang-Tidy. 2024. URL \url{https://clang.llvm.org/extra/clang-tidy/}.} or use the clang-tidy -list-checks command on your system.
+这只是可用检查的一个子集的表示。每个类别都包含多个检查，工具中还有其他额外的类别。要获取完整的、最新的检查列表及其详细描述，请参考官方Clang-Tidy文档\footnote{LLVM Community. Extra Clang Tools documentation: Clang-Tidy. 2024. URL \url{https://clang.llvm.org/extra/clang-tidy/}}或在你的系统上使用clang-tidy -list-checks命令。
 
-After learning how to build and use clang-tidy, it's time to delve deeper and examine its internal design.
+学习了如何构建和使用clang-tidy之后，现在是时候更深入地了解其内部设计了。
 
 
 

@@ -1,24 +1,24 @@
-AST matchers are incredibly useful, and there's a utility that facilitates checking various matchers and analyzing the AST of your source code. This utility is known as clang-query tool. You can build and install this utility using the following command:
+AST匹配器非常有用，有一个工具可以方便地检查各种匹配器并分析源代码的AST，这个工具就是clang-query。您可以使用以下命令来构建和安装这个工具：
 
 \begin{shell}
 $ ninja install-clang-query
 \end{shell}
 
 \begin{center}
-Figure 3.29: The clang-query installation
+图3.29：clang-query安装
 \end{center}
 
-You can run the tool as follows:
+您可以通过以下方式运行该工具：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-query minmax.cpp
 \end{shell}
 
 \begin{center}
-Figure 3.30: Running clang-query on a test file
+图3.30：在测试文件上运行clang-query
 \end{center}
 
-We can use the match command as follows:
+我们可以按以下方式使用匹配命令：
 
 \begin{shell}
 clang-query> match functionDecl(decl().bind("match-id"), matchesName("max"))
@@ -34,10 +34,10 @@ clang-query>
 \end{shell}
 
 \begin{center}
-Figure 3.31: Working with clang-query
+图3.31：使用clang-query
 \end{center}
 
-Figure 3.31 demonstrates the default output, referred to as 'diag' . Among several potential outputs, the most relevant one for us is 'dump' . When the output is set to 'dump' , clang-query will display the located AST node. For example, the following demonstrates how to match a function parameter named a :
+图3.31展示了默认输出，称为'diag'。在众多可能的输出中，对我们来说最相关的是'dump'。当输出设置为'dump'时，clang-query将显示定位到的AST节点。例如，以下展示了如何匹配名为a的函数参数：
 
 \begin{shell}
 clang-query> set output dump
@@ -53,10 +53,10 @@ clang-query>
 \end{shell}
 
 \begin{center}
-Figure 3.32: Working with clang-query using dump output
+图3.32：使用clang-query的dump输出
 \end{center}
 
-This tool proves useful when you wish to test a particular matcher or investigate a portion of the AST tree. We will utilize this tool to explore how Clang handles compilation errors.
+当您想要测试特定的匹配器或调查AST树的一部分时，这个工具非常有用。我们将使用这个工具来探索Clang如何处理编译错误。
 
 
 

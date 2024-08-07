@@ -1,8 +1,8 @@
-Clang is a compiler frontend, and its most important operations are related to diagnostics. Diagnostics require precise information about position location in the source code. Let's explore the basic classes that Clang provides for these operations.
+Clang是一个编译器前端，其最重要的操作与诊断相关。诊断需要精确的源代码位置信息。让我们探索Clang为这些操作提供的基本类。
 
-\mySubsubsection{4.4.1.}{SourceManager and SourceLocation}
+\mySubsubsection{4.4.1.}{SourceManager 和 SourceLocation}
 
-Clang, as a compiler, operates with text files (programs), and locating a specific place in the program is one of the most frequently requested operations. Let's look at a typical Clang error report. Consider a program from Chapter 3, Clang AST, as seen in Figure 3.33. Clang produces the following error message for the program:
+Clang作为一个编译器，操作文本文件（程序），而定位程序中的特定位置是最常请求的操作之一。让我们看看典型的Clang错误报告。考虑第三章中的程序，如图3.33所示。Clang为该程序生成的错误消息如下：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only maxerr.cpp
@@ -13,25 +13,25 @@ maxerr.cpp:3:12: error: use of undeclared identifier 'ab'
 \end{shell}
 
 \begin{center}
-Figure 4.12: Error reported in maxerr.cpp
+图4.12：maxerr.cpp中的错误报告
 \end{center}
 
-As we can see in Figure 4.12, the following information is required to display the message:
+如图4.12所示，显示消息所需的信息包括：
 
 \begin{itemize}
 \item
-Filename: In our case, it's maxerr.cpp
+文件名: 在我们的例子中，它是maxerr.cpp
 
 \item
-Line in the file: In our case, it's 3
+文件中的行：在我们的例子中，它是3
 
 \item
-Column in the file: In our case, it's 12
+文件中的列：在我们的例子中，它是12
 \end{itemize}
 
-The data structure that stores this information should be as compact as possible because the compiler uses it frequently. Clang stores the required information in the clang::SourceLocation object.
+存储这些信息的结构体应该尽可能紧凑，因为编译器经常使用它。Clang将这些信息存储在clang::SourceLocation对象中。
 
-This object is used often, so it should be small in size and quick to copy. We can check the size of the object using lldb. For instance, if we run Clang under the debugger, we can determine the size as follows:
+这个对象经常被使用，所以它应该尽可能小且快速复制。我们可以使用lldb检查对象的大小。例如，如果我们使用调试器运行Clang，我们可以如下确定大小：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/clang
@@ -42,20 +42,20 @@ $ lldb <...>/llvm-project/install/clang
 \end{shell}
 
 \begin{center}
-Figure 4.13: clang::SourceLocation size determination under debugger
+图4.13：在调试器下确定clang::SourceLocation的大小
 \end{center}
 
-That is, the information is encoded using a single unsigned long number. How is this possible? The number merely serves as an identifier for a position in the text file. An additional class is required to correctly extract and represent this information, which is clang::SourceManager. The SourceManager object contains all the details about a specific location. In Clang, managing source locations can be challenging due to the presence of macros, includes, and other preprocessing directives. Consequently, there are several ways to interpret a given source location. The primary ones are as follows:
+也就是说，信息是通过一个无符号长整数编码的。这是如何可能的呢？这个数字仅仅作为文本文件中位置的标识符。另外，需要一个额外的类来正确提取和表示这些信息，这个类是clang::SourceManager。SourceManager对象包含有关特定位置的所有详细信息。在Clang中，管理源位置可能具有挑战性，因为存在宏、包含和其他预处理指令。因此，有几种方式可以解释给定的源位置。主要方式如下：
 
 \begin{itemize}
 \item
-Spelling location: Refers to the location where something was actually spelled out in the source. If you have a source location pointing inside a macro body, the spelling location will give you the location in the source code where the contents of the macro are defined.
+拼写位置：指的是某个东西在源中实际拼写出来的位置。如果你有一个指向宏体内部的源位置，拼写位置将给你源代码中宏内容定义的位置。
 
 \item
-Expansion location: Refers to where a macro gets expanded. If you have a source location pointing inside a macro body, the expansion location will give you the location in the source code where the macro was used (expanded).
+扩展位置：指的是宏在哪里被扩展。如果你有一个指向宏体内部的源位置，扩展位置将给你源代码中使用宏（扩展）的位置。
 \end{itemize}
 
-Let's look at a specific example:
+让我们看一个具体的例子：
 
 \begin{cpp}
 #define BAR void bar()
@@ -64,26 +64,26 @@ BAR;
 \end{cpp}
 
 \begin{center}
-Figure 4.14: Example program to test different types of source locations: functions.hpp
+图4.14：测试不同类型的源位置的示例程序：functions.hpp
 \end{center}
 
-In Figure 4.14, we define two functions: int foo() at Line 2 and void bar() at Line 3. For the first function, both the spelling and expansion locations point to Line 2. However, for the second function, the spelling location is at Line 1, while the expansion location is at Line 3.
+在图4.14中，我们在第1行定义了两个函数：int foo()在第2行和void bar()在第3行。对于第一个函数，拼写位置和扩展位置都指向第2行。然而，对于第二个函数，拼写位置在第1行，而扩展位置在第3行。
 
-Let's examine this with a test Clang tool. We will use the test project from Section 3.4, Recursive AST visitor and replace some parts of the code here. First of all, we have to pass clang::ASTContext to our Visitor implementation. This is required because clang::ASTContext provides access to clang::SourceManager. We will replace Line 11 in Figure 3.8 and pass ASTContext as follows:
+让我们用一个测试Clang工具来检查这个例子。我们将使用第3.4节的测试项目，Recursive AST visitor，并在此处替换一些代码部分。首先，我们必须将clang::ASTContext传递给我们的Visitor实现。这是必要的，因为clang::ASTContext提供对clang::SourceManager的访问。我们将替换图3.8中的第11行，并如下传递ASTContext：
 
 \begin{cpp}
 CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef File) {
   return std::make_unique<Consumer>(&CI.getASTContext());
 \end{cpp}
 
-The Consumer class (see Figure 3.9) will accept the argument and use it as a parameter for Visitor:
+Consumer类（见图3.9）将接受参数并将其作为Visitor的参数使用：
 
 \begin{cpp}
 Consumer(clang::ASTContext *Context)
   : V(std::make_unique<Visitor>(Context)) {}
 \end{cpp}
 
-The main changes are for the Visitor class, which is mostly rewritten. First of all, we pass clang::ASTContext to the class constructor as follows:
+主要的更改是在Visitor类中，它几乎被重写。首先，我们将clang::ASTContext传递给类构造函数：
 
 \begin{cpp}
 class Visitor : public clang::RecursiveASTVisitor<Visitor> {
@@ -92,10 +92,10 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 4.15: Visitor class implementation: constructor
+图4.15：Visitor类实现：构造函数
 \end{center}
 
-The AST Context class is stored as a private member of our class, as shown below:
+AST Context类作为我们类的私有成员存储，如下所示：
 
 \begin{cpp}
 private:
@@ -103,10 +103,10 @@ private:
 \end{cpp}
 
 \begin{center}
-Figure 4.16: Visitor class implementation: private section
+图4.16：Visitor类实现：private部分
 \end{center}
 
-The main processing logic is in Visitor::VisitFunctionDecl method, which you can see next
+主要处理逻辑在Visitor::VisitFunctionDecl方法中，您接下来可以看到：
 
 \begin{cpp}
 bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
@@ -127,10 +127,10 @@ bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
 \end{cpp}
 
 \begin{center}
-Figure 4.17: Visitor class implementation: VisitFunctionDecl method
+图4.17：Visitor类实现：VisitFunctionDecl方法
 \end{center}
 
-If we compile and run the code on the test file from Figure 4.14, the following output will be generated::
+如果我们编译并运行图4.14中的测试文件，以下输出将被生成：
 
 \begin{shell}
 Spelling : foo at functions.hpp:2
@@ -140,30 +140,30 @@ Expansion : bar at functions.hpp:3
 \end{shell}
 
 \begin{center}
-Figure 4.18: Output from the recursivevisitor executable on the functions.hpp test file
+图4.18：recursivevisitor可执行文件在functions.hpp测试文件上的输出
 \end{center}
 
-clang::SourceLocation and clang::SourceManager are very powerful classes. In combination with other classes such as clang::SourceRange (a pair of two source locations that specify the beginning and end of a source range), they provide a great foundation for diagnostics used in Clang.
+clang::SourceLocation和clang::SourceManager是非常强大的类。与诸如clang::SourceRange（两个源位置的配对，用于指定源范围的开始和结束）等其他类结合使用，它们为Clang中使用的诊断提供了坚实的基础。
 
-\mySubsubsection{4.4.2.}{Diagnostics support}
+\mySubsubsection{4.4.2.}{诊断支持}
 
-Clang's diagnostics subsystem is responsible for generating and reporting warnings, errors, and other messages [8]. The main classes involved are:
+Clang的诊断子系统负责生成和报告警告、错误和其他消息\footnote{LLVM Community. “Clang” CFE Internals Manual. 2023. URL \url{https://clang.llvm.org/docs/InternalsManual.html}}。涉及的主要类包括：
 
 \begin{itemize}
 \item
-DiagnosticsEngine: Manages diagnostic IDs and options
+DiagnosticsEngine: 管理诊断ID和选项
 
 \item
-DiagnosticConsumer: Abstract base class for diagnostic consumers
+DiagnosticConsumer: 诊断消费者的抽象基类
 
 \item
-DiagnosticIDs: Handles the mapping between diagnostic flags and internal IDs
+DiagnosticIDs: 处理诊断标志和内部ID之间的映射
 
 \item
-DiagnosticInfo: Represents a single diagnostic
+DiagnosticInfo: 代表单个诊断
 \end{itemize}
 
-Here is a simple example illustrating how you might emit a warning in Clang:
+以下是一个简单的例子，展示了如何在Clang中发出警告：
 
 \begin{cpp}
 // Emit a warning
@@ -172,12 +172,12 @@ DiagnosticsEngine.Report(DiagnosticsEngine.getCustomDiagID(
 \end{cpp}
 
 \begin{center}
-Figure 4.19: Emit warning with clang::DiagnosticsEngine
+图4.19：使用clang::DiagnosticsEngine发出警告
 \end{center}
 
-In our example, we will use a simple DiagnosticConsumer, clang::TextDiagnosticPrinter, which formats and prints the processed diagnostic messages.
+在我们的例子中，我们将使用一个简单的DiagnosticConsumer，即clang::TextDiagnosticPrinter，它格式化和打印处理后的诊断消息。
 
-The full code for the main function of our example is shown in Figure 4.20:
+我们示例中主函数的完整代码如图4.20所示：
 
 \begin{cpp}
 int main() {
@@ -200,20 +200,20 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 4.20: Clang diagnostics example
+图4.20：Clang诊断示例
 \end{center}
 
-The code will produce the following output
+这段代码将产生以下输出：
 
 \begin{shell}
 warning: This is a custom warning.
 \end{shell}
 
 \begin{center}
-Figure 4.21: Printed diagnostics
+图4.21：打印的诊断信息
 \end{center}
 
-In this example, we first set up DiagnosticsEngine with TextDiagnosticPrinter as its DiagnosticConsumer. We then use the Report method of DiagnosticsEngine to emit a custom warning. We will add a more realistic example later when we create our test project for the Clang plugin in Section 4.6, Clang plugin project.
+在这个例子中，我们首先使用TextDiagnosticPrinter作为其DiagnosticConsumer来设置DiagnosticsEngine。然后，我们使用DiagnosticsEngine的Report方法发出一个自定义警告。我们将在创建第4.6节中的Clang插件的测试项目时添加一个更现实的例子。
 
 
 

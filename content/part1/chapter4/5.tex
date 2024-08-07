@@ -1,12 +1,12 @@
-he LLVM project has its own tooling support. The most important LLVM tools are TableGen and LIT (which stands for LLVM Integrated Tester). We will look into them with examples from the Clang code. These examples should help us understand the purpose of the tooling and how they can be used.
+LLVM项目有自己的工具支持。最重要的LLVM工具是TableGen和LIT（LLVM集成测试器）。我们将通过Clang代码中的示例来了解它们，这些示例应该帮助我们理解工具的目的以及如何使用它们。
 
 \mySubsubsection{4.5.1.}{TableGen}
 
-TableGen is a domain-specific language (DSL) and associated tool used in the LLVM project for the purpose of describing and generating tables, particularly those that describe a target architecture. This is highly useful for compiler infrastructure, where one frequently needs to describe things such as instruction sets, registers, and various other target-specific attributes in a structured manner.
+TableGen是一种领域特定语言（DSL）和相关工具，用于描述和生成表，特别是那些描述目标架构的表。这对于编译器基础设施非常有用，因为在其中经常需要以结构化方式描述诸如指令集、寄存器和其他目标特定属性。
 
-TableGen is employed in various parts of the Clang compiler. It's primarily used where there's a need to generate large amounts of similar code. For instance, it can be used for supporting cast operations that necessitate extensive enum declarations in basic classes, or in the diagnostic subsystem where code generation is required to handle numerous similar diagnostic messages. We will examine how TableGen functions within the diagnostics system as an example.
+TableGen在Clang编译器的各个部分都有应用。它主要用于需要生成大量类似代码的情况。例如，它可用于支持基本类中需要大量枚举声明的强制转换操作，或在诊断子系统中生成代码以处理大量相似的诊断消息。我们将检查TableGen在诊断系统中的功能作为示例。
 
-We will begin with the Diagnostic.td file, which describes Clang's diagnostics. This file can be found at clang/include/clang/Basic/Diagnostic.td. Let's examine how diagnostic severity is defined:
+我们将从Diagnostic.td文件开始，该文件描述了Clang的诊断。这个文件可以在clang/include/clang/Basic/Diagnostic.td找到。让我们看看如何定义诊断严重性：
 
 \begin{shell}
 // Define the diagnostic severities.
@@ -16,10 +16,10 @@ class Severity<string N> {
 \end{shell}
 
 \begin{center}
-Figure 4.22: Severity definition in clang/include/clang/Basic/Diagnostic.td
+图4.22：在clang/include/clang/Basic/Diagnostic.td中定义严重性
 \end{center}
 
-In Figure 4.22, we define a class for severities (Lines 17-19). Each severity is associated with a string, as shown below:
+在图4.22中，我们定义了一个用于严重性的类（第17-19行）。每个严重性都与一个字符串相关联，如下所示：
 
 \begin{shell}
 def SEV_Ignored : Severity<"Ignored">;
@@ -30,12 +30,12 @@ def SEV_Fatal   : Severity<"Fatal">;
 \end{shell}
 
 \begin{center}
-Figure 4.23: Definitions for different types of severity in clang/include/clang/Basic/Diagnostic.td
+图4.23：clang/include/clang/Basic/Diagnostic.td中不同类型严重性的定义
 \end{center}
 
-Figure 4.23 contains definitions for the different severities; for instance, the Warning severity is defined on Line 22.
+图4.23包含不同严重性的定义；例如，警告严重性在第22行定义。
 
-The severity is later used to define the Diagnostic class, with the Warning diagnostic being defined as a descendant of this class:
+严重性后来用于定义Diagnostic类，其中警告诊断是这个类的直接子类：
 
 \begin{shell}
 // All diagnostics emitted by the compiler are an indirect subclass of this.
@@ -48,10 +48,10 @@ class Warning<string str>   : Diagnostic<str, CLASS_WARNING, SEV_Warning>;
 \end{shell}
 
 \begin{center}
-Figure 4.24: Diagnostics definition in clang/include/clang/Basic/Diagnostic.td
+图4.24：在clang/include/clang/Basic/Diagnostic.td中定义诊断
 \end{center}
 
-Using the Warning class definition, different instances of the class can be defined. For example, the following is an instance that defines an unused parameter warning located in DiagnosticSemaKinds.td:
+使用Warning类定义，可以定义该类的不同实例。例如，以下是在DiagnosticSemaKinds.td中定义的未使用参数警告实例：
 
 \begin{shell}
 def warn_unused_parameter : Warning<"unused parameter %0">,
@@ -59,22 +59,22 @@ def warn_unused_parameter : Warning<"unused parameter %0">,
 \end{shell}
 
 \begin{center}
-Figure 4.25: The definition of the unused parameter warning in clang/include/clang/Basic/DiagnosticSemaKinds.td
+图4.25：在clang/include/clang/Basic/DiagnosticSemaKinds.td中定义未使用参数警告
 \end{center}
 
-The clang-tblgen tool will generate the corresponding DiagnosticSemaKinds.inc file:
+clang-tblgen工具将生成相应的DiagnosticSemaKinds.inc文件：
 
 \begin{shell}
 DIAG(warn_unused_parameter, CLASS_WARNING, (unsigned)diag::Severity::Ignored, "unused parameter %0", 985, SFINAE_Suppress, false, false, true, false, 2)
 \end{shell}
 
 \begin{center}
-Figure 4.26: The definition of the unused parameter warning in clang/include/clang/Basic/DiagnosticSemaKinds.inc
+图4.26：在clang/include/clang/Basic/DiagnosticSemaKinds.inc中定义未使用参数警告
 \end{center}
 
-This file retains all the necessary information about the diagnostic. This information can be retrieved from the Clang source code using different definitions of the DIAG macro.
+这个文件保留了所有必要的诊断信息。这些信息可以从Clang源代码中通过不同的DIAG宏定义获取。
 
-For instance, the following code leverages the TableGen-generated code to extract diagnostic descriptions, as found in clang/lib/Basic/DiagnosticIDs.cpp:
+例如，以下代码利用TableGen生成的代码提取诊断描述，可以在clang/lib/Basic/DiagnosticIDs.cpp中找到：
 
 \begin{cpp}
 const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
@@ -89,10 +89,10 @@ const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
 \end{cpp}
 
 \begin{center}
-Figure 4.27: DIAG macro definition
+图4.27：DIAG宏定义
 \end{center}
 
-The C++ preprocessor will expand to the following:
+C++预处理器将展开为以下内容：
 
 \begin{cpp}
 const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
@@ -104,30 +104,30 @@ const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
 \end{cpp}
 
 \begin{center}
-Figure 4.28: DIAG macro expansion
+图4.28：DIAG宏展开
 \end{center}
 
-The provided example demonstrates how TableGen can be used to generate code in Clang and how it can simplify Clang development. The diagnostic subsystem is not the only area where TableGen is utilized; it is also widely used in other parts of Clang. For instance, the macros used in various types of AST visitors also rely on the code generated by TableGen; see Section 3.3.2, Visitor implementation.
+提供的示例展示了如何使用TableGen在Clang中生成代码，以及它如何简化Clang开发。诊断子系统并不是TableGen唯一被使用的领域；它还广泛用于Clang的其他部分。例如，用于各种AST访问者的宏也依赖于TableGen生成的代码；请参见第3.3.2节，访问者实现。
 
-\mySubsubsection{4.5.2.}{LLVM test framework}
+\mySubsubsection{4.5.2.}{LLVM测试框架}
 
-LLVM uses several testing frameworks for different types of testing. The primary ones are LLVM Integrated Tester (LIT) and Google Test (GTest) \footnote{Google. Google Test. 2023. URL \url{https://github.com/google/googletest}. C++ testing framework.}. Both LIT and GTest play significant roles in Clang's testing infrastructure:
+LLVM使用多个测试框架进行不同类型的测试。主要的是LLVM集成测试器（LIT）和Google测试（GTest）\footnote{Google. Google Test. 2023. URL \url{https://github.com/google/googletest}. C++ testing framework}。LIT和GTest在Clang的测试基础设施中都扮演着重要角色：
 
-LIT is primarily used for testing the behavior of the Clang toolchain as a whole, with a focus on its code compilation capabilities and the diagnostics it produces.
+LIT主要用于测试Clang工具链的整体行为，重点是其代码编译能力和产生的诊断。
 
-GTest is utilized for unit tests, targeting specific components of the code base, primarily utility libraries and internal data structures.
+GTest用于单元测试，针对代码库的特定组件，主要是实用库和内部数据结构。
 
-These tests are crucial for maintaining the quality and stability of the Clang project.
+这些测试对于保持Clang项目的质量和稳定性至关重要。
 
-\begin{myNotic}{Important note}
-We will not delve into GTest, as this testing framework is commonly used outside LLVM and isn't part of LLVM itself. For more information about GTest, please visit its official page: \url{https://github.com/google/googletest}
+\begin{myNotic}{重要提示}
+我们将不深入探讨GTest，因为该测试框架在LLVM之外广泛使用，并不属于LLVM本身。有关GTest的更多信息，请访问其官方页面：\url{https://github.com/google/googletest}
 \end{myNotic}
 
-Our focus will be on LIT. LIT is LLVM's own test framework and is heavily used for testing the various tools and libraries in LLVM, including the Clang compiler. LIT is designed to be lightweight and is tailored for the needs of compiler testing. It's commonly used for running tests that are essentially shell scripts, often with checks for specific patterns in the output. A typical LIT test may consist of a source code file along with a set of "RUN" commands that specify how to compile, link, or otherwise process the file, and what output to expect.
+我们的重点将是LIT。LIT是LLVM自己的测试框架，在LLVM中的各种工具和库（包括Clang编译器）的测试中被广泛使用。LIT被设计为轻量级，并针对编译器测试的需求进行了定制。它通常用于运行实际上是shell脚本的测试，经常检查输出中的特定模式。典型的LIT测试可能包括源代码文件以及一组“RUN”命令，指定如何编译、链接或处理文件，以及预期的输出。
 
-The RUN commands often use FileCheck, another utility in the LLVM project, to check the output against expected patterns. In Clang, LIT tests are often used to test frontend features such as parsing, semantic analysis, code generation, and diagnostics. These tests typically look like source code files with embedded comments to indicate how to run the test and what to expect.
+RUN命令经常使用LLVM项目中的另一个工具FileCheck来检查输出是否符合预期模式。在Clang中，LIT测试通常用于测试前端功能，如解析、语义分析、代码生成和诊断。这些测试通常看起来像源代码文件，其中嵌入注释以指示如何运行测试以及期望的结果。
 
-Consider the following example from clang/test/Sema/attr-unknown.c:
+考虑以下来自clang/test/Sema/attr-unknown.c的示例：
 
 \begin{cpp}
 // RUN: %clang_cc1 -fsyntax-only -verify -Wattributes %s
@@ -137,14 +137,14 @@ void z(void) __attribute__((bogusattr)); // expected-warning {{unknown attribute
 \end{cpp}
 
 \begin{center}
-Figure 4.29: LIT test for Clang warnings about unknown attributes
+图4.29：LIT测试用于Clang警告未知属性
 \end{center}
 
-The example is a typical C source file that can be processed by Clang. LIT's behavior is controlled by comments within the source text. The first comment (on Line 1) specifies how the test should be executed. As indicated, clang should be started with some additional arguments: -fsyntax-only and -verify . There are also substitutions that begin with the '\%' symbol. The most important of these is '\%s', which is replaced by the source file's name. LIT will also examine comments beginning with expected-
+这个例子是一个典型的C源文件，可以被Clang处理。LIT的行为由源文本中的注释控制。第1行的注释（Line 1）指定了如何执行测试。如指示，应该使用一些额外的参数启动clang：-fsyntax-only和-verify。还有以'\%'符号开头的替换。最重要的这些是'\%s'，它会被源文件名替换。LIT还会检查以expected-
 
-warning and ensure that the warnings produced by Clang's output match the expected values.
+warning开头的注释，并确保Clang的输出产生的警告与预期值匹配。
 
-The test can be run as follows:
+测试可以按以下方式运行：
 
 \begin{shell}
 $ ./build/bin/llvm-lit ./clang/test/Sema/attr-unknown.c
@@ -158,10 +158,10 @@ Passed: 1
 
 
 \begin{center}
-Figure 4.30: LIT test run
+图4.30：LIT测试运行
 \end{center}
 
-We run llvm-lit from the build folder because the tool is not included in the installation procedure. We can obtain more details about LIT setup and its invocation once we create our test clang plugin project and configure LIT tests for it.
+我们从构建文件夹运行llvm-lit，因为该工具不包括在安装过程中。一旦我们创建了测试Clang插件项目并配置了LIT测试，我们就可以获得更多关于LIT设置和调用方式的细节。
 
 
 

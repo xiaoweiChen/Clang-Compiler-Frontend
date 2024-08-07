@@ -1,6 +1,6 @@
-AST matchers \footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} provide another approach for locating specific AST nodes. They can be particularly useful in linters when searching for improper pattern usage or in refactoring tools when identifying AST nodes for modification.
+AST匹配器\footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} 为定位特定的AST节点提供了另一种方法。它们在搜索不适当的模式使用或识别需要修改的AST节点的linters和重构工具中特别有用。
 
-We will create a simple program to test AST matches. The program will identify a function definition with the name max. We will use a slightly modified CMakeLists.txt file from the previous examples to include the libraries required to support AST matches:
+我们将创建一个简单的程序来测试AST匹配。该程序将识别具有名称max的函数定义。我们将使用从前面的示例中稍作修改的CMakeLists.txt文件，以包含支持AST匹配所需的库：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -33,10 +33,10 @@ endif()
 \end{cmake}
 
 \begin{center}
-Figure 3.24: CMakeLists.txt for AST matchers test tool
+图3.24: AST匹配器测试工具的CMakeLists.txt文件
 \end{center}
 
-There are two additional libraries added: LLVMFrontendOpenMP and clangASTMatchers (see Lines 18 and 21 in Figure 3.24). The main function for our tool looks like this:
+我们添加了两个额外的库：LLVMFrontendOpenMP和clangASTMatchers（见图3.24中的第18行和第21行）。我们工具的主函数看起来像这样：
 
 \begin{cpp}
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -67,10 +67,10 @@ int main(int argc, const char **argv) {
 \end{cpp}
 
 \begin{center}
-Figure 3.25: The main function for AST matchers test tool
+图3.25: AST匹配器测试工具的主函数
 \end{center}
 
-As you can observe (Lines 21-23), we employ the MatchFinder class and define a custom callback (included via the header in Line 4) that outlines the specific AST node we intend to match. The callback is implemented as follows:
+正如你所观察到的（第21-23行），我们使用了MatchFinder类，并定义了一个自定义回调（通过第4行的头文件包含），该回调描述了我们打算匹配的特定AST节点。回调的实现如下：
 
 \begin{cpp}
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -103,21 +103,21 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 3.26: The match callback for the AST matchers test tool
+图3.26: AST匹配器测试工具的匹配回调
 \end{center}
 
-The most crucial section of the code is located at lines 7-9. Each matcher is identified by an ID, which, in our case, is 'match-id'. The matcher itself is defined in Lines 8-9:
+代码中最重要的部分位于第7-9行。每个匹配器都由一个ID标识，在我们的情况下是'match-id'。匹配器本身在第8-9行定义：
 
 \begin{cpp}
 clang::ast_matchers::DeclarationMatcher M =
   functionDecl(decl().bind(MatchID), matchesName("max"));
 \end{cpp}
 
-This matcher seeks a function declaration that has a specific name, using functionDecl(), as seen in matchesName(). We utilized a specialized Domain-Specific Language (DSL) to specify the matcher. The DSL is implemented using C++ macros. We can also create our own matchers, as will be shown in Section 7.3.3, Check implementation. It's worth noting that the recursive AST visitor serves as the backbone for AST traversal inside the matcher's implementation.
+这个匹配器寻找具有特定名称的函数声明，使用functionDecl()，正如我们在matchesName()中看到的那样。我们使用了一个专门的领域特定语言（DSL）来指定匹配器。DSL使用C++宏实现。我们还可以创建自己的匹配器，这将在第7.3.3节，检查实现中展示。值得注意的是，递归AST访问者在匹配器实现中的AST遍历中起着核心作用。
 
-The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
+程序可以使用我们之前使用的相同的命令序列进行编译。见图3.11。
 
-We will utilize a slightly modified version of the example shown in Figure 2.5, with an additional function added:
+我们将使用图2.5中示例的一个稍微修改版本，其中添加了一个额外的函数：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -132,10 +132,10 @@ int min(int a, int b) {
 \end{cpp}
 
 \begin{center}
-Figure 3.27: Test program minmax.cpp for AST matchers
+图3.27: AST匹配器的测试程序minmax.cpp
 \end{center}
 
-When we run our test tool on the example, we will obtain the following output:
+当我们运行我们的测试工具时，我们将获得以下输出：
 
 \begin{shell}
 ./matchvisitor minmax.cpp -- -std=c++17
@@ -144,12 +144,14 @@ Found the 'max' function at minmax.cpp:1:5
 \end{shell}
 
 \begin{center}
-Figure 3.28: The result of running the matchvisitor utility on a test file
+图3.28: 在测试文件上运行matchvisitor实用程序的结果
 \end{center}
 
 As we can see, it has located only one function declaration with the name specified for the matcher.
 
-The DSL for matchers is typically employed in custom Clang tools, such as clang-tidy (as discussed in Chapter 5, Clang-Tidy Linter Framework), but it can also be used as a standalone tool. A specialized program called clang-query enables the execution of different match queries, which can be used to search for specific AST nodes in analyzed C++ code. Let's see how the tool works.
+如我们所见，它只找到了与匹配器指定的名称匹配的一个函数声明。
+
+匹配器的DSL通常在自定义Clang工具中使用，但它也可以作为独立工具使用。一个专门的程序名为clang-query，它可以执行不同的匹配查询，用于在分析的C++代码中搜索特定的AST节点。让我们看看这个工具是如何工作的。
 
 
 

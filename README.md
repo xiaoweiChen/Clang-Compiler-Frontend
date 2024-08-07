@@ -16,9 +16,9 @@ Get to grips with the internals of a C/C++ compiler frontend and create your own
 
 One of the key components of LLVM is the C/C++ compiler known as Clang. This compiler is widely used across various companies and has been designated as the default compiler for certain development environments, notably for macOS development. Clang will be the primary focus of our investigation in this book, with particular attention to its frontend—the part that is closest to the C/C++ programming language. Specifically, the book will include examples demonstrating how the C++ standard is implemented within the compiler.
 
-A pivotal aspect of LLVM’s design is its modularity, which facilitates the creation of custom tools that exploit the compiler’s comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project’s needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
+A pivotal aspect of LLVM's design is its modularity, which facilitates the creation of custom tools that exploit the compiler's comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project's needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
 
-LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book’s content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
+LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book's content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
 
 
 
@@ -30,7 +30,7 @@ LLVM is an actively evolving project with two major releases each year. At the t
 
 ## 本书相关
 
-* github翻译地址：https://github.com/xiaoweiChen/Clang-Compiler-Frontend  
+* github翻译地址：https://github.com/xiaoweiChen/Clang-Compiler-Frontend
 
 * 译文的LaTeX 环境配置：https://www.cnblogs.com/1625--H/p/11524968.html
 

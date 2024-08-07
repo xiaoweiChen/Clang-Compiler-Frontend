@@ -1,6 +1,6 @@
-Recursive AST visitors address the limitations observed with specialized visitors. We will create the same program, which searches for and prints function declarations along with their parameters, but we'll use a recursive visitor this time.
+递归AST访问者解决了与专用访问者观察到的局限性。我们将创建相同的程序，该程序搜索并打印函数声明及其参数，但这次我们将使用递归访问者。
 
-The CMakeLists.txt for recursive visitor test tool will be used in a similar way as before. Only the project name (Lines 2 and 15-17 in Figure 3.20) and source filename (Line 14 in Figure 3.20) were changed:
+递归访问者测试工具的CMakeLists.txt将以与之前类似的方式使用。只有项目名称（图3.20第2行和第15-17行）和源文件名（图3.20第14行）发生了变化：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -31,10 +31,10 @@ endif()
 \end{cmake}
 
 \begin{center}
-Figure 3.20: CMakeLists.txt file for the RecursiveVisitor test tool
+图3.20: 递归访问者测试工具的CMakeLists.txt文件
 \end{center}
 
-The main function for our tool is similar to the 'DeclVisitor' one defined in Figure 3.7.
+我们工具的主函数与图3.7中定义的'DeclVisitor'主函数类似。
 
 \begin{cpp}
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -65,12 +65,12 @@ int main(int argc, const char **argv) {
 \end{cpp}
 
 \begin{center}
-Figure 3.21: The main function for the RecursiveVisitor test tool
+图3.21: 递归访问者测试工具的主函数
 \end{center}
 
-As you can see, we changed only the namespace name for our custom frontend action at Line 23.
+如你所见，我们在第23行只更改了自定义前端动作的命名空间名称。
 
-The code for the frontend action and consumer is the same as in Figure 3.8 and Figure 3.9, with the only difference being the namespace change from declvisitor to recursivevisitor. The most interesting part of the program is the Visitor class implementation.
+前端动作和消费者的代码与图3.8和图3.9中的代码相同，唯一的区别是命名空间从declvisitor更改为recursivevisitor。程序中最有趣的部分是访问者类的实现。
 
 \begin{cpp}
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -93,14 +93,14 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 3.22: Visitor class implementation
+图3.22: 访问者类的实现
 \end{center}
 
-There are several changes compared to the code for 'DeclVisitor' (see Figure 3.10). The first is that recursion isn't implemented. We've only implemented the callbacks for nodes of interest to us. A reasonable question arises: how is the recursion controlled? The answer lies in another change: our callbacks now return a boolean result. The false value indicates that the recursion should stop, while true signals the visitor to continue the traversal.
+与'DeclVisitor'的代码（见图3.10）相比，有几个变化。首先，递归没有实现。我们只实现了对我们感兴趣的节点的回调。随之而来的是一个合理的问题：递归是如何控制的？答案在于另一个变化：我们的回调现在返回一个布尔结果。false值表示递归应该停止，而true信号访问者继续遍历。
 
-The program can be compiled using the same sequence of commands as we used previously. See Figure 3.11.
+程序可以使用我们之前使用的相同的命令序列进行编译。见图3.11。
 
-We can run our program as follows, see Figure 3.23:
+我们可以像这样运行我们的程序，见图3.23：
 
 \begin{shell}
 $ ./recursivevisitor max.cpp -- -std=c++17
@@ -111,10 +111,10 @@ Function: 'max'
 \end{shell}
 
 \begin{center}
-Figure 3.23: The result of running the recursivevisitor utility on a test file
+图3.23: 在测试文件上运行递归访问者实用程序的结果
 \end{center}
 
-As we can see, it produces the same result as we obtained with the DeclVisitor implementation. The AST traversal techniques considered so far are not the only ways for AST traversal. Most of the tools that we will consider later will use a different approach based on AST matchers.
+如我们所见，它产生了与我们使用DeclVisitor实现获得的结果相同的输出。到目前为止考虑的AST遍历技术并不是进行AST遍历的唯一方法。我们稍后考虑的大多数工具将使用基于AST匹配器的不同方法。
 
 
 

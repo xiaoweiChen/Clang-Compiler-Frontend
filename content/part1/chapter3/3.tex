@@ -1,26 +1,25 @@
-The compiler requires traversal of the AST to generate IR code. Thus, having a well-structured data structure for tree traversal is paramount for AST design. To put it another way, the design of the AST should prioritize facilitating easy tree traversal. A standard approach in many systems is to have a common base class for all AST nodes. This class typically provides a method to retrieve the node's children, allowing for tree traversal using popular algorithms such as Breadth-First Search (BFS) [19]. Clang, however, takes a different approach: its AST nodes don't share a common ancestor. This poses the question: how is tree traversal organized in Clang?
+编译器需要遍历AST来生成IR代码。因此，为树遍历提供良好结构的数据结构对于AST设计至关重要。换句话说，AST的设计应该优先考虑促进容易的树遍历。许多系统中的标准方法是为所有AST节点提供一个共同的基类。这个类通常提供一种方法来检索节点的子节点，从而允许使用诸如广度优先搜索（BFS）[19]之类的流行算法进行树遍历。然而，Clang采取了不同的方法：它的AST节点没有共同的祖先。这提出了一个问题：Clang中的树遍历是如何组织的？
 
-Clang employs three unique techniques:
+Clang采用了三种独特的技术：
 
 \begin{itemize}
 \item
-The Curiously Recurring Template Pattern (CRTP) for visitor class definition
+用于访问者类定义的奇异递归模板模式（CRTP）
 
 \item
-Ad hoc methods tailored specifically for different nodes
+为不同节点量身定制的特有方法
 
 \item
-Macros, which can be perceived as the connecting layer between the ad hoc methods and CRTP
+宏，可以被视为特有方法与CRTP之间的连接层
 \end{itemize}
 
-We will explore these techniques through a simple program designed to identify function definitions and display the function names together with their parameters.
+我们将通过一个简单的程序来探索这些技术，该程序旨在识别函数定义并显示函数名及其参数。
 
-\mySubsubsection{3.3.1.}{DeclVisitor test tool}
+\mySubsubsection{3.3.1.}{DeclVisitor测试工具}
 
-Our test tool will build upon the clang::DeclVisitor class, which is defined as a straightforward visitor class aiding in the creation of visitors for C/C++ declarations.
+我们的测试工具将建立在clang::DeclVisitor类之上，这是一个简单的访问者类，用于帮助创建C/C++声明的访问者。
 
-We will use the same CMake file as was created for our first Clang tool (see Figure 1.13). The sole addition to the new tool is the clangAST library. The resultant CMakeLists.txt is shown in Figure 3.6:
-
+我们将使用与我们的第一个Clang工具相同的CMake文件（参见图1.13）。新工具的唯一添加是clangAST库。生成的CMakeLists.txt如图3.6所示：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -50,10 +49,10 @@ else()
 \end{cmake}
 
 \begin{center}
-Figure 3.6: CMakeLists.txt file for DeclVisitor test tool
+图3.6:DeclVisitor测试工具的CMakeLists.txt文件
 \end{center}
 
-The main function of our tool is presented below:
+工具的main函数如下所示:
 
 \begin{cpp}
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -84,12 +83,12 @@ int main(int argc, const char **argv) {
 \end{cpp}
 
 \begin{center}
-Figure 3.7: The main function of the DeclVisitor test tool
+图3.7: DeclVisitor测试工具的main函数
 \end{center}
 
-From Lines 5 and 23, it's evident that we employ a custom frontend action specific to our project: clangbook::declvisitor::FrontendAction.
+从第5行和第23行可以看出，我们使用了针对我们项目的自定义前端动作：clangbook::declvisitor::FrontendAction。
 
-The following is the code for this class:
+以下是对这个类的代码：
 
 \begin{cpp}
 #include "Consumer.hpp"
@@ -110,12 +109,12 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 3.8: Custom FrontendAction class for the DeclVisitor test tool
+ 图3.8: DeclVisitor测试工具的自定义FrontendAction类
 \end{center}
 
-You'll notice that we have overridden the CreateASTConsumer function from clang::ASTFrontendAction class to instantiate an object of our custom AST consumer class Consumer, defined in clangbook::declvisitor namespace, as highlighted in Figure 3.8, Lines 9-12.
+你会注意到，我们已经重写了clang::ASTFrontendAction类的CreateASTConsumer函数，以实例化我们自定义的AST Consumer类，该类定义在clangbook::declvisitor命名空间中，如图3.8。
 
-The implementation for the class is as follows:
+该类的实现如下：
 
 \begin{cpp}
 #include "Visitor.hpp"
@@ -139,12 +138,12 @@ private:
 \end{cpp}
 
 \begin{center}
-Figure 3.9: Consumer class for the DeclVisitor test tool
+图3.9: DeclVisitor测试工具的Consumer类
 \end{center}
 
-Here, we can see that we've created a sample visitor and invoked it using an overridden method HandleTranslationUnit from the clang::ASTConsumer class (see Figure 3.9, Line 11).
+在这里，我们可以看到我们已经创建了一个示例访问者，并使用重写的clang::ASTConsumer类的HandleTranslationUnit方法（见图3.9，第11行）来调用它。
 
-However, the most intriguing portion is the code for the visitor:
+然而，最有趣的部分是Visitor代码：
 
 \begin{cpp}
 #include "clang/AST/DeclVisitor.h"
@@ -173,12 +172,12 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 3.10: Visitor class implementation
+图3.10: Visitor类的实现
 \end{center}
 
-We will explore the code in more depth later. For now, we observe that it prints the function name at Line 8 and the parameter name at Line 14.
+我们将在稍后更深入地探讨代码。目前，我们观察到它在第8行打印了函数名，在第14行打印了参数名。
 
-We can compile our program using the same sequence of commands as we did for our test project, as detailed in Section 1.4, Test project – syntax check with a Clang tool.
+我们可以使用与我们测试项目相同的命令序列来编译我们的程序，如第1.4节，测试项目——使用Clang工具进行语法检查中所述。
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -189,22 +188,22 @@ ninja
 \end{shell}
 
 \begin{center}
-Figure 3.11: Configure and build commands for the DeclVisitor test tool
+图3.11: DeclVisitor测试工具的配置和构建命令
 \end{center}
 
-As you may notice, we used the -DCMAKE\_BUILD\_TYPE=Debug option for CMake. The option we are using will slow down the overall performance, but we use it because we might want to investigate the resulting program under debugger.
+正如你所注意到的，我们在CMake中使用了-DCMAKE\_BUILD\_TYPE=Debug选项。我们之所以使用这个选项，是因为我们可能需要在调试器中调查结果程序。
 
-\begin{myNotic}{Important note}
-The build command we used for our tool assumes that the required libraries are installed under the <...>/llvm-project/install folder, which was specified with the -DCMAKE\_INSTALL\_PREFIX option during the CMake configure command, as described in Section 1.4, Test project – syntax check with a Clang tool. See Figure 1.12:
+\begin{myNotic}{重要提示}
+我们为工具使用的构建命令假设所需的库安装在<…>/llvm-project/install文件夹下，这是在CMake配置命令期间使用-DCMAKE\_INSTALL\_PREFIX选项指定的，如第1.4节，测试项目——使用Clang工具进行语法检查中所述。见图1.12：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
 \end{shell}
 
-The required build artifacts must be installed using the ninja install command.
+所需的构建工件必须使用ninja install命令安装
 \end{myNotic}
 
-We will use the same program we referenced in our previous investigations (see Figure 2.5) to also study AST traversal:
+我们将使用我们在之前调查中引用的同一程序（见图2.5）来研究AST遍历：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -215,12 +214,12 @@ int max(int a, int b) {
 \end{cpp}
 
 \begin{center}
-Figure 3.12: Test program max.cpp
+图3.12: 测试程序max.cpp
 \end{center}
 
-This program consists of a single function, max, which takes two parameters, a and b, and returns the maximum of the two.
+这个程序包含一个单一的函数max，它接受两个参数a和b，并返回两者中的较大者。
 
-We can run our program as follows:
+我们可以像这样运行我们的程序：
 
 \begin{shell}
 $ ./declvisitor max.cpp -- -std=c++17
@@ -230,37 +229,37 @@ Function: 'max'
         Parameter: 'b'
 \end{shell}
 
-Figure 3.13: The result of running the declvisitor utility on a test file
+图3.13: 在测试文件上运行declvisitor实用程序的结果
 
-\begin{myNotic}{Important note}
+\begin{myNotic}{重要提示}
 
-We used '- -' to pass additional arguments to the compiler in Figure 3.13, specifically indicating that we want to use C++17 with the option '-std=c++17'. We can also pass other compiler arguments. An alternative is to specify the compilation database path with the '-p' option, as shown below:
+我们在图3.13中使用'-{}-'来向编译器传递附加参数，具体指示我们想要使用C++17，并通过选项'-std=c++17'。我们还可以传递其他编译器参数。另一种方法是使用'-p'选项指定编译数据库路径，如下所示：
 
 \begin{shell}
 $ ./declvisitor max.cpp -p <path>
 \end{shell}
 
-Here, <path> is the path to the folder containing the compilation database. You can find more information about the compilation database in Chapter 9, Appendix 1: Compilation Database.
+在这里，是包含编译数据库的文件夹路径<path>。关于编译数据库的更多信息，请参见第9章，附录1：编译数据库。
 
 \end{myNotic}
 
-Let's investigate the Visitor class implementation in detail.
+现在，让我们详细探讨访问者类的实现。
 
-\mySubsubsection{3.3.2.}{Visitor implementation}
+\mySubsubsection{3.3.2.}{访问者实现}
 
-Let's delve into the Visitor code (see Figure 3.10). Firstly, you'll notice an unusual construct where our class is derived from a base class parameterized by our own class:
+让我们深入研究访问者代码（见图3.10）。首先，你会注意到我们的类是从一个基类参数化而成的，这个基类是我们的类：
 
 \begin{cpp}
 class Visitor : public clang::DeclVisitor<Visitor> {
 \end{cpp}
 
 \begin{center}
-Figure 3.14: Visitor class declaration
+图3.14: 访问者类声明
 \end{center}
 
-This construct is known as the Curiously Recurring Template Pattern, or CRTP.
+这种构造被称为奇异递归模板模式，或CRTP。
 
-The Visitor class has several callbacks that are triggered when a corresponding AST node is encountered. The first callback targets the AST node representing a function declaration:
+访问者类有几个回调，当遇到相应的AST节点时会被触发。第一个回调针对表示函数声明的AST节点：
 
 \begin{cpp}
 void VisitFunctionDecl(const clang::FunctionDecl *FD) {
@@ -272,12 +271,12 @@ void VisitFunctionDecl(const clang::FunctionDecl *FD) {
 \end{cpp}
 
 \begin{center}
-Figure 3.15: FunctionDecl callback
+图3.15: FunctionDecl回调
 \end{center}
 
-As shown in Figure 3.15, the function name is printed on Line 8. Our subsequent step involves printing the names of the parameters. To retrieve the function parameters, we can utilize the parameters() method from the clang::FunctionDecl class. This method was previously mentioned as an ad hoc approach for AST traversal. Each AST node provides its own methods to access child nodes. Since we have an AST node of a specific type (i.e., clang::FunctionDecl*) as an argument, we can employ these methods.
+如图3.15所示，函数名在第8行被打印出来。我们的下一步是打印参数名。为了检索函数参数，我们可以使用clang::FunctionDecl类的parameters()方法。这个方法之前被提及为AST遍历的特有方法。每个AST节点都提供自己的方法来访问子节点。由于我们有一个特定类型的AST节点（即clang::FunctionDecl*）作为参数，我们可以使用这些方法。
 
-The function parameter is passed to the Visit(...) method of the base class clang::DeclVisitor<>, as shown in Line 12 of Figure 3.15. This call is subsequently transformed into another callback, specifically for the clang::ParmVarDecl AST node:
+函数参数被传递给基类clang::DeclVisitor<>的Visit(…)方法，如图3.15第12行所示。这个调用随后被转换为另一个回调，具体针对clang::ParmVarDecl AST节点：
 
 \begin{cpp}
 void VisitParmVarDecl(const clang::ParmVarDecl *PVD) {
@@ -286,10 +285,10 @@ void VisitParmVarDecl(const clang::ParmVarDecl *PVD) {
 \end{cpp}
 
 \begin{center}
-Figure 3.16: ParmVarDecl callback
+图3.16: ParmVarDecl回调
 \end{center}
 
-You might be wondering how this conversion is achieved. The answer lies in a combination of the CRTP and C/C++ macros. To understand this, we need to dive into the Visit() method implementation of the clang::DeclVisitor<> class. This implementation heavily relies on C/C++ macros, so to get a glimpse of the actual code, we must expand these macros. This can be done using the shell-E compiler option. Let's make some modifications to CMakeLists.txt and introduce a new custom target.
+你可能想知道这个转换是如何实现的。答案在于CRTP和C/C++宏的结合。为了理解这一点，我们需要深入研究clang::DeclVisitor<>类的Visit()方法的实现。这个实现严重依赖于C/C++宏，因此为了看到实际的代码，我们必须展开这些宏。这可以通过使用shell-E编译器选项来实现。让我们对CMakeLists.txt进行一些修改，并引入一个新的自定义目标。
 
 \begin{cmake}
 add_custom_command(
@@ -302,16 +301,16 @@ add_custom_target(preprocess ALL DEPENDS ${SOURCE_FILE}.preprocessed)
 \end{cmake}
 
 \begin{center}
-Figure 3.17: Custom target to expand macros
+图3.17: 展开宏的自定义目标
 \end{center}
 
-We can run the target as follows:
+我们可以像这样运行目标：
 
 \begin{shell}
 $ ninja preprocess
 \end{shell}
 
-The resulting file can be located in the build folder specified earlier, named DeclVisitor.cpp.preprocessed . The build folder containig the file was specified by us earlier when executing the cmake command (see Figure 3.11). Within this file, the generated code for the Visit() method appears as follows:
+生成的文件可以在之前指定的构建文件夹中找到，名为DeclVisitor.cpp.preprocessed。我们之前在执行cmake命令时指定了包含文件的构建文件夹（见图3.11）。在这个文件中，Visit()方法的生成代码如下所示：
 
 \begin{cpp}
 RetTy Visit(typename Ptr<Decl>::type D) {
@@ -324,12 +323,12 @@ RetTy Visit(typename Ptr<Decl>::type D) {
 \end{cpp}
 
 \begin{center}
-igure 3.18: Generated code for Visit() method
+图3.18: Visit()方法的生成代码
 \end{center}
 
-This code showcases the use of the CRTP in Clang. In this context, CRTP is employed to redirect back to our Visitor class, which is referenced as ImplClass. CRTP allows the base class to call a method from an inherited class. This pattern can serve as an alternative to virtual functions and offers several advantages, the most notable being performance-related. Specifically, the method call is resolved at compile time, eliminating the need for a vtable lookup associated with virtual method calls.
+这段代码展示了Clang中CRTP的使用。在这个上下文中，CRTP被用来将调用重定向回我们的Visitor类，这个类被称为ImplClass。CRTP允许基类调用继承类的某个方法。这种模式可以作为虚拟函数的替代方案，并提供了几个优点，其中最显著的是与性能相关的优点。具体来说，方法调用是在编译时解决的，消除了与虚拟方法调用相关的vtable查找的需要。
 
-The code was generated using C/C++ macros, as demonstrated here. This particular code was sourced from the clang/include/clang/AST/DeclVisitor.h header:
+代码是通过C/C++宏生成的，正如这里所展示的。这段特定的代码来源于clang/include/clang/AST/DeclVisitor.h头文件：
 
 \begin{cpp}
 #define DISPATCH(NAME, CLASS) \
@@ -337,14 +336,14 @@ The code was generated using C/C++ macros, as demonstrated here. This particular
 \end{cpp}
 
 \begin{center}
-Figure 3.19: DISPATCH macro definition from clang/include/clang/AST/DeclVisitor.h
+图3.19: clang/include/clang/AST/DeclVisitor.h中的DISPATCH宏定义
 \end{center}
 
-NAME from Figure 3.19 is replaced with the node name; in our case, it's ParmVarDecl.
+图3.19中的NAME被替换为节点名称；在我们的例子中，它是ParmVarDecl。
 
-DeclVisitor is used to traverse C++ declarations. Clang also has StmtVisitor and TypeVisitor to traverse statements and types, respectively. These are built on the same principles as we considered in our example with the declaration visitor. However, these visitors come with several issues. They can only be used with specific groups of AST nodes. For instance, DeclVisitor can only be used with descendants of the Decl class. Another limitation is that we are required to implement recursion. For example, we set up recursion to traverse the function declaration in lines 9-11 (Figure 3.10). The same recursion was employed to traverse declarations within the translation unit (see Figure 3.10, Lines 17-19). This brings up another concern: it's possible to miss some parts of the recursion. For instance, our code will not function correctly if the max function declaration is specified inside a namespace. To address such scenarios, we would need to implement an additional visit method specifically for namespace declarations.
+DeclVisitor用于遍历C++声明。Clang还提供了StmtVisitor和TypeVisitor来分别遍历语句和类型。这些访问者是基于我们与声明访问者示例考虑的相同原则构建的。然而，这些访问者存在一些问题。它们只能与特定组的AST节点一起使用。例如，DeclVisitor只能与Decl类的后代一起使用。另一个限制是我们需要实现递归。例如，我们在图3.10的第9-11行设置了递归来遍历函数声明。同样，我们使用了递归来遍历翻译单元内的声明（见图3.10，第17-19行）。这带来了一个新的问题：我们可能会错过递归的某些部分。例如，如果max函数声明指定在命名空间内，我们的代码将无法正确工作。为了解决这种情况，我们需要为命名空间声明实现一个额外的访问方法。
 
-These challenges are addressed by the recursive visitor, which we will discuss shortly.
+这些问题通过递归访问者得到了解决，我们将在不久的将来讨论它。
 
 
 

@@ -1,43 +1,43 @@
-The AST is usually depicted as a tree, with its leaf nodes corresponding to various objects, such as function declarations and loop bodies. Typically, the AST represents the result of syntax analysis, i.e., parsing. Clang's AST nodes were designed to be immutable. This design requires that the Clang AST stores results from semantic analysis, meaning the Clang AST represents the outcomes of both syntax and semantic analyses.
+AST通常被表示为一棵树，其叶节点对应于各种对象，例如函数声明和循环体。通常，AST代表了语法分析的结果，即解析。Clang的AST节点被设计为不可变。这种设计要求Clang AST存储语义分析的结果，这意味着Clang AST代表了语法和语义分析的结果。
 
-\begin{myNotic}{Important note}
-Although Clang also employs an AST, it's worth noting that the Clang AST is not a true tree. The presence of backward edges makes "graph" a more appropriate term for describing Clang's AST.
+\begin{myNotic}{重要提示}
+虽然Clang也使用AST，但值得注意的是，Clang AST并不是真正的树。由于存在反向边，因此“图”更适合用来描述Clang的AST
 \end{myNotic}
 
-Typical tree structure implemented in C++ has all nodes derived from a base class. Clang uses a different approach. It splits different C++ constructions into separate groups with basic classes for each of them:
+在C++中实现的典型树结构将所有节点从基类派生。Clang采用了不同的方法。它将不同的C++构造划分为不同的组，并为每个组提供基本类：
 
 \begin{itemize}
 \item
-Statements: clang::Stmt is the basic class for all statements. That includes ordinary statements such as if statements (clang::IfStmt class) as well as expressions and other C++ constructions.
+语句：clang::Stmt是所有语句的基本类。这包括普通语句，如if语句（clang::IfStmt类），以及表达式和其他C++构造。
 
 \item
-Declarations: clang::Decl is the base class for declarations. This includes a variable, typedef, function, struct, and more. There is also a separate base class for declarations with context, that is, declarations that might contain other declarations. The class is called clang::DeclContext. The declarations contained in clang::DeclContext can be accessed using the clang::DeclContext::decls method. Translation units (clang::TranslationUnitDecl class) and namespaces (clang::NamespaceDecl class) are typical examples of declarations with context.
+声明：clang::Decl是声明的基本类。这包括变量、typedef、函数、结构体等。还有一个单独的基类用于具有上下文的声明，即可能包含其他声明的声明。该类称为clang::DeclContext。clang::DeclContext中包含的声明可以通过clang::DeclContext::decls方法访问。翻译单元（clang::TranslationUnitDecl类）和命名空间（clang::NamespaceDecl类）是具有上下文的声明的典型示例。
 
 \item
-Types: C++ has a rich type system. It includes basic types such as int for integers as well as custom defined types and type redefinition via typedef or using. Types in C++ can have qualifiers such as const and can represent different memory addressing modes, aka pointers, references, and so on. Clang uses clang::Type as the basic class for type representations in AST.
+类型：C++有一个丰富的类型系统。它包括基本类型，如整数int，以及自定义定义的类型和通过typedef或using重定义的类型。C++的类型可以具有const等修饰符，并可以表示不同的内存寻址模式，即指针、引用等。Clang使用clang::Type作为AST中类型表示的基本类。
 \end{itemize}
 
-It's worth noting that there are additional relations between the groups. For example, the clang::DeclStmt class, which inherits from clang::Stmt, has methods to retrieve corresponding declarations. Additionally, expressions (represented by the clang::Expr class), which inherit from clang::Stmt have methods to work with types. Let's look at all the groups in detail.
+值得注意的是，这些组之间还有其他关系。例如，继承自clang::Stmt的clang::DeclStmt类具有检索相应声明的方法。此外，表达式（由clang::Expr类表示），它继承自clang::Stmt，具有与类型一起工作的方法。让我们详细看看所有这些组。
 
-\mySubsubsection{3.2.1.}{Statements}
+\mySubsubsection{3.2.1.}{语句}
 
-Stmt is the basic class for all statements. The statements can be combined into two sets (see Figure 3.1). The first one contains statements with values and the opposite group is for statements without values.
+Stmt是所有语句的基本类。语句可以分为两组（见图3.1）。第一组包含有值的语句，而相反的组包含无值的语句。
 
-\myGraphic{0.7}{content/part1/chapter3/images/1.png}{Figure 3.1: Clang AST: statements}
+\myGraphic{1.0}{content/part1/chapter3/images/1.png}{图3.1：Clang AST：语句}
 
-The group of statements without a value consist of different C++ constructions such as if statements (clang::IfStmt class) or compound statements (clang::CompoundStmt class). The majority of all statements fall into the group.
+无值语句组包含各种C++构造，如if语句（clang::IfStmt类）或复合语句（clang::CompoundStmt类）。大多数语句都属于这个组。
 
-The group of statements with a value consists of one base class clang::ValueStmt that has several children, such as clang::LabelStmt (for label representation) or clang::ExprStmt (for expression representation), see Figure 3.2.
+有值语句组包含一个基类clang::ValueStmt，它有几个子类，如clang::LabelStmt（用于标签表示）或clang::ExprStmt（用于表达式表示），见图3.2。
 
-\myGraphic{0.7}{content/part1/chapter3/images/2.png}{Figure 3.2: Clang AST: statements with a value}
+\myGraphic{1.0}{content/part1/chapter3/images/2.png}{图3.2：Clang AST：有值的语句}
 
-\mySubsubsection{3.2.2.}{Declarations}
+\mySubsubsection{3.2.2.}{声明}
 
-Declarations can also be combined into two primary groups: declarations with context and without. Declarations with context can be considered as placeholders for other declarations. For example, a C++ namespace as well as a translation unit or function declaration might contain other declarations. A declaration of a friend entity (clang::DeclFriend) can be considered an example of a declaration without context.
+声明也可以分为两大类：带上下文的声明和不带上下文的声明。带上下文的声明可以被视为其他声明的占位符。例如，一个C++命名空间、翻译单元或函数声明可能包含其他声明。一个朋友实体声明（clang::DeclFriend）可以被视为一个不带上下文的声明的例子。
 
-It has to be noted that classes that are inherited from DeclContext also have clang::Decl as their top parent.
+需要注意的是，继承自DeclContext的类也有clang::Decl作为它们的顶级父类。
 
-Some declarations can be redeclared, as in the following example:
+一些声明可以被重新声明，例如：
 
 \begin{cpp}
 extern int a;
@@ -45,22 +45,22 @@ int a = 1;
 \end{cpp}
 
 \begin{center}
-Figure 3.3: Declarations example: redeclaration.cpp
+图3.3：声明示例：redeclaration.cpp
 \end{center}
 
-Such declarations have an additional parent that is implemented via a clang::Redeclarable<...> template.
+这样的声明有一个额外的父类，通过clang::Redeclarable<…>模板实现。
 
-\mySubsubsection{3.2.3.}{Types}
+\mySubsubsection{3.2.3.}{类型}
 
-C++ is a statically typed language, which means that the types of variables must be declared at compile time. The types allow the compiler to make a reasonable conclusion about the program's meaning, which makes types an important part of semantic analysis. clang::Type is the basic class for types in Clang.
+C++是一种静态类型语言，这意味着变量的类型必须在编译时声明。类型允许编译器对程序的含义做出合理的推断，这是语义分析的重要组成部分。clang::Type是Clang中类型的基本类。
 
-Types in C/C++ might have qualifiers that are called CV-qualifiers, as specified in the standard [21, basic.type.qualifier]. CV here stands for two keywords const and volatile that can be used as the qualifier for a type.
+C/C++的类型可能有修饰符，称为CV修饰符，如标准[\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}.}, basic.type.qualifier]所规定。CV在这里代表两个关键字const和volatile，它们可以作为类型的修饰符。
 
-\begin{myNotic}{Important note}
-The C99 standard has an additional type qualifier, restrict, which is also supported by Clang [25, 6.7.3]. The type qualifier indicates to the compiler that, for the lifetime of the pointer, no other pointer will be used to access the object it points to. This allows the compiler to perform optimizations such as vectorization that wouldn't be possible otherwise. restrict helps limit pointer aliasing effects, which occur when multiple pointers reference the same memory location, thereby aiding optimizations. However, if the programmer's declaration of intent is not followed, and the object is accessed by an independent pointer, it results in undefined behavior.
+\begin{myNotic}{重要提示}
+C99标准有一个额外的类型修饰符，restrict，Clang也支持[\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.}, 6.7.3]。这个类型修饰符指示编译器，在指针的生命周期内，不会使用其他指针来访问它指向的对象。这使得编译器可以执行无法 otherwise的优化，如向量化。restrict有助于限制指针别名效应，即当多个指针引用同一内存位置时发生的情况，从而有助于优化。然而，如果程序员的意图没有被遵循，并且对象被一个独立的指针访问，这会导致未定义的行为。
 \end{myNotic}
 
-Clang has a special class to support a type with a qualifier, clang::QualType, which is a pair of a pointer to clang::Type and a bit mask with information about the type qualifier. The class has a method to retrieve a pointer to the clang::Type and check different qualifiers. The following code (LLVM 18.x, clang/lib/AST/ExprConstant.cpp, Line 3918) shows how we can check a type for a const qualifier:
+Clang有一个特殊的类来支持带有修饰符的类型，clang::QualType，它是一个指向clang::Type的指针和包含类型修饰符信息的位掩码的组合。这个类有一个方法来获取指向clang::Type的指针并检查不同的修饰符。以下代码（LLVM 18.x, clang/lib/AST/ExprConstant.cpp, 第3918行）展示了如何检查类型是否有const修饰符：
 
 \begin{cpp}
 bool checkConst(QualType QT) {
@@ -74,22 +74,22 @@ bool checkConst(QualType QT) {
 \end{cpp}
 
 \begin{center}
-Figure 3.4: checkConst implementation from clang/lib/AST/ExprConstant.cpp
+图3.4：clang/lib/AST/ExprConstant.cpp中的checkConst实现
 \end{center}
 
-It's worth mentioning that clang::QualType has operator->() and operator*() implemented, that is, it can be considered as a smart pointer for the underlying clang::Type class.
+值得注意的是，clang::QualType实现了operator->()和operator*()，也就是说，它可以被视为指向clang::Type类的智能指针。
 
-In addition to qualifiers, the type can have additional information that represents different memory address models. For instance, there can be a pointer to an object or reference. clang::Type has the following helper methods to check different address models:
+除了修饰符之外，类型还可以有其他信息，表示不同的内存地址模型。例如，可以有一个指向对象的指针或引用。clang::Type有如下辅助方法来检查不同的地址模型：
 
 \begin{itemize}
 \item
-clang::Type::isPointerType() for pointer type check
+clang::Type::isPointerType()于检查指针类型
 
 \item
-clang::Type::isReferenceType() for reference type check
+clang::Type::isReferenceType()用于检查引用类型
 \end{itemize}
 
-Types in C/C++ can also use aliases, which are introduced by using the typedef or using keywords. The following code defines foo and bar as aliases for the int type.
+C/C++的类型也可以使用别名，通过使用typedef或using关键字引入。以下代码定义了foo和bar作为int类型的别名。
 
 \begin{cpp}
 using foo = int;
@@ -97,12 +97,13 @@ typedef int bar;
 \end{cpp}
 
 \begin{center}
-Figure 3.5: Type alias declarations
+图3.5：类型别名声明
 \end{center}
 
-Original types, int in our case, are called canonical. You can test whether the type is canonical or not using the clang::QualType::isCanonical() method. clang::QualType also provides a method to retrieve the canonical type from an alias: clang::QualType::getCanonicalType().
+原始类型，在我们的例子中是int，被称为规范类型。你可以使用clang::QualType::isCanonical()方法来测试类型是否是规范类型。clang::QualType还提供了一个方法来从别名获取规范类型：clang::QualType::getCanonicalType()。
 
-After gaining knowledge of the basic blocks used for the AST in Clang, it's time to investigate how these blocks can be used for AST traversal. This is the basic operation used by the compiler and compiler tools, and we will use it extensively throughout the book.
+在了解了Clang中用于AST的基本块之后，现在是时候研究这些块如何用于AST遍历。这是编译器和编译工具的基本操作，我们将在本书中广泛使用。
+
 
 
 

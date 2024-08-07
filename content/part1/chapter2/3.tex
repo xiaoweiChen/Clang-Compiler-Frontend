@@ -1,10 +1,10 @@
-When discussing compilers, we typically refer to a command-line utility that initiates and manages the compilation process. For example, to use the GNU Compiler Collection, one must call gcc to start the compilation process. Similarly, to compile a C++ program using Clang, one must call clang as the compiler. The program that controls the compilation process is known as the driver. The driver coordinates different stages of compilation and connects them together. In the book, we will be focusing on LLVM and using Clang as the driver for the compilation process.
+在讨论编译器时，我们通常指的是一个命令行工具，它启动和管理编译过程。例如，要使用GNU编译器集合，必须调用gcc来启动编译过程。同样，要使用Clang编译C++程序，也必须将clang作为编译器来调用。控制编译过程的程序称为驱动程序。驱动程序协调整个编译过程的不同阶段，并将它们连接在一起。在本书中，我们将重点关注LLVM，并使用Clang作为编译过程的驱动程序。
 
-It may be confusing for readers that the same word, "Clang," is used to refer to both the compiler frontend and the compilation driver. In contrast, with other compilers, where the driver and C++ compiler can be separate executables, "Clang" is a single executable that functions as both the driver and the compiler frontend. To use Clang as the compiler frontend only, the special option -cc1 must be passed to it.
+对于读者来说，可能会有点混淆，因为“Clang”这个词既用来指代编译器前端，也用来指代编译驱动程序。相比之下，在其他编译器中，驱动程序和C++编译器可以是分开的可执行文件，而“Clang”是一个单一的可执行文件，既作为驱动程序，也作为编译器前端。若要仅将Clang用作编译器前端，必须向其传递特殊选项-cc1。
 
-\mySubsubsection{2.3.1.}{Example program}
+\mySubsubsection{2.3.1.}{示例}
 
-We will use the simple "Hello world!" example program for our experiments with the Clang driver. The main source file is called hello.cpp . The file implements a trivial C++ program that prints "Hello world!" to the standard output:
+我们将使用简单的“Hello world!”示例程序来与Clang驱动程序进行实验。主源文件名为hello.cpp。该文件实现了一个简单的C++程序，它将“Hello world!”打印到标准输出：
 
 \begin{cpp}
 #include <iostream>
@@ -16,26 +16,26 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 2.13: Example program: hello.cpp
+图2.13：示例程序：hello.cpp
 \end{center}
 
-You can compile the source with the following:
+可以使用以下命令编译源代码：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++
 \end{shell}
 
 \begin{center}
-Figure 2.14: Compilation for hello.cpp
+图2.14：hello.cpp的编译
 \end{center}
 
-As you can see, we used the clang executable as the compiler and specified the -lstdc++ library option because we used the <iostream> header from the standard C++ library. We also specified the output for the executable (/tmp/hello ) with the -o option.
+如你所见，我们使用clang可执行文件作为编译器，并指定了-lstdc++库选项，因为我们使用了标准C++库中的头文件。我们还使用-o选项指定了可执行文件的输出位置（/tmp/hello）。
 
-\mySubsubsection{2.3.2.}{Compilation phases}
+\mySubsubsection{2.3.2.}{编译阶段}
 
-We used two inputs for our example program. The first one is our source code and the second one is a shared library for the standard C++ library. The Clang driver should combine the inputs together, pass them via different phases of the compilation process, and finally, provide the executable file on the target platform.
+我们的示例程序使用了两个输入。第一个是我们的源代码，第二个是标准C++库的共享库。Clang驱动程序应该将输入组合在一起，通过编译过程的不同阶段传递它们，并最终在目标平台上提供可执行文件。
 
-Clang uses the same typical compiler workflow as shown in Figure 2.2. You can ask Clang to show the phases using the -ccc-print-phases additional argument:
+Clang使用与图2.2所示相同的典型编译器工作流程。你可以使用-ccc-print-phases附加参数要求Clang显示这些阶段：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++ \
@@ -43,10 +43,10 @@ $ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++ \
 \end{shell}
 
 \begin{center}
-Figure 2.15: Command to print compilation phases for hello.cpp
+图2.15：用于打印hello.cpp编译阶段的命令
 \end{center}
 
-The output for the command is the following:
+该命令的输出如下：
 
 \begin{shell}
             +- 0: input, "hello.cpp", c++
@@ -59,20 +59,20 @@ The output for the command is the following:
 \end{shell}
 
 \begin{center}
-Figure 2.16: Compilation phases for hello.cpp
+图2.16：hello.cpp的编译阶段
 \end{center}
 
-We can visualize the output as shown in Figure 2.17.
+我们可以如图2.17所示可视化输出。
 
-\myGraphic{0.6}{content/part1/chapter2/images/17.png}{Figure 2.17: Clang driver phases}
+\myGraphic{0.6}{content/part1/chapter2/images/17.png}{图2.17：Clang驱动程序阶段}
 
-As we can see in Figure 2.17, the driver receives an input file, hello.cpp , which is a C++ file. The file is processed by the preprocessor and we obtain the preprocessor output (marked as c++-cpp-output ). The result is compiled into IR form by the compiler, and then the backend converts it into assembly form. This form is later transformed into an object file. The final object file is combined with another object (libstdc++ ) to produce the final binary (image ).
+如我们在图 2.17 中所见，驱动程序接收一个输入文件 hello.cpp，这是一个 C++ 文件。该文件经过预处理器处理后，我们获得了预处理器输出（标记为 c++-cpp-output）。结果由编译器编译成中间表示 (IR) 形式，然后后端将其转换为汇编形式。这种形式随后被转化为一个目标文件。最终的目标文件与另一个对象（libstdc++）合并，产生最终的可执行文件（image）。
 
-\mySubsubsection{2.3.3.}{Tool execution}
+\mySubsubsection{2.3.3.}{使用工具}
 
-The phases are combined into several tool executions. The Clang driver invokes different programs to produce the final executable. Specifically, for our example, it calls the clang compiler and the ld linker. Both programs require additional arguments that are set up by the driver.
+这些阶段组合成了几次工具执行。Clang 驱动程序调用不同的程序来生成最终的可执行文件。具体来说，在我们的例子中，它调用了 Clang 编译器和 ld 链接器。这两个程序都需要额外的参数，这些参数由驱动程序设置。
 
-For instance, our example program (hello.cpp ) includes the following header:
+例如，我们的示例程序 hello.cpp 包含了以下头文件：
 
 \begin{cpp}
 #include <iostream>
@@ -80,22 +80,22 @@ For instance, our example program (hello.cpp ) includes the following header:
 \end{cpp}
 
 \begin{center}
-Figure 2.18: iostream header at hello.cpp
+图 2.18: iostream 头文件在 hello.cpp 中的位置
 \end{center}
 
-We did not specify any additional arguments (such as search paths, for example, -I ) when we invoked the compilation. However, different architectures and operating systems might have different paths for locating headers.
+当我们调用编译时，并未指定任何附加参数（比如搜索路径，例如 -I）。但是，不同的架构和操作系统可能有不同的位置来定位头文件。
 
-On Fedora 39, the header is located in the /usr/include/c++/13/iostream folder. We can examine a detailed description of the process executed by the driver and the arguments used with the -\#\#\# option:
+在 Fedora 39 上，该头文件位于 /usr/include/c++/13/iostream 文件夹中。我们可以使用 -\#\#\# 选项来查看驱动程序执行的过程以及使用的参数：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang hello.cpp -o /tmp/hello -lstdc++ -###
 \end{shell}
 
 \begin{center}
-Figure 2.19: Command to print tools execution for hello.cpp
+图 2.19: 打印 hello.cpp 编译工具执行命令
 \end{center}
 
-The output for this command is quite extensive, and certain parts have been omitted here. Please refer to Figure 2.20.
+此命令的输出非常详尽，这里省略了一部分内容。请参考图 2.20。
 
 \begin{shell}
 1   clang version 18.1.0rc (https://github.com/llvm/llvm-project.git ...)
@@ -117,27 +117,27 @@ The output for this command is quite extensive, and certain parts have been omit
 \end{shell}
 
 \begin{center}
-Figure 2.20: Clang driver tool execution. The host system is Fedora 39.
+图 2.20: Clang 驱动程序工具执行，系统为 Fedora 39。
 \end{center}
 
-As we can see in Figure 2.20, the driver initiates two processes: clang-18 with the -cc1 flag (see Lines 2-12) and the linker ld (see Lines 13-16). The Clang compiler implicitly receives several search paths, as seen in Lines 5, 7, 9, and 11. These paths are necessary for the inclusion of the iostream header in the test program.
+如图 2.20 所示，驱动程序启动了两个进程：带有 -cc1 标志的 clang-18（参见第 2 至 12 行）和链接器 ld（参见第 13 至 16 行）。Clang 编译器隐式地接收了多个搜索路径，如第 5、7、9 和 11 行所示。这些路径对于包含测试程序中的 iostream 头文件是必要的。
 
-The output of the first executable (/tmp/hello-XXX.o ) serves as input for the second one (see Lines 12 and 15). The arguments -lstdc++ and -o /tmp/hello are set for the linker, while the first argument (hello.cpp) is provided for the compiler invocation (first executable).
+第一个可执行文件的输出（/tmp/hello-XXX.o）作为第二个可执行文件的输入（参见第 12 和 15 行）。链接器的参数 -lstdc++ 和 -o /tmp/hello 被设定，而第一个参数（hello.cpp）是为编译器调用（第一个可执行文件）提供的。
 
-\myGraphic{0.4}{content/part1/chapter2/images/21.png}{Figure 2.21: Clang driver tool execution. The Clang driver runs two executables: the clang executable with the -cc1 flag and the linker - ld executable}
+\myGraphic{0.4}{content/part1/chapter2/images/21.png}{图 2.21: Clang 驱动程序工具执行。Clang 驱动程序运行两个可执行文件：带有 -cc1 标志的 clang 可执行文件和链接器 ld 可执行文件}
 
-The process can be visualized as shown in Figure 2.21, where we can see that two executables are executed as part of the compilation process. The first one is clang-18 with a special flag (-cc1 ). The second one is the linker: ld .
+过程可以如图 2.21 所示进行可视化，其中可以看到两个可执行文件作为编译过程的一部分被执行。第一个是带有特殊标志 -cc1 的 clang-18。第二个是链接器：ld。
 
-\mySubsubsection{2.3.4.}{Combining it all together}
+\mySubsubsection{2.3.4.}{综合所有步骤}
 
-We can summarize the knowledge we have acquired so far using Figure 2.22. The figure illustrates two different processes started by the Clang driver. The first one is clang -cc1 (compiler), and the second one is ld (linker). The compiler process is the same executable as the Clang driver (clang ), but it is run with a special argument: -cc1 . The compiler produces an object file that is then processed by the linker (ld ) to generate the final binary.
+我们可以利用图 2.22 对目前为止所获得的知识进行总结。该图展示了由 Clang 驱动程序启动的两个不同的进程。第一个是 clang -cc1（编译器），第二个是 ld（链接器）。编译器进程与 Clang 驱动程序（clang）是同一个可执行文件，但它是以一个特殊参数 -cc1 运行的。编译器产生一个目标文件，该文件随后被链接器（ld）处理以生成最终的可执行文件。
 
-\myGraphic{0.4}{content/part1/chapter2/images/22.png}{Figure 2.22: Clang driver: The driver got the input file hello.cpp, which is a C++ file. It starts two processes: clang and ld. The first one does real compilation and starts the integrated assembler. The last one is the linker (ld) that produces the final binary (image) from the result received from the compiler and the external library (libstdc++)}
+\myGraphic{0.4}{content/part1/chapter2/images/22.png}{图 2.22: Clang 驱动程序：驱动程序接收输入文件 hello.cpp，这是一个 C++ 文件。它启动了两个进程：clang 和 ld。第一个进程真正进行编译并启动集成汇编器。最后一个进程是链接器（ld），它从编译器的结果和外部库（libstdc++）生成最终的可执行文件（image）}
 
-In Figure 2.22, we can observe similar components of the compiler mentioned earlier (see Section 2.2, Getting started with compilers). However, the main difference is that the preprocessor (part of the lexer) is shown separately, while the frontend and middle-end are combined into the compiler. Additionally, the figure depicts an assembler that is executed by the driver to generate the object code. It is important to note that the assembler can be integrated, as shown in Figure 2.22, or it may require a separate process to be executed.
+在图 2.22 中，我们可以看到之前提到的编译器的相似组成部分（参见第 2.2 节，开始了解编译器）。然而，主要的区别在于预处理器（词法分析器的一部分）单独显示，而前端和中端则组合到了编译器中。此外，该图还描绘了一个由驱动程序执行的汇编器以生成目标代码。值得注意的是，汇编器可以被集成，如图 2.22 所示，也可能需要一个单独的进程来执行。
 
-\begin{myNotic}{Important note}
-Here is an example of specifying an external assembler using the -c (compile only) and -o (output file) options, along with the appropriate flags for your platform:
+\begin{myNotic}{重要提示}
+这里有一个使用 -c（仅编译）和 -o（输出文件）选项以及针对你的平台的适当标志来指定外部汇编器的例子：
 
 \begin{shell}
 $<...>/llvm-project/install/bin/clang -c hello.cpp \
@@ -146,15 +146,15 @@ as -o /tmp/hello.o /tmp/hello.s
 \end{shell}
 \end{myNotic}
 
-\mySubsubsection{2.3.5.}{Debugging Clang}
+\mySubsubsection{2.3.5.}{调试 Clang}
 
-We're going to step through a debugging session for our compilation process, illustrated in Figure 2.14.
+我们将逐步讲解图2.14所示的编译过程的调试会话。
 
-\begin{myNotic}{Important note}
-We will use the LLDB build created previously in Section 1.3.3, The LLVM debugger, its build, and usage for this and other debug sessions throughout the book. You can also use the LLDB that comes as part of your host system.
+\begin{myNotic}{重要提示}
+本书中的此调试会话和其他调试会话将使用第1.3.3节中构建的LLDB版本，即LLVM调试器及其构建和使用。你也可以使用宿主系统自带的LLDB。
 \end{myNotic}
 
-Our chosen point of interest, or breakpoint, is the clang::ParseAST function. In a typical debug session, which resembles the one outlined in Figure 1.11, you would feed command-line arguments following the "- -" symbol. The command should look like this:
+我们选择感兴趣的点，或者说是断点，是clang::ParseAST函数。在典型的调试会话中，类似于图1.11中概述的会话，你会在“–”符号后输入命令行参数。命令应该如下所示：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- hello.cpp -o /tmp/hello \
@@ -162,12 +162,12 @@ $ lldb <...>/llvm-project/install/bin/clang -- hello.cpp -o /tmp/hello \
 \end{shell}
 
 \begin{center}
-Figure 2.23: Running debugger for hello.cpp file compilation
+图2.23：为hello.cpp文件编译运行调试器
 \end{center}
 
-In this case, <...> represents the directory path used to clone the LLVM project.
+在这种情况下，<…>代表克隆LLVM项目时使用的目录路径。
 
-Unfortunately, this approach doesn't work with the Clang compiler:
+不幸的是，这种方法对Clang编译器不起作用：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- hello.cpp -o /tmp/hello.o -lstdc++
@@ -185,15 +185,15 @@ Unfortunately, this approach doesn't work with the Clang compiler:
 \end{shell}
 
 \begin{center}
-Figure 2.24: Debugger session with failed interruption
+图2.24：失败的调试会话中断
 \end{center}
 
-As we can see from Line 7, the breakpoint was set but the process finished successfully (Line 11) without any interruptions. In other words, our breakpoint didn't trigger in this instance.
+从第7行可以看出，断点已经设置，但进程成功结束（第11行）而没有中断。换句话说，我们的断点在这个实例中没有触发。
 
-Understanding the internals of the Clang driver can help us identify the problem at hand. As mentioned earlier, the clang executable acts as a driver in this context, running two separate processes (refer to Figure 2.21). Therefore, if we wish to debug the compiler, we need to run it using the -cc1 option.
+理解Clang驱动程序的内部机制可以帮助我们识别手头的问题。如前所述，clang可执行文件在这种情况下充当驱动程序，运行两个单独的进程（参考图2.21）。因此，如果我们想要调试编译器，我们需要使用-cc1选项来运行它。
 
-\begin{myNotic}{Important note}
-It's worth mentioning a certain optimization implemented in Clang in 2019 \footnote{Alexandre Ganea. [Clang][Driver] Re-use the calling process instead of creating a new process for the cc1 invocation. 2019. URL \url{https://reviews.llvm.org/D69825}.}. When using the -c option, the Clang driver doesn't spawn a new process for the compiler:
+\begin{myNotic}{重要提示}
+值得一提的是，Clang在2019年实现了一项优化\footnote{Alexandre Ganea. [Clang][Driver] Re-use the calling process instead of creating a new process for the cc1 invocation. 2019. URL \url{https://reviews.llvm.org/D69825}。}。当使用-c选项时，Clang驱动程序不会为编译器生成新进程：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -c hello.cpp  \
@@ -206,10 +206,10 @@ InstalledDir: <...>/llvm-project/install/bin
 ...
 \end{shell}
 
-As shown above, the Clang driver does not spawn a new process and instead calls the "cc1" tool within the same process. This feature not only improves the compiler's performance but can also be leveraged for Clang debugging.
+如上所示，Clang驱动程序没有生成新进程，而是在同一进程中调用"cc1"工具。这个特性不仅提高了编译器的性能，还可以用于Clang的调试。
 \end{myNotic}
 
-Upon using the -cc1 option and excluding the -lstdc++ option (which is specific to the second process, the ld linker), the debugger will generate the following output:
+使用-cc1选项并排除-lstdc++选项（这是特定于第二个进程，即ld链接器的）后，调试器将生成以下输出：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 hello.cpp -o /tmp/hello.o
@@ -240,12 +240,12 @@ Upon using the -cc1 option and excluding the -lstdc++ option (which is specific 
 \end{shell}
 
 \begin{center}
-Figure 2.25: Debugger session with missing search paths
+图2.25：缺少搜索路径的调试会话
 \end{center}
 
-Thus, we can see that we were able to successfully set the breakpoint, but the process ended with an error (see Lines 20-24). This error arose because we omitted certain search paths, which are typically appended implicitly by the Clang driver, necessary to find all the includes required for successful compilation.
+因此，我们可以看到我们成功地设置了断点，但是进程以错误结束（见第20-24行）。这个错误是因为我们省略了一些搜索路径，这些路径通常是由Clang驱动程序隐式附加的，用于找到成功编译所需的所有包含文件。
 
-We can successfully execute the process if we explicitly include all necessary arguments in the compiler invocation. Here's how to do that:
+如果我们显式地在编译器调用中包含所有必要的参数，我们可以成功执行进程。以下是操作方法：
 
 \begin{shell}
 lldb <...>/llvm-project/install/bin/clang -- -cc1                    \
@@ -258,10 +258,10 @@ lldb <...>/llvm-project/install/bin/clang -- -cc1                    \
 \end{shell}
 
 \begin{center}
-Figure 2.26: Running the debugger with specified search paths. Host system is Fedora 39
+图2.26：指定搜索路径后运行调试器，系统是Fedora 39
 \end{center}
 
-Then we can set the breakpoint for clang::ParseAST and run the debugger. The execution will complete without errors, as shown below:
+然后我们可以为clang::ParseAST设置断点并运行调试器。执行将无错误完成，如下所示：
 
 \begin{shell}
 1  (lldb) b clang::ParseAST
@@ -286,10 +286,10 @@ Then we can set the breakpoint for clang::ParseAST and run the debugger. The exe
 \end{shell}
 
 \begin{center}
-Figure 2.27: Successful debugger session for compiler
+图2.27：编译器的成功调试会话
 \end{center}
 
-In conclusion, we have successfully demonstrated the debugging of a Clang compiler invocation. The techniques presented can be effectively employed for exploring the internals of a compiler and addressing compiler-related bugs.
+总之，我们已经成功地演示了Clang编译器调用的调试。所展示的技术可以有效地用于探索编译器的内部机制并解决与编译器相关的错误。
 
 
 

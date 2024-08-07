@@ -1,57 +1,57 @@
-It's evident that the Clang compiler toolchain conforms to the pattern widely described in various compiler books [1, 18]. However, Clang's frontend part diverges significantly from a typical compiler frontend. The primary reason for this distinction is the complexity of the C++ language. Some features, such as macros, can modify the source code itself, while others, such as typedef, can influence the kind of token. Clang can also generate output in a variety of formats. For instance, the following command generates an aesthetically pleasing HTML view of the program shown in Figure 2.5:
+显然，Clang编译器工具链遵循各种编译器书籍中广泛描述的模式【1, 18】。然而，Clang的前端部分与典型的编译器前端有很大的不同。这种区别的主要原因是C++语言的复杂性。一些特性，如宏，可以修改源代码本身，而其他特性，如typedef，可以影响token的类型。Clang还可以生成多种格式的输出。例如，以下命令会生成图2.5所示程序的悦目的HTML视图：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-html max.cpp
 \end{shell}
 
-Take note that we pass the argument to emit the HTML form of the source program to the Clang frontend, specified with the -cc1 option. Alternatively, you can pass an option to the frontend via the -Xclang option, which requires an additional argument representing the option itself, for example:
+请注意，我们通过-cc1选项向Clang前端传递了生成源程序HTML形式的参数。或者，你也可以通过-Xclang选项向前端传递一个选项，这需要一个额外的参数来表示该选项本身，例如：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -Xclang -emit-html max.cpp \
                                        -fsyntax-only
 \end{shell}
 
-You may notice that, in the preceding command, we utilized the -fsyntax-only option, instructing Clang to only execute the preprocessor, parser, and semantic analysis stages.
+你可能注意到，在上述命令中，我们使用了-fsyntax-only选项，指示Clang只执行预处理器、解析器和语义分析阶段。
 
-Accordingly, we can instruct the Clang frontend to perform different actions and produce varying types of output based on the provided compilation options. The base class for these actions is termed FrontendAction .
+因此，我们可以根据提供的编译选项，指导Clang前端执行不同的操作并产生不同类型的输出。这些操作的基础类称为\textbf{前端操作}(FrontendAction)。
 
-\mySubsubsection{2.4.1.}{Frontend action}
+\mySubsubsection{2.4.1.}{前端操作}
 
-The Clang frontend is capable of executing only one frontend action at a time. A frontend action is a specific task or process that the frontend performs based on the provided compiler option. The following is a list of some possible frontend actions (the table only includes a subset of the available frontend actions):
+Clang前端一次只能执行一个前端操作。前端操作是基于提供的编译器选项，前端执行的具体任务或过程。以下是可能的前端操作的一些列表（表只包括可用前端操作的一个子集）：
 
 % Please add the following required packages to your document preamble:
 % \usepackage{longtable}
 % Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
 \begin{longtable}{|l|l|l|}
 \hline
-\textbf{FrontendAction} & \textbf{Compiler option} & \textbf{Description}                   \\ \hline
+\textbf{前端操作} & \textbf{编译器选项} & \textbf{描述}                   \\ \hline
 \endfirsthead
 %
 \endhead
 %
-EmitObjAction           & -emit-obj (default)      & Compile to an object file              \\ \hline
-EmitBCAction            & -emit-llvm-bc            & Compile to LLVM bytecode               \\ \hline
-EmitLLVMAction          & -emit-llvm               & Compile to LLVM readable form          \\ \hline
-ASTPrintAction          & -ast-print               & Build ASTs and then pretty-print them. \\ \hline
-HTMLPrintAction         & -emit-html               & Prints the program source in HTML form \\ \hline
-DumpTokensAction        & -dump-tokens             & Prints preprocessor tokens             \\ \hline
+EmitObjAction           & -emit-obj (default)      & 编译为目标文件              \\ \hline
+EmitBCAction            & -emit-llvm-bc            & 编译成LLVM字节码               \\ \hline
+EmitLLVMAction          & -emit-llvm               & 编译成LLVM可读形式          \\ \hline
+ASTPrintAction          & -ast-print               & 构建AST，然后美观地打印它们。 \\ \hline
+HTMLPrintAction         & -emit-html               & 以HTML形式打印程序源代码 \\ \hline
+DumpTokensAction        & -dump-tokens             & 打印预处理器令牌             \\ \hline
 \end{longtable}
 
 \begin{center}
-Table 2.1: Frontend actions
+表2.1: 前端操作
 \end{center}
 
-\myGraphic{0.4}{content/part1/chapter2/images/28.png}{Figure 2.28: Clang frontend components}
+\myGraphic{0.8}{content/part1/chapter2/images/28.png}{图2.28: Clang前端组件}
 
-The diagram shown in Figure 2.28 illustrates the basic frontend architecture, which is similar to the architecture shown in Figure 2.4. However, there are notable differences specific to Clang.
+图2.28所示的图描绘了基本的前端架构，与图2.4所示的架构类似。然而，Clang特定的差异是显而易见的。
 
-One significant change is the naming of the lexer. In Clang, the lexer is referred to as the preprocessor. This naming convention reflects the fact that the lexer implementation is encapsulated within the Preprocessor class. This alteration was inspired by the unique aspects of the C/C++ language, which includes special types of tokens (macros) that require specialized preprocessing.
+一个显著的变化是对词法分析器的命名。在Clang中，词法分析器被称为预处理器。这种命名约定反映了词法分析器实现被封装在Preprocessor类中的事实。这种改变受到了C/C++语言独特特性的启发，这些特性包括需要特殊预处理的特殊类型的token（宏）。
 
-Another noteworthy deviation is found in the parser component. While conventional compilers typically perform both syntax and semantic analysis within the parser, Clang distributes these tasks across different components. The Parser component focuses solely on syntax analysis, while the Sema component handles semantic analysis.
+另一个值得注意的偏离是在解析器组件中。虽然传统的编译器通常在解析器中同时执行语法和语义分析，但Clang将这些任务分布在不同的组件中。Parser组件专注于语法分析，而Sema组件处理语义分析。
 
-Furthermore, Clang offers the ability to produce output in different forms or formats. For example, the CodeGenAction class serves as the base class for various code generation actions, such as EmitObjAction or EmitLLVMAction.
+此外，Clang提供了生成不同形式或格式的输出的能力。例如，CodeGenAction类作为各种代码生成操作的基础类，如EmitObjAction或EmitLLVMAction。
 
-We will use the code for the max function from Figure 2.5 for our future exploration of the Clang frontend's internals:
+我们将使用图2.5中的max函数的代码来探索Clang前端内部的更多细节：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -62,20 +62,20 @@ int max(int a, int b) {
 \end{cpp}
 
 \begin{center}
-Figure 2.29: Source code for max function: max.cpp
+图2.29: max函数的源代码：max.cpp
 \end{center}
 
-By utilizing the -cc1 option, we can directly invoke the Clang frontend, bypassing the driver. This approach allows us to examine and analyze the inner workings of the Clang frontend in greater detail.
+通过使用-cc1选项，我们可以直接调用Clang前端，绕过驱动程序。这种方法使我们能够更详细地检查和分析Clang前端的工作原理。
 
-\mySubsubsection{2.4.2.}{Preprocessor}
+\mySubsubsection{2.4.2.}{预处理器}
 
-The first part is the Lexer , which is called the preprocessor in Clang. Its primary goal is to convert the input program into a stream of tokens. You can print the token stream using the -dump-tokens options as follows:
+第一部分是词法分析器，在Clang中被称为预处理器。它的主要目标是将输入程序转换为token流。你可以使用-dump-tokens选项打印token流，如下所示：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -dump-tokens max.cpp
 \end{shell}
 
-The output of the command is as shown:
+命令的输出如下：
 
 \begin{shell}
 int 'int'        [StartOfLine]  Loc=<max.cpp:1:1>
@@ -105,15 +105,14 @@ eof ''          Loc=<max.cpp:5:2>
 \end{shell}
 
 \begin{center}
-Figure 2.30: Clang dump token output
+图2.30: Clang打印token输出
 \end{center}
 
-As we can see, there are different types of tokens, such as language keywords (e.g., int, return), identifiers (e.g., max, a, b, etc.), and special symbols (e.g., semicolon, comma, etc.). The tokens for our small program are called normal tokens, which are returned by the lexer.
+正如我们所看到的，有不同的token类型，如语言关键字（例如，int、return）、标识符（例如，max、a、b等）和特殊符号（例如，分号、逗号等）。我们这个小程序的token被称为正常token，它们由词法分析器返回。
 
-In addition to normal tokens, Clang has an additional type of token called annotation tokens. The primary difference is that these tokens also store additional semantic
-information. For instance, a sequence of normal tokens can be replaced by the parser with a single annotation token that contains information about the type or C++ scope. The primary reason for using such tokens is performance, as it allows for the prevention of reparsing when the parser needs to backtrack.
+除了正常token外，Clang还有一种额外的token类型，称为注释token。主要区别在于，这些token还存储额外的语义信息。例如，一系列正常token可以被解析器替换为一个包含关于类型或C++作用域信息的单个注释token。使用此类token的主要原因是为了性能，因为它允许在解析器需要回退时防止重新解析。
 
-Since annotation tokens are used in the internal implementation of the parser, it would be good to consider an example of their usage with LLDB. Suppose we have the following C++ code:
+由于注释token用于解析器的内部实现，考虑一个使用LLDB的注释token示例是有益的。假设我们有以下C++代码：
 
 \begin{cpp}
 namespace clangbook {
@@ -123,11 +122,10 @@ clangbook::A<int> a;
 \end{cpp}
 
 \begin{center}
-Figure 2.31: Source code that uses annotation tokens, annotation.cpp
+图2.31: 使用注释token的源代码，annotation.cpp
 \end{center}
 
-The last line of the code declares the variable a with the following type:
-clangbook::A<int>. The type is represented as an annotation token, as shown in the following LLDB session:
+代码的最后一行声明了变量a，其类型为： clangbook::A。该类型以注释token的形式表示，如下面的LLDB会话所示：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 annotation.cpp
@@ -148,36 +146,36 @@ clangbook::A<int>. The type is represented as an annotation token, as shown in t
 \end{shell}
 
 \begin{center}
-Figure 2.32: LLDB session for annotation.cpp
+图2.32: annotation.cpp的LLDB交互界面
 \end{center}
 
-As we can see, Clang consumes an annotation token from Line 4 of the program shown in Figure 2.31. The token is located between columns 1 and 7. See Figure 2.32. This corresponds to the following text used as the token: clangbook::A<int>. The token consists of other tokens, such as 'clangbook', '::', and so on. Combining all the tokens into one will significantly simplify the parsing and boost the overall parsing performance.
+正如我们所看到的，Clang从图2.31中示例程序的第4行消耗了一个注释token。该token位于列1和列7之间。请见图2.32。这对应于以下作为token使用的文本：clangbook::A。该token由其他token组成，例如'clangbook'、'::'等。将所有token组合成一个将大大简化解析并提高整体的解析性能。
 
-\myGraphic{0.4}{content/part1/chapter2/images/33.png}{Figure 2.33: Preprocessor (clang lexer) class internals}
+\myGraphic{0.8}{content/part1/chapter2/images/33.png}{图2.33: 预处理器（Clang词法分析器）类内部}
 
-C/C++ language has some specifics that influence the internal implementation of the Preprocessor class. The first one is about macros. The Preprocessor class has two different helper classes to retrieve tokens:
+C/C++语言有一些特定之处，影响了Preprocessor类的内部实现。首先是宏。Preprocessor类有两个不同的辅助类来检索token：
 
 \begin{itemize}
 \item
-The Lexer class is used to convert a text buffer into a stream of tokens.
+Lexer类用于将文本缓冲区转换为token流。
 
 \item
-The TokenLexer class is used to retrieve tokens from macro expansions.
+TokenLexer类用于从宏扩展中检索token。
 \end{itemize}
 
-It should be noted that only one of these helpers can be active at a time.
+需要注意的是，这些辅助类中只能有一个同时激活。
 
-Another specific aspect of C/C++ is the \#include directive (which is also applicable to the import directive). In this case, we need to maintain a stack of includes, where each include can have its own TokenLexer or Lexer, depending on whether there is a macro expansion within it. As a result, the Preprocessor class keeps a stack of lexers (IncludeMacroStack class) for each \#include directive, as shown in Figure 2.33.
+C/C++的另一个特定之处是\#include指令（也适用于import指令）。在这种情况下，我们需要维护一个包含的栈，其中每个包含都可以有自己的TokenLexer或Lexer，取决于其中是否包含宏扩展。因此，Preprocessor类为每个\#include指令保持了一个包含的lexer栈（IncludeMacroStack类），如图2.33所示。
 
-\mySubsubsection{2.4.2.}{Parser and sema}
+\mySubsubsection{2.4.2.}{解析器与语义分析器}
 
-The parser and sema are crucial components of the Clang compiler frontend. They handle the syntax and semantic analysis of the source code, producing an AST as output. This tree can be visualized for our test program using the following command:
+解析器和语义分析器是Clang编译器前端的关键组件。它们处理源代码的语法和语义分析，产生AST作为输出。对于我们的测试程序，可以使用以下命令可视化这个树：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -ast-dump max.cpp
 \end{shell}
 
-The output of this command is shown here:
+这个命令的输出如下：
 
 \begin{shell}
 TranslationUnitDecl 0xa9cb38 <<invalid sloc>> <invalid sloc>
@@ -209,16 +207,15 @@ implicit __int128_t '__int128'
 \end{shell}
 
 \begin{center}
-Figure 2.34: Clang AST dump output
+图2.34: Clang AST dump的输出
 \end{center}
 
-Clang utilizes a hand-written recursive-descent parser \footnote{LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}.}. This parser can be considered simple, and this simplicity was one key reason for its selection. Additionally, the complex rules specified for the C/C++ languages necessitated an ad hoc parser with easily adaptable rules.
+Clang使用了一个手工编写的递归下降解析器 \footnote{LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}。}。 这个解析器可以被认为是简单的，这也是它被选中的一个关键原因。此外，C/C++语言的复杂规则需要一个易于适应的临时解析器。
 
-Let's explore how this works with our example. Parsing begins with a top-level declaration known as a TranslationUnitDecl, representing a single translation unit. The C++ standard defines a translation unit as follows \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}:
+让我们通过我们的示例来探索它是如何工作的。解析从代表单个翻译单元的顶级声明开始，称为TranslationUnitDecl。C++标准将翻译单元定义为\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}:
 
-A source file together with all the headers (16.5.1.2) and source files included (15.3) via the preprocessing directive \#include, less any source lines skipped by any of the conditional inclusion (15.2) preprocessing directives, is called a translation unit.
-
-The parser first recognizes that the initial tokens from the source code correspond to a function definition, as defined in the C++ standard \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
+一个源文件及其通过预处理指令\#include包含的所有头文件（16.5.1.2）和源文件，减去任何通过任何条件包含预处理指令（15.2）跳过的源行，称为翻译单元。
+解析器首先识别出源代码的初始token对应于函数定义，如C++标准所定义\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
 
 \begin{shell}
 function-definition :
@@ -227,10 +224,10 @@ function-definition :
 \end{shell}
 
 \begin{center}
-Figure 2.35: Function definition for C++ standard
+图2.35: C++标准中的函数定义
 \end{center}
 
-The corresponding code follows:
+相应的代码如下：
 
 \begin{cpp}
 int max(...) {
@@ -239,10 +236,10 @@ int max(...) {
 \end{cpp}
 
 \begin{center}
-Figure 2.36: Part of the example code corresponding to function definition from C++ standard
+图2.36: 对应于C++标准中函数定义的部分示例代码
 \end{center}
 
-The function definition necessitates a declarator and function body. We'll start with the declarator, defined in the C++ standard as \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general}:
+函数定义需要一个声明器和函数体。我们首先从声明器开始，它被C++标准定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general}:
 
 \begin{shell}
 declarator:
@@ -260,10 +257,10 @@ parameter-declaration-list:
 \end{shell}
 
 \begin{center}
-Figure 2.37: Declarator definition for C++ standard
+图2.37: C++标准中的声明器定义
 \end{center}
 
-In other words, the declarator specifies a list of parameter declarations within brackets. The corresponding piece of code from the source is as follows:
+换句话说，声明器在一个括号内指定参数声明列表。源代码中的相应部分如下：
 
 \begin{cpp}
 ... (int a, int b)
@@ -271,10 +268,10 @@ In other words, the declarator specifies a list of parameter declarations within
 \end{cpp}
 
 \begin{center}
-Figure 2.38: Part of the example code corresponding to declarator from C++ standard
+图2.38: 对应于C++标准中声明器的部分示例代码
 \end{center}
 
-The function definition, as stated above, also requires a function body. The C++ standard specifies the function body as follows: \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}
+函数定义，如上述所述，还需要一个函数体。C++标准将函数体定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
 
 \begin{shell}
 function-body:
@@ -283,10 +280,10 @@ function-body:
 \end{shell}
 
 \begin{center}
-Figure 2.39: Function body definition for C++ standard
+图2.39: C++标准中的函数体定义
 \end{center}
 
-Thus the function body consists of a compound statement, which is defined as follows in the C++ standard \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block}:
+因此，函数体由一个复合语句组成，它被C++标准定义为\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block}:
 
 \begin{shell}
 compound-statement:
@@ -297,12 +294,12 @@ statement-seq:
 \end{shell}
 
 \begin{center}
-Figure 2.40: Compound statement definition for C++ standard
+图2.40: C++标准中的复合语句定义
 \end{center}
 
-Therefore, it describes a sequence of statements enclosed within \{... brackets.
+因此，它描述了一组语句，这些语句被括在大括号内(\{... ).
 
-Our program has two types of statements: the conditional (if ) statement and the return statement. These are represented in the C++ grammar definition as follows \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre}:
+我们的程序有两种类型的语句：条件（if）语句和返回语句。这些在C++语法定义中如下所示 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre}:
 
 \begin{shell}
 statement:
@@ -314,12 +311,12 @@ statement:
 \end{shell}
 
 \begin{center}
-Figure 2.41: Statement definition for C++ standard
+图2.41: C++标准中的语句定义
 \end{center}
 
-In this context, the selection statement corresponds to the if condition in our program, while the jump statement corresponds to the return operator.
+在这个上下文中，选择语句对应于我们程序中的if条件，而跳转语句对应于返回运算符。
 
-Let's examine the jum statement in more detail \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general}:
+让我们更详细地检查跳转语句 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general}:
 
 \begin{shell}
 jump-statement:
@@ -329,10 +326,10 @@ jump-statement:
 \end{shell}
 
 \begin{center}
-Figure 2.42: jump statement definition for C++ standard
+图2.42: C++标准中的跳转语句定义图2.42: C++标准中的跳转语句定义
 \end{center}
 
-where expr-or-braced-init-list is defined as \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general}:
+其中expr-or-braced-init-list被定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general}:
 
 \begin{shell}
 expr-or-braced-init-list:
@@ -341,18 +338,18 @@ expr-or-braced-init-list:
 \end{shell}
 
 \begin{center}
-Figure 2.43: Return expression definition for C++ standard
+图2.43: C++标准中的返回表达式定义
 \end{center}
 
-In this context, the return keyword is followed by an expression and a semicolon. In our case, there's an implicit cast expression that automatically converts the variable into the required type (int ).
+在这个上下文中，return关键字后面跟着一个表达式和一个分号。在我们的情况下，有一个隐式转换表达式，它自动将变量转换为所需的类型（int）。
 
-It can be enlightening to examine the parser's operation through the LLDB debugger:
+通过LLDB调试器检查解析器的操作可能会很有启发性：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 \end{shell}
 
-The debugger session output is shown in Figure 2.44. As you can see, on Line 1, we've set a breakpoint for the parsing of return statements. Our program has two return statements. We bypass the first call (line 4) and halt at the second method invocation (Line 9). The backtrace (from the 'bt' command at Line 13) displays the call stack for the parsing process. This stack mirrors the parsing blocks we described earlier, adhering to the C++ grammar detailed in \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}.
+调试器会话输出在图2.44中。如你所见，在第1行，我们为返回语句的解析设置了断点。我们的程序有两个返回语句。我们跳过了第一个调用（第4行）并在第二个方法调用（第9行）处暂停。调用栈（从第13行的'bt'命令）显示了解析过程的调用栈。这个栈反映了我们之前描述的解析块，遵循了C++语法详细说明\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}。
 
 \begin{shell}
 1  (lldb) b clang::Parser::ParseReturnStatement
@@ -378,10 +375,10 @@ The debugger session output is shown in Figure 2.44. As you can see, on Line 1, 
 \end{shell}
 
 \begin{center}
-Figure 2.44: Second return statement parsing at max.cpp example program
+图2.44: 在max.cpp示例程序中解析第二个返回语句
 \end{center}
 
-The parsing results in the generation of AST. We can also inspect the process of AST creation using the debugger. To do this, we need to set a corresponding breakpoint at the clang::ReturnStmt::Create method:
+解析的结果是生成AST。我们也可以使用调试器检查AST的创建过程。为此，我们需要在clang::ReturnStmt::Create方法上设置相应的断点：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
@@ -411,12 +408,12 @@ The parsing results in the generation of AST. We can also inspect the process of
 \end{shell}
 
 \begin{center}
-Figure 2.45: Breakpoint at clang::ReturnStmt::Create
+图2.45: 在clang::ReturnStmt::Create处的断点
 \end{center}
 
-As can be seen, the AST node for the return statement is created by the Sema component.
+如所见，返回语句的AST节点是由Sema组件创建的。
 
-The beginning of the return statement parser can be located in frame 4:
+返回语句解析的开始可以在帧4找到：
 
 \begin{shell}
 1  (lldb) f 4
@@ -432,20 +429,21 @@ The beginning of the return statement parser can be located in frame 4:
 \end{shell}
 
 \begin{center}
-Figure 2.46: Return statement parsing at debugger
+图2.46: 调试器中的返回语句解析
 \end{center}
 
-As we can observe, there is a reference to the C99 standard for the corresponding statement. The standard \footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.} provides a detailed description of the statement and the process for handling it.
+正如我们所观察到的，有对C99标准\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}。} 的引用，该标准为相应的语句提供了详细的描述。
 
-The code assumes that the current token is of type tok::kw\_return, and in this case, the parser invokes the relevant clang::Parser::ParseReturnStatement method.
+代码假设当前token的类型为tok::kw\_return，在这种情况下，解析器调用相应的clang::Parser::ParseReturnStatement方法。
 
-While the process of AST node creation can vary across different C++ constructs, it generally follows the pattern displayed in Figure 2.47.
+尽管不同C++构造的AST节点创建过程可能会有所不同，但一般来说，它遵循图2.47所示的模式。
 
-\myGraphic{0.4}{content/part1/chapter2/images/47.png}{Figure 2.47: C++ parsing in Clang frontend}
+\myGraphic{0.8}{content/part1/chapter2/images/47.png}{图2.47: Clang前端中的C++解析}
 
-In Figure 2.47, the square boxes represent the corresponding classes, and the function calls are represented as edges with the called function shown as the edge label. As can be seen, the Parser invokes the Preprocessor::Lex method to retrieve a token from the lexer. It then calls a method corresponding to the token, for example, Parser:ParseXXX for the token XXX. This method then calls Sema::ActOnXXX, which creates the corresponding object using XXX::Create. The process is then repeated with a new token.
+在图2.47中，方框代表相应的类，函数调用用带有调用函数的边缘表示。如所见，解析器调用Preprocessor::Lex方法从词法分析器获取一个token，然后调用与token对应的函数，例如Parser::ParseXXX对于token XXX。然后该方法调用Sema::ActOnXXX，使用XXX::Create创建相应的对象。这个过程然后用新的token重复。
 
-With this, we have now fully explored how the typical compiler frontend flow is implemented in Clang. We can see how the lexer component (the preprocessor) works in tandem with the parser (which comprises the parser and sema components) to produce the primary data structure for future code generation: the Abstract Syntax Tree (AST). The AST is not only essential for code generation but also for code analysis and modification. Clang provides easy access to the AST, thereby enabling the development of a diverse range of compiler tools.
+通过以上内容，我们现在已经全面探索了Clang中典型的编译器前端流程的实现。我们可以看到，词法分析器组件（预处理器）与解析器（包括解析器和语义分析器）协同工作，生成了未来代码生成的主要数据结构：抽象语法树（AST）。AST不仅对于代码生成至关重要，对于代码分析和修改也非常重要。Clang提供了对AST的便捷访问，从而使得开发各种编译器工具成为可能。
+
 
 
 

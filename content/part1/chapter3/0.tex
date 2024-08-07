@@ -1,22 +1,23 @@
-The parsing stage of any compiler generates a parse tree, and the Abstract Syntax Tree (AST) is a fundamental algorithmic structure that is generated during the parsing of a given input program. The AST serves as the framework for the Clang frontend and is the primary tool for various Clang utilities, including linters. Clang offers sophisticated tools for searching (or matching) various AST nodes. These tools are implemented using a Domain-Specific Language (DSL). It's crucial to understand its implementation to use it effectively.
+在编译器的任何解析阶段，都会生成一个解析树，而抽象语法树（AST）是在给定输入程序的解析过程中生成的一种基本算法结构。AST作为Clang前端的基础框架，是各种Clang实用工具（包括linters）的主要工具。Clang提供了用于搜索（或匹配）各种AST节点的复杂工具。这些工具使用领域特定语言（DSL）实现。理解其实现对于有效使用至关重要。
 
-We will start with the basic data structures and the class hierarchy that Clang uses to construct the AST. Additionally, we will explore the methods used for AST traversal and highlight some helper classes that facilitate node matching during this traversal. We will cover the following topics:
-
-Basic blocks used to construct the AST
+我们将从Clang用于构建AST的基本数据结构和类层次结构开始。此外，我们将探索用于AST遍历的方法，并突出显示一些在遍历过程中辅助节点匹配的辅助类。我们将涵盖以下主题：
 
 \begin{itemize}
 \item
-How the AST can be traversed
+用于构建AST的基本块
 
 \item
-The recursive visitor as the fundamental AST traversal tool
+如何遍历AST
 
 \item
-AST matchers and their role in assisting with AST traversal
+递归访问者作为AST遍历的基本工具
 
 \item
-Clang-Query as the basic tool to explore AST internals
+AST匹配器及其在辅助AST遍历中的作用
 
 \item
-Compilation errors and their impact on the AST
+Clang-Query作为探索AST内部的基本工具
+
+\item
+编译错误及其对AST的影响
 \end{itemize}

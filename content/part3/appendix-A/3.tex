@@ -1,32 +1,32 @@
-The concept of a CDB is not specific to Clang but Clang-based tools make extensive use of it. For instance, the Clang compiler itself can use a compilation database to understand how to compile files in a project. Tools such as Clang-Tidy and Clangd (for language support in IDEs) can also use it to ensure they understand code as it was built, making their analyses and transformations more accurate.
+CDB的概念不仅限于Clang，但基于Clang的工具广泛使用它。例如，Clang编译器本身可以使用编译数据库来了解如何编译项目中的文件。像Clang-Tidy和Clangd（用于IDE中的语言支持）这样的工具也可以使用它来确保它们理解构建时的代码，使它们的分析和转换更加精确。
 
-\mySamllsection{Clang-Tidy Configuration for Large Projects}
+\mySamllsection{针对大型项目的Clang-Tidy配置}
 
-To use clang-tidy with a CDB, you typically don't need any additional configuration. Clang-tidy can automatically detect and utilize the compile\_commands.json file in your project's root directory.
+要使用带有CDB的clang-tidy，通常不需要任何额外的配置。Clang-tidy可以自动检测并使用项目根目录中的compile\_commands.json文件。
 
-On the other hand, Clang Tools provide a special option, -p, defined as follows:
+另一方面，Clang工具提供了一个特殊选项，-p，定义如下：
 
 \begin{shell}
 -p <build-path> is used to read a compile command database
 \end{shell}
 
-You can use this option to run Clang-Tidy on a file from the Clang source code. For example, if you run it from the llvm-project folder where the source code was cloned, it would look like this:
+您可以使用这个选项在Clang源代码中的一个文件上运行Clang-Tidy。例如，如果您在克隆源代码的llvm-project文件夹中运行它，它看起来会像这样：
 
 \begin{shell}
 $ ./install/bin/clang-tidy clang/lib/Parse/Parser.cpp -p ./build/
 \end{shell}
 
 \begin{center}
-Figure 9.5: Running Clang-Tidy on the LLVM code base
+图 9.5：在LLVM代码库上运行Clang-Tidy
 \end{center}
 
-In this case, we are running Clang-Tidy from the folder, where we installed it, as described in Section 5.2.1, Building and testing Clang-Tidy. We have also specified the build folder as the project root folder containing the CDB.
+在这种情况下，我们正在安装它的文件夹中运行Clang-Tidy，如第5.2.1节“构建和测试Clang-Tidy”中所述。我们还指定了包含CDB的构建文件夹作为项目根文件夹。
 
-Clang-Tidy is one of the tools that actively uses the CDB to be executed on large projects. Another tool is Clangd, which we will also explore.
+Clang-Tidy是积极使用CDB在大型项目上执行的工具之一。另一个工具是Clangd，我们也将探讨它。
 
-\mySamllsection{Clangd Setup for Large Projects}
+\mySamllsection{针对大型项目的Clangd设置}
 
-Clangd offers a special configuration option to specify the path to the CDB. This option is defined as follows:
+Clangd提供了一个特殊的配置选项来指定CDB的路径。这个选项定义如下：
 
 \begin{shell}
 $ clangd --help
@@ -38,18 +38,18 @@ in the current directory and parent paths of each source file.
 \end{shell}
 
 \begin{center}
-Figure 9.6: Description for '–compile-commands-dir' option from 'clangd –help' output
+ 图 9.6：来自'clangd –help'输出的'–compile-commands-dir'选项的描述
 \end{center}
 
-You can specify this option in Visual Studio Code via the Settings panel, as shown in the following figure:
+您可以在Visual Studio Code的设置面板中指定这个选项，如下面所示：
 
-\myGraphic{0.7}{content/part3/appendix-A/images/7.png}{Figure 9.7: Configure the CDB path for clangd}
+\myGraphic{0.7}{content/part3/appendix-A/images/7.png}{图 9.7：为clangd配置CDB路径}
 
-Therefore, if you open a file from the Clang source code, you will have access to navigation support provided by Clangd as you can see in the following figure:
+因此，如果您打开Clang源代码中的一个文件，您将能够访问Clangd提供的导航支持，如下面所示：
 
-\myGraphic{0.7}{content/part3/appendix-A/images/8.png}{Figure 9.8: Hover provided for Parser::Parser method by Clangd at clang/lib/Parse/Parser.cpp}
+\myGraphic{0.7}{content/part3/appendix-A/images/8.png}{图 9.8：Clangd在clang/lib/Parse/Parser.cpp中为Parser::Parser方法提供悬停提示}
 
-Integration of compile commands with Clang tools, such as Clang-Tidy or Clangd, provides a powerful tool for exploring and analyzing your source code.
+将编译命令与Clang工具（如Clang-Tidy或Clangd）集成，为探索和分析您的源代码提供了一个强大的工具。
 
 
 

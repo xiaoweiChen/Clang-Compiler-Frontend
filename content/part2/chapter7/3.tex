@@ -1,13 +1,12 @@
-We plan to investigate FixItHint, which is a part of the Clang Diagnostics subsystem (see Section 4.4.2, Diagnostics support). FixItHint can be integrated with clang::Rewriter and clang::tooling::Replacement explored previously, providing advanced diagnostics that are used in powerful tools such as Clang-Tidy.
-
+我们计划研究 clang::FixItHint，它是 Clang 诊断子系统的一部分（参见第 4.4.2 节，《诊断支持》）。FixItHint 可以与之前探讨过的 clang::Rewriter 和 clang::tooling::Replacement 结合使用，为强大的工具如 Clang-Tidy 提供高级诊断功能。
 
 \mySubsubsection{7.3.1.}{FixItHint}
 
-clang::FixItHint is a class in the Clang compiler that significantly enhances its diagnostic capabilities. Its primary role is to provide automated suggestions for correcting code errors or issues that the compiler detects. These suggestions, known as "fix-its," are a part of Clang's diagnostic messages and are intended to guide developers in resolving identified issues in their code.
+clang::FixItHint 是 Clang 编译器中的一个类，显著增强了其诊断能力。它的主要作用是提供自动化的建议来纠正编译器检测到的代码错误或问题。这些建议，被称为"修复提示"（fix-its），是 Clang 诊断消息的一部分，旨在指导开发者解决他们代码中发现的问题。
 
-When Clang encounters a coding error, warning, or stylistic issue, it generates a FixItHint. This hint contains specific recommendations for changes in the source code. For instance, it may suggest replacing a snippet of text with a corrected version or inserting or removing code at a particular location.
+当 Clang 遇到编码错误、警告或风格问题时，它会生成一个 FixItHint。这个提示包含具体的关于源代码更改的建议。例如，它可能会建议用修正版本替换一段文本，或在某个特定位置插入或删除代码。
 
-For example, consider the following source code:
+考虑下面的源代码示例：
 
 \begin{cpp}
 void foo() {
@@ -17,10 +16,10 @@ void foo() {
 \end{cpp}
 
 \begin{center}
-Figure 7.13: Test file foo.cpp
+图 7.13: 测试文件 foo.cpp
 \end{center}
 
-If we run a compilation for the file, we will get the following error:
+如果我们编译这个文件，将会得到以下错误：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj foo.cpp -o /tmp/foo.o
@@ -39,14 +38,14 @@ constant address
 \end{shell}
 
 \begin{center}
-Figure 7.14: Compilation error generated in foo.cpp
+图 7.14: 在 foo.cpp 中生成的编译错误
 \end{center}
 
-As you can see, the compiler suggests adding the static keyword at Line 2 for the program shown in Figure 7.13.
+如您所见，编译器建议在第 2 行添加 static 关键字，如图 7.13 所示的程序。
 
-The error is processed by Clang using the FixItHint object, as shown in Figure 7.15. As seen in Figure 7.15, when Clang detects an issue in the source code and generates a diagnostic, it can also produce a clang::FixItHint that suggests how to fix the issue. The hint is later processed by the Clang diagnostics subsystem and displayed to the user.
+此错误通过 FixItHint 对象被 Clang 处理，如图 7.15 所示。如图 7.15 所示，当 Clang 发现源代码中的问题并生成诊断时，它也可以生成一个 clang::FixItHint，提示如何解决问题。该提示随后被 Clang 诊断子系统处理并显示给用户。
 
-It's important to highlight that the hint can also be converted into a Replacement object, which represents the exact text change needed. For example, Clang-Tidy uses the Replacement object as temporary storage for information from FixItHint in its DiagnosticConsumer class implementation, allowing the FixItHint to be converted into a Replacement object that represents the exact text change needed.
+值得注意的是，该提示还可以转换为 Replacement 对象，该对象代表确切的文本更改需求。例如，Clang-Tidy 在其 DiagnosticConsumer 类的实现中使用 Replacement 对象作为来自 FixItHint 的信息的临时存储，允许 FixItHint 转换为代表确切文本更改需求的 Replacement 对象。
 
 \begin{cpp}
 if (VarD && VarD->isConstexpr()) {
@@ -61,24 +60,26 @@ if (VarD && VarD->isConstexpr()) {
 \end{cpp}
 
 \begin{center}
-Figure 7.15: Code fragment from clang/lib/AST/ExprConstant.cpp
+图 7.15: 从 clang/lib/AST/ExprConstant.cpp 中的代码片段
 \end{center}
 
-Overall, clang::FixItHint enhances the user-friendliness and utility of Clang, providing developers with practical tools for improving code quality and resolving issues efficiently. Its integration into Clang's diagnostic system exemplifies the compiler's emphasis on not only pinpointing code issues but also aiding in their resolution. We are going to utilize this feature in a Clang-Tidy check that will rename methods in a test class and convert the code shown in Figure 7.10 to that in Figure 7.12.
+总的来说，clang::FixItHint 增强了 Clang 的用户友好性和实用性，为开发者提供了实用的工具来提高代码质量和有效地解决问题。它集成到 Clang 的诊断系统中，体现了编译器不仅专注于指出代码问题，而且还辅助解决这些问题的重点。我们打算利用这一特性在 Clang-Tidy 检查中重命名测试类中的方法，并将图 7.10 中的代码转换为图 7.12 中的代码。
 
-\mySubsubsection{7.3.2.}{Creating project skeleton}
+\mySubsubsection{7.3.2.}{创建项目的结构}
 
-Let's create the project skeleton for our Clang-Tidy check. We will name our check "methodrename" and it will be a part of "misc" set of Clang-Tidy checks. We will use the command from Section 5.4.1
+在创建项目的结构时，我们为Clang-Tidy检查创建了“methodrename”项目。该项目将作为“misc”集的一部分包含在Clang-Tidy检查中。我们使用了第5.4.1节的命令。
 
 \begin{shell}
 $ ./clang-tools-extra/clang-tidy/add_new_check.py misc methodrename
 \end{shell}
 
-Figure 7.16: Creating a skeleton for the misc-methodrename check
+\begin{center}
+图7.16：为misc-methodrename检查创建骨架
+\end{center}
 
-The command from Figure 7.16 should be run from the root of the cloned LLVM project. We specified two parameters for the add\_new\_check.py script: misc – the set of checks that will contain our new check, and methodrename – the name of our check.
+如图7.16所示的命令应该从克隆的LLVM项目的根目录运行。我们为add\_new\_check.py脚本指定了两个参数：misc - 包含我们新检查的检查集，以及methodrename - 我们的检查名称。
 
-The command will produce the following output:
+该命令将产生以下输出：
 
 \begin{shell}
 Updating ./clang-tools-extra/clang-tidy/misc/CMakeLists.txt...
@@ -93,23 +94,23 @@ Done. Now it's your turn!
 \end{shell}
 
 \begin{center}
-Figure 7.17: Artefacts created for misc-methodrename check
+图7.17：为misc-methodrename检查创建的工件
 \end{center}
 
 
-We have to modify at least two generated files in the ./clang-tools-extra/clang-tidy /misc folder:
+我们需要在./clang-tools-extra/clang-tidy/misc文件夹中至少修改两个生成的文件：
 
 \begin{enumerate}
 \item
-MethodrenameCheck.h : This is the header file for our check. Here, we want to add an additional private method processMethod for checking the method's properties and displaying diagnostics.
+MethodrenameCheck.h：这是我们的检查的头部文件。在这里，我们想要添加一个额外的私有方法processMethod来检查方法的属性和显示诊断信息。
 
 \item
-MethodrenameCheck.cpp : This file contains the processing logic, and we need to implement three methods: registerMatchers, check, and the newly added private method processMethod.
+MethodrenameCheck.cpp：这个文件包含处理逻辑，我们需要实现三个方法：registerMatchers，check，以及新添加的私有方法processMethod。
 \end{enumerate}
 
-\mySubsubsection{7.3.3.}{Check implementation}
+\mySubsubsection{7.3.3.}{检查实现}
 
-We will start with modifications to the header file:
+在实现检查时，我们首先修改头文件：
 
 \begin{cpp}
 private:
@@ -119,13 +120,13 @@ private:
 \end{cpp}
 
 \begin{center}
-Figure 7.18: MethodrenameCheck.h modifications
+图7.18：MethodrenameCheck.h的修改
 \end{center}
 
 
-The added private method MethodrenameCheck::processMethod has the same parameters as the method introduced earlier in our Clang Tool 'methodrename', as seen in Figure 7.4.
+添加的私有方法MethodrenameCheck::processMethod具有与我们在Clang工具'methodrename'中之前引入的方法相同的参数，如图7.4所示。
 
-We start the implementation with the MethodrenameCheck::registerMatchers method of our check as follows:
+我们开始实现MethodrenameCheck::registerMatchers方法：
 
 \begin{cpp}
 void MethodrenameCheck::registerMatchers(MatchFinder *Finder) {
@@ -138,18 +139,18 @@ void MethodrenameCheck::registerMatchers(MatchFinder *Finder) {
 \end{cpp}
 
 \begin{center}
-Figure 7.19: Implementation of registerMatchers
+图7.19：registerMatchers的实现
 \end{center}
 
-Lines 30 and 31 register two matchers. The first one is for method declarations (bound to the "method" identifier), and the second one is for method calls (bound to the "call" identifier).
+在第30和31行注册了两个匹配器。第一个是用于方法声明（绑定到“method”标识符），第二个是用于方法调用（绑定到“call”标识符）。
 
-Here, we use a Domain Specific Language (DSL) defined in Section 3.5, AST matchers. The ClassMatcher specifies that our method declaration has to be declared within a class with a name starting with the "Test" prefix.
+在这里，我们使用在第3.5节定义的特定领域语言（DSL）AST匹配器。ClassMatcher指定我们的方法声明必须声明在一个以“Test”前缀开头的类中。
 
-The method declaration matcher (MethodMatcher) is defined at Line 28. It must be declared within the class specified by ClassMatcher and should be a test method (details about the isNotTestMethod matcher will be described below).
+方法声明匹配器（MethodMatcher）在第28行定义。它必须声明在ClassMatcher指定的类中，并且应该是一个测试方法（关于isNotTestMethod匹配器的详细信息将在下面描述）。
 
-The last matcher, CallMatcher, is defined at Line 29 and specifies that it must be a call to a method that satisfies the conditions of MethodMatcher.
+最后一个匹配器，CallMatcher，在第29行定义，指定它必须是对满足MethodMatcher条件的方法的调用。
 
-The isNotTestMethod matcher is an ad-hoc matcher that is used to check our specific conditions. We can define our own matchers using AST\_MATCHER and related macros. The implementation for it can be found here:
+isNotTestMethod匹配器是一个特设匹配器，用于检查我们的特定条件。我们可以使用AST\_MATCHER和相关宏来定义我们自己的匹配器。它的实现如下：
 
 \begin{cpp}
 AST_MATCHER(CXXMethodDecl, isNotTestMethod) {
@@ -161,14 +162,16 @@ AST_MATCHER(CXXMethodDecl, isNotTestMethod) {
 \end{cpp}
 
 \begin{center}
-Figure 7.20: isNotTestMethod matcher implementation
+图7.20：isNotTestMethod匹配器实现
 \end{center}
 
-The macro has two parameters. The first one specifies the AST node we want to check, which is clang::CXXMethodDecl in our case. The second parameter is the matcher name that we want to use for the user-defined matcher, which is isNotTestMethod in our case.
+这个宏有两个参数。第一个指定我们想要检查的AST节点，在我们的例子中是clang::CXXMethodDecl。第二个参数是我们想要用于用户定义匹配器的匹配器名称，在我们的例子中是isNotTestMethod。
 
-The AST node can be accessed as a Node variable at the macro body. The macro should return true if the Node matches the required conditions. We use the same conditions we used for our 'methodrename' Clang Tool in Figure 7.4 (Lines 46-51).
+AST节点可以作为宏体中的Node变量访问。宏应该在其满足所需条件时返回true。我们使用与我们在图7.4中'methodrename' Clang工具相同的条件（第46-51行）。
 
-The MethodrenameCheck::check is the main method for our check and can be implemented as follows:
+MethodrenameCheck::check是我们检查的主要方法，可以如下实现：
+
+
 
 \begin{cpp}
 void MethodrenameCheck::check(const MatchFinder::MatchResult &Result) {
@@ -185,12 +188,12 @@ void MethodrenameCheck::check(const MatchFinder::MatchResult &Result) {
 \end{cpp}
 
 \begin{center}
-Figure 7.21: check implementation
+图7.21：check实现
 \end{center}
 
-The code has two blocks. The first one (Lines 35-37) processes method declarations, and the last one (Lines 39-42) processes method calls. Both call MethodrenameCheck ::processMethod to display diagnostics and create the required code modifications.
+代码有两个块。第一个块（第35-37行）处理方法声明，最后一个块（第39-42行）处理方法调用。两者都调用MethodrenameCheck ::processMethod来显示诊断信息并创建所需的代码修改。
 
-Let's examine how it's implemented and how clang::FixItHint is used.
+让我们看看它是如何实现的，以及如何使用clang::FixItHint。
 
 \begin{cpp}
 void MethodrenameCheck::processMethod(const clang::CXXMethodDecl *Method,
@@ -203,28 +206,28 @@ void MethodrenameCheck::processMethod(const clang::CXXMethodDecl *Method,
 \end{cpp}
 
 \begin{center}
-Figure 7.22: processMethod implementation
+图7.22：processMethod实现
 \end{center}
 
-We print diagnostics about the detected issue at Line 49. Lines 50-51 print an informational message about the suggested code modifications and create the corresponding code replacement at Line 51. To insert text, we use clang::FixItHint::CreateInsertion. We also display the insertion as a note for our primary warning.
+我们在第49行打印关于检测到的问题的诊断信息。第50-51行打印关于建议代码修改的信息性消息，并在第51行创建相应的代码替换。为了插入文本，我们使用clang::FixItHint::CreateInsertion。我们还将插入作为我们主要警告的注释显示。
 
-As soon as all the required changes are applied to the generated skeleton, it's time to build and run our check on a test file.
+一旦所有必要的更改都应用于生成的骨架，就是构建并运行我们的检查到测试文件的时候了。
 
-\mySubsubsection{7.3.4.}{Build and run the check}
+\mySubsubsection{7.3.4.}{构建和运行检查}
 
-We assume that build configuration from Figure 1.12 was used. Thus, we have to run the following command to build our check:
+我们假设使用了图1.12中的构建配置。因此，我们必须运行以下命令来构建我们的检查：
 
 \begin{shell}
 $ ninja clang-tidy
 \end{shell}
 
-We can install it to the install folder with:
+我们可以将其安装到安装文件夹中：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-We can run our check as follows on the TestClass from Figure 7.10:
+我们可以按照以下方式在图7.10中的TestClass上运行我们的检查：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
@@ -235,10 +238,10 @@ $ <...>/llvm-project/install/bin/clang-tidy \
 
 
 \begin{center}
-Figure 7.23: Clang-Tidy misc-methodrename check run on the test file TestClass.cpp
+图7.23：在TestClass.cpp上运行Clang-Tidy misc-methodrename检查
 \end{center}
 
-The command will produce the following output:
+该命令将产生以下输出：
 
 \begin{shell}
 TestClass.cpp:4:8: warning: Method 'pos' does not have 'test_' prefix
@@ -260,11 +263,10 @@ TestClass.cpp:9:8: note: insert 'test_'
 \end{shell}
 
 \begin{center}
-Figure 7.24: Warning generated for TestClass.cpp by misc-methodrename check
+图7.24：TestClass.cpp由misc-methodrename检查生成的警告
 \end{center}
 
-
-As we can see, the check correctly detected two places where the method name has to be changed and created replacements. The command from Figure 7.23 does not modify the original source file. We have to specify an additional argument -fix-notes to apply the insertions specified as notes to the original warnings. The required command will look like this:
+如我们所见，检查正确地检测到了两个需要更改方法名称的地方，并创建了相应的替换。从图7.23所示的命令并没有修改原始源文件。我们必须指定一个额外的参数-fix-notes，以将作为注释指定的插入应用到原始警告中。所需的命令将如下所示：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
@@ -276,10 +278,10 @@ $ <...>/llvm-project/install/bin/clang-tidy \
 
 
 \begin{center}
-Figure 7.25: Clang-Tidy with -fix-notes option
+图7.25：使用-fix-notes选项的Clang-Tidy
 \end{center}
 
-The command output is as follows:
+命令输出如下：
 
 \begin{shell}
 2 warnings generated.
@@ -306,10 +308,10 @@ clang-tidy applied 2 of 2 suggested fixes.
 
 
 \begin{center}
-Figure 7.26: Clang-Tidy fixes applied to the TestClass.cpp
+图7.26：Clang-Tidy对TestClass.cpp的修复
 \end{center}
 
-As we can see, the required insertions were applied here. Clang-Tidy has powerful tools to control the applied fixes and can be considered a significant resource for code modification. Another popular tool used for code modification is Clang-Format. As the name suggests, this tool specializes in code formatting. Let's explore it in detail.
+如我们所见，所需的插入被应用在这里。Clang-Tidy具有强大的工具来控制应用的修复，可以被视为代码修改的重要资源。另一个用于代码修改的流行工具是Clang-Format。正如其名称所示，这个工具专门用于代码格式化。让我们详细探讨它。
 
 
 

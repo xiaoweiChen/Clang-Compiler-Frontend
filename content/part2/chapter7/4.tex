@@ -1,28 +1,28 @@
-Clang-Format is an essential tool in the Clang/LLVM project, designed for formatting C, C++, Java, JavaScript, Objective-C, or Protobuf code. It plays a crucial role in the Clang tooling ecosystem, offering capabilities for parsing, analyzing, and manipulating source code.
+Clang-Format是Clang/LLVM项目中的一个重要工具，专为格式化C、C++、Java、JavaScript、Objective-C或Protobuf代码而设计。它在Clang工具生态系统中扮演着关键角色，提供解析、分析和操作源代码的功能。
 
-Clang-Format is a part of Clang and has to be installed if we have built and installed the Clang compiler. Let's look at how it can be used.
+Clang-Format是Clang的一部分，如果我们已经构建并安装了Clang编译器，就必须安装它。让我们看看它是如何使用的。
 
-\mySubsubsection{7.4.1.}{Clang-Format configuration and usage examples}
+\mySubsubsection{7.4.1.}{Clang-Format配置和使用示例}
 
-Clang-Format uses .clang-format configuration files. The utility will use the closest configuration file; i.e., if the file is located at the folder with the source files we want to format, then the configuration from the folder will be used. The format for configuration files is YAML, which is the same format used for Clang-Tidy configuration files, as shown in Figure 5.12, Clang-Tidy configuration. Let's create the following simple configuration file:
+Clang-Format使用.clang-format配置文件。该工具将使用最近的配置文件；也就是说，如果配置文件位于我们想要格式化的源文件所在的文件夹中，那么将使用该文件夹中的配置。配置文件的格式是YAML，这与Clang-Tidy配置文件所使用的格式相同，如图5.12所示。让我们创建一个简单的配置文件：
 
 \begin{shell}
 BasedOnStyle: LLVM
 \end{shell}
 
 \begin{center}
-Figure 7.27: Simple .clang-format configuration file
+图7.27：简单的.clang-format配置文件
 \end{center}
 
-The configuration file says that we will use the code style defined by LLVM, see \url{https://llvm.org/docs/CodingStandards.html}.
+配置文件表示我们将使用由LLVM定义的代码风格，详见LLVM的编码标准\url{https://llvm.org/docs/CodingStandards.html}。
 
-Suppose we have a non-formatted file main.cpp , then the following command will format it:
+假设我们有一个未格式化的文件main.cpp，那么以下命令将对其进行格式化：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-format -i main.cpp
 \end{shell}
 
-The result of the formatting is shown here:
+格式化结果如下：
 
 \begin{cpp}
 namespace clang {
@@ -37,7 +37,7 @@ int main() {
 }
 \end{cpp}
 
-Original code
+原始代码
 
 \begin{cpp}
 namespace clang {
@@ -53,56 +53,56 @@ int main() {
 }
 \end{cpp}
 
-Formatted code
+格式化后的代码
 
 \begin{center}
-Figure 7.28: Formatting for main.cpp
+图7.28：main.cpp的格式化
 \end{center}
 
-In the example provided in Figure 7.28, we can see that the indentation defined by the LLVM code style was applied. We can also observe that Clang-Format broke Line 6 in the original source code and made the main function definition start on a separate line. Additionally, we can see that Clang-Format added a comment to the namespace closing bracket in the formatted code at Line 6.
+在图7.28中提供的示例中，我们可以看到LLVM代码风格定义的缩进被应用了。我们还可以观察到，Clang-Format在原始源代码的第6行中打破了行，使主函数定义开始于单独一行。此外，我们还可以看到，Clang-Format在格式化代码的第6行中为命名空间关闭括号添加了注释。
 
-After considering the usage example, it's time to look at the internal design of Clang-Format.
+在考虑了使用示例之后，是时候看看Clang-Format的内部设计。
 
-\mySubsubsection{7.4.2.}{Design considerations}
+\mySubsubsection{7.4.2.}{设计考虑}
 
-At the core of Clang-Format is the Clang Lexer (see Figure 2.5, Lexer), which tokenizes the input source code, breaking it down into individual tokens like keywords, identifiers, and literals. These tokens serve as the basis for formatting decisions.
+Clang-Format的核心是Clang词法分析器（见图2.5，词法分析器），它将输入源代码分解为单个词法单元，如关键字、标识符和字面量。这些词法单元构成了格式化决策的基础。
 
-The initial Clang-Format design document considered the Parser and AST as basic components for formatting. Despite the advantages provided by advanced data structures such as the AST, this approach has some disadvantages:
+Clang-Format的初始设计文档考虑了词法分析器、解析器和抽象语法树（AST）作为格式化的基本组件。尽管高级数据结构如AST提供了许多优点，但这种方法也有一些缺点：
 
 \begin{itemize}
 \item
-The Parser requires a full build process and, therefore, build configuration.
+解析器需要完整的构建过程，因此需要构建配置。
 
 \item
-The Parser has limited capabilities to process a part of the source text, which is a typical task for formatting, such as formatting a single function or a source range of the source file.
+解析器在处理源文本的一部分时能力有限，这是格式化的典型任务，例如格式化单个函数或源文件的源范围。
 
 \item
-Formatting macros is a challenging task when using the AST as the basic structure for formatting. For instance, the processed macro may not be called in the compiled code and, as a result, may be missed in the AST.
+使用AST作为格式化的基本结构来处理宏是一项具有挑战性的任务。例如，处理的宏可能在编译后的代码中未被调用，因此可能在AST中遗漏。
 \end{itemize}
 
-The Parser is much slower than the Lexer.
+解析器比词法分析器慢得多。
 
-Clang-Format leverages clang::tooling::Replacement to represent code formatting changes and utilizes clang::Rewriter to apply these changes to the source code.
+Clang-Format利用clang::tooling::Replacement来表示代码格式化更改，并利用clang::Rewriter将这些更改应用于源代码。
 
-Configuration plays a pivotal role in Clang-Format's operation. Users define their preferred formatting style by configuring rules in a .clang-format file. This configuration specifies details such as indentation width, brace placement, line breaks, and more.
+配置在Clang-Format的操作中起着关键作用。用户通过在.clang-format文件中配置规则来定义他们喜欢的格式化风格。这个配置指定了一些细节，如缩进宽度、括号放置、换行等。
 
-Clang-Format supports various predefined and customizable formatting styles, such as "LLVM," "Google," and "Chromium." Users can select a style that aligns with their project's coding standards.
+Clang-Format支持各种预定义和可定制的格式化风格，如“LLVM”、“Google”和“Chromium”。用户可以选择与项目编码标准相符的风格。
 
-Once tokenized, Clang-Format processes the token stream, taking into account the current context, indentation level, and configured style rules. It then adjusts whitespace and line breaks accordingly to adhere to the chosen style.
+一旦词法单元化，Clang-Format就会处理词法单元流，考虑到当前上下文、缩进级别和配置的风格规则。然后，它相应地调整空格和换行，以符合所选风格。
 
-One notable feature of Clang-Format is its ability to handle macros effectively, preserving the original formatting within macros and complex macros.
+Clang-Format的一个显著特性是其有效处理宏的能力，保持宏内和复杂宏内的原始格式。
 
-Customization is a key aspect of Clang-Format. Users can extend or customize its behavior by defining custom rules and formatting options in the configuration file. This flexibility allows teams to enforce specific coding standards or adapt Clang-Format to project-specific needs.
+自定义是Clang-Format的一个关键方面。用户可以通过在配置文件中定义自定义规则和格式化选项来扩展或定制其行为。这种灵活性允许团队强制执行特定的编码标准，或者根据项目特定需求调整Clang-Format。
 
-It offers a user-friendly command-line interface, enabling manual code formatting or integration into scripts and automation.
+它提供了一个用户友好的命令行界面，可以手动格式化代码或将其集成到脚本和自动化中。
 
-Clang-Format utilizes Clang's Format library to generate formatted code accurately. This library ensures that the code consistently follows the desired formatting style. The design follows the main paradigm of LLVM: "everything is a library," as discussed in Section 1.2.1, Short LLVM history. Thus, we can effectively use the formatting functionality in other Clang Tools. For instance, formatting can be used with Clang-Tidy to format code with fixes applied by Clang-Tidy. Let's consider an example of how this functionality can be used.
+Clang-Format利用Clang的Format库来准确生成格式化代码。这个库确保代码始终遵循所需的格式化风格。设计遵循LLVM的主要范式：“一切都是库”，如在第1.2.1节中讨论的LLVM简史。因此，我们可以在其他Clang工具中有效地使用格式化功能。例如，可以使用格式化功能与Clang-Tidy一起使用，以格式化Clang-Tidy应用的修复代码。让我们考虑一个如何使用这种功能示例。
 
-\mySubsubsection{7.4.3.}{Clang-Tidy and Clang-Format}
+\mySubsubsection{7.4.3.}{Clang-Tidy与Clang-Format}
 
-The applied Clang-Tidy fixes can break formatting. Clang-Tidy suggests using the -format-style option to address the problem. This option will apply formatting using the functionality provided by the clangFormat library. The formatting is applied to the modified lines of code. Consider an example when our TestClass has broken formatting.
+应用的Clang-Tidy修复可能会破坏代码格式。Clang-Tidy建议使用-format-style选项来解决这个问题。这个选项会使用clangFormat库提供的功能来进行格式化。格式化仅应用于被修改的代码行。考虑一个例子，假设我们的TestClass格式不正确。
 
-If we run Clang-Tidy as we did before (see Figure 7.25), then the formatting will remain unchanged and broken:
+如果我们像之前那样运行Clang-Tidy（参见图7.25），则格式将保持不变并且仍然是错乱的：
 
 \begin{cpp}
 class TestClass {
@@ -118,7 +118,7 @@ int main() {
 }
 \end{cpp}
 
-Original code
+原始代码
 
 \begin{cpp}
 class TestClass {
@@ -134,13 +134,13 @@ int main() {
 }
 \end{cpp}
 
-Applied fixes
+应用的修复
 
 \begin{center}
-Figure 7.29: Applying Clang-Tidy fixes without formatting on TestClassNotFormated.cpp
+图 7.29: 在TestClassNotFormated.cpp上应用Clang-Tidy修复而不进行格式化
 \end{center}
 
-We used the following command for Figure 7.29
+我们使用了如下的命令来生成图7.29：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
@@ -150,7 +150,7 @@ $ <...>/llvm-project/install/bin/clang-tidy \
    -- -std=c++17
 \end{shell}
 
-The result will be different if we run Clang-Tidy with -format-style option, for example:
+如果我们使用-format-style选项运行Clang-Tidy，结果将会不同，例如：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy \
@@ -161,7 +161,7 @@ $ <...>/llvm-project/install/bin/clang-tidy \
    -- -std=c++17
 \end{shell}
 
-As we can see the 'llvm' formatting style was chosen for the example. The result is shown in the following figure:
+如我们所见，此例选择了'llvm'格式化风格。结果如下所示：
 
 \begin{cpp}
 class TestClass {
@@ -177,7 +177,7 @@ int main() {
 }
 \end{cpp}
 
-Original code
+原始代码
 
 \begin{cpp}
 class TestClass {
@@ -193,21 +193,21 @@ int main() {
 }
 \end{cpp}
 
-Applied fixes with formatting
+应用修复并进行格式化
 
 \begin{center}
-Figure 7.30: Applying Clang-Tidy fixes with formatting on TestClassNotFormated.cpp
+图 7.30: 在TestClassNotFormated.cpp上应用Clang-Tidy修复并进行格式化
 \end{center}
 
-The relationship between Clang-Tidy and Clang-Format, as we just demonstrated, can be visualized as presented in the following figure:
+Clang-Tidy与Clang-Format之间的关系，正如我们刚才展示的，可以可视化地表示如下：
 
 
-\myGraphic{0.5}{content/part2/chapter7/images/1.png}{Figure 7.31: Clang-Tidy and Clang-Format integration}
+\myGraphic{0.5}{content/part2/chapter7/images/1.png}{图7.31:Clang-Tidy和Clang-Format的集成}
 
 
-In the figure, both Clang-Tidy and Clang-Format use the clangFormat library to format the code.
+在图中，Clang-Tidy和Clang-Format都使用clangFormat库来格式化代码。
 
-The provided example demonstrates the integration of various Clang Tools. Modularity, an essential design decision in LLVM/Clang, is a key component for such integration. This example is not unique, and we will explore the further integration of different Clang Tools to enhance the development experience in Integrated Development Environments (IDEs) like Visual Studio Code (VS Code). This will be the topic of our next chapter.
+提供的示例展示了Clang工具之间的集成。LLVM/Clang中的模块化是一个重要的设计决策，是这种集成的关键组成部分。这个示例并不独特，我们将探索不同Clang工具的进一步集成，以增强集成开发环境（IDE）如Visual Studio Code（VS Code）的开发体验。这将是我们下一章的主题。
 
 
 

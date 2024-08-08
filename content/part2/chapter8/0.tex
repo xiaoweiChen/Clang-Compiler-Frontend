@@ -1,20 +1,20 @@
-This chapter is about the Language Server Protocol (LSP) and how you can utilize it to enhance your Integrated Development Environment (IDE). Our primary IDE of choice is Visual Studio Code (VS Code). LLVM has its own implementation of LSP known as Clangd. We will begin by describing LSP and exploring how Clangd leverages it to extend the capabilities provided by the IDE. Finally, we will conclude with examples of how various Clang tools, such as Clang-Tidy and Clang-Format, can be seamlessly integrated into the IDE through Clangd.
+本章将介绍语言服务器协议（LSP）以及如何利用它来增强集成开发环境（IDE）的功能。我们的首选IDE是Visual Studio Code（VS Code）。LLVM有自己的LSP实现，称为Clangd。我们将首先描述LSP，并探讨Clangd如何利用它来扩展IDE提供的功能。最后，我们将通过示例展示如何将各种Clang工具，如Clang-Tidy和Clang-Format，无缝集成到IDE中。
 
-We will cover the following topics in this chapter:
+本章将涵盖以下主题：
 
 \begin{itemize}
 \item
-What is Language Server Protocol (LSP) and how does it improve an IDE's capabilities?
+语言服务器协议（LSP）是什么，它如何改善IDE的功能？
 
 \item
-How VS Code and Clangd (the Clang LSP server) can be installed
+如何安装VS Code和Clangd（Clang LSP服务器）
 
 \item
-How LSP is used to connect VS Code and Clangd, through an example
+如何通过示例使用LSP将VS Code与Clangd连接起来
 
 \item
-How Clangd is integrated with other Clang tools
+Clangd如何与其他Clang工具集成
 
 \item
-Why performance matters for Clangd and what optimizations were made to make Clangd fast
+Clangd的性能为何重要，以及为了使Clangd更快，进行了哪些优化
 \end{itemize}

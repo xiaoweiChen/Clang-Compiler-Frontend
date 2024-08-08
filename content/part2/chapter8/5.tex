@@ -1,17 +1,17 @@
-Clangd takes advantage of the LLVM module architecture and has a very strong integration with other Clang tools. In particular, Clangd uses Clang-Format libraries to provide formatting functionality and Clang-Tidy libraries (such as libraries with clang-tidy checks) to support linters in the IDE. The integration is schematically shown in the following figure:
+Clangd利用LLVM模块架构的优势，与其他Clang工具有着非常紧密的集成。特别是，Clangd使用Clang-Format库来提供格式化功能，并使用Clang-Tidy库（如带有clang-tidy检查的库）来在IDE中支持代码检查器。这种集成在下面的图中示意性地展示了出来：
 
-\myGraphic{0.7}{content/part2/chapter8/images/11.png}{Figure 8.27: VS Code with LSP extension and Clangd server for C++ }
+\myGraphic{0.7}{content/part2/chapter8/images/11.png}{图8.27：带有LSP扩展和Clangd服务器的VS Code用于C++}
 
-The configuration from .clang-format (see Section 7.4.1, Clang-Format configuration and usage examples) is used for formatting, and from .clang-tidy (see Figure 5.12, Clang-Tidy configuration) for linters. Let's see how the formatting works in Clangd.
+格式化配置来自.clang-format（参见第7.4.1节，Clang-Format配置和使用示例），而代码检查器的配置来自.clang-tidy（参见图5.12，Clang-Tidy配置）。让我们看看Clangd中格式化是如何工作的。
 
 
-\mySubsubsection{8.5.1.}{Clangd support for code formatting using LSP messages}
+\mySubsubsection{8.5.1.}{Clangd使用LSP消息支持代码格式化}
 
-Clangd provides robust support for code formatting. This feature is essential for developers to maintain consistent code styles and readability in their C and C++ projects. Clangd leverages LSP messages, primarily the "textDocument/formatting" and "textDocument/rangeFormatting" requests, to achieve this functionality.
+Clangd为代码格式化提供了强大的支持。这个特性对于开发者在他们的C和C++项目中保持一致的代码风格和可读性至关重要。Clangd通过LSP消息实现此功能，主要是使用“textDocument/formatting”和“textDocument/rangeFormatting”请求。
 
-\mySamllsection{Formatting entire documents}
+\mySamllsection{格式化整个文档}
 
-The "textDocument/formatting" request is used when a developer wants to format the entire content of a document. This request is typically initiated by the user in VS Code by pressing Ctrl + Shift + I (or  \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + Shift + I for macOS); the IDE sends a "textDocument/formatting" request to Clangd for the entire document:
+当开发者想要格式化文档的全部内容时，会使用“textDocument/formatting”请求。在VS Code中，这个请求通常是通过用户按下Ctrl + Shift + I（或者在macOS上是 \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + Shift + I）来发起的；IDE会向Clangd发送一个针对整个文档的“textDocument/formatting”请求：
 
 \begin{shell}
 {
@@ -32,12 +32,12 @@ The "textDocument/formatting" request is used when a developer wants to format t
 
 
 \begin{center}
-Figure 8.28: VS Code to Clangd (textDocument/formatting request)
+图8.28：VS Code向Clangd发送（textDocument/formatting请求）
 \end{center}
 
-Clangd processes this request by utilizing the code style configuration specified in the project's .clang-format file. The .clang-format file contains formatting rules and preferences, allowing developers to define their desired code style; see Section 7.4.1, Clang-Format configuration and usage examples.
+Clangd通过使用项目中.clang-format文件指定的代码风格配置来处理这个请求。.clang-format文件包含了格式化规则和偏好设置，允许开发者定义他们期望的代码风格；详见第7.4.1节，Clang-Format配置和使用示例。
 
-The response contains the list of modifications to be applied to the opened document:
+响应包含了要应用于打开文档的修改列表：
 
 \begin{shell}
 {
@@ -63,18 +63,18 @@ The response contains the list of modifications to be applied to the opened docu
 
 
 \begin{center}
-Figure 8.29: Clangd to VS Code (textDocument/formatting response)
+图8.29：Clangd向VS Code返回（textDocument/formatting响应）
 \end{center}
 
-In the example, we should replace the text at the specified range at Lines 7-16 in Figure 8.29 with new text specified at Line 6.
+在示例中，我们应该在图8.29中的第7-16行指定的范围内，用第6行指定的新文本替换文本。
 
-\mySamllsection{Formatting specific code ranges}
+\mySamllsection{格式化特定的代码范围}
 
-In addition to formatting entire documents, Clangd also supports formatting specific code ranges within a document. This is achieved using the "textDocument/rangeFormatting" request. Developers can select a range within the code, such as a function, a block of code, or even just a few lines, and request formatting for that specific range, as shown in the following screenshot:
+除了格式化整个文档外，Clangd还支持在文档内格式化特定的代码范围。这是通过使用“textDocument/rangeFormatting”请求实现的。开发者可以在代码中选择一个范围，比如一个函数、一个代码块，甚至只是几行，然后请求对该特定范围的格式化，如下面的屏幕截图所示：
 
-\myGraphic{0.7}{content/part2/chapter8/images/12.png}{Figure 8.30: Reformatting a specific code range in helper.hpp}
+\myGraphic{0.7}{content/part2/chapter8/images/12.png}{图8.30：在helper.hpp中重新格式化特定的代码范围}
 
-When selecting the menu item or pressing Ctrl + K and then Ctrl + F (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + K and then \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + F for macOS), VS Code will send the following request to Clangd:
+当选择菜单项或按下Ctrl + K然后Ctrl + F（或者在macOS上是 \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + K然后 \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} + F），VS Code会向Clangd发送以下请求：
 
 \begin{shell}
 {
@@ -104,16 +104,16 @@ When selecting the menu item or pressing Ctrl + K and then Ctrl + F (or \include
 \end{shell}
 
 \begin{center}
-Figure 8.31: VS Code to Clangd (textDocument/rangeFormatting request)
+图8.31：VS Code向Clangd发送（textDocument/rangeFormatting请求）
 \end{center}
 
-The "textDocument/rangeFormatting" request specifies the range to be formatted within the document, and Clangd applies the same formatting rules from the .clang-format file to this specific code segment. The response will be similar to the one used for the formatting request and will contain the modification that should be applied to the original text, as shown in Figure 8.29. The only difference will be the method name, which should be "textDocument/rangeFormatting" in this case.
+“textDocument/rangeFormatting"请求指定了要在文档中格式化的范围，Clangd将相同的格式化规则应用于这个特定的代码段，这些规则来自.clang-format文件。响应将与用于格式化请求的响应类似，并将包含应应用于原始文本的修改，如图8.29所示。唯一的区别将是方法名称，在这种情况下应该是"textDocument/rangeFormatting”。
 
-Another tool that is integrated via Clangd is Clang-Tidy, and it utilizes the LSP protocol in a different manner compared to the formatting functionality that we just described.
+通过Clangd集成的另一个工具是Clang-Tidy，它与刚刚描述的格式化功能相比，以不同的方式使用LSP协议。
 
 \mySubsubsection{8.5.2.}{Clang-Tidy}
 
-As we can see, Clangd uses specific LSP methods to implement integration with Clang-Format:
+正如我们所见，Clangd使用特定的LSP方法来实现与Clang-Format的集成：
 
 \begin{itemize}
 \item
@@ -123,29 +123,29 @@ As we can see, Clangd uses specific LSP methods to implement integration with Cl
 "textDocument/rangeFormatting"
 \end{itemize}
 
-On the other hand, the integration with Clang-Tidy is implemented differently, and it reuses the "publishDiagnostics" notification to report linter warnings and errors.
+另一方面，与Clang-Tidy的集成实现方式不同，它重用"publishDiagnostics"通知来报告代码检查器的警告和错误。
 
-Let's investigate how it works and create a custom Clang-Tidy configuration as the first step.
+让我们探究一下它是如何工作的，并首先创建一个自定义的Clang-Tidy配置。
 
-\mySamllsection{Clang-Tidy integration with LSP}
+\mySamllsection{Clang-Tidy与LSP的集成}
 
-We will run the misc-methodrename check that we recently created for testing method renaming, see Section 7.3, Clang-Tidy as a code modification tool. Our Clang-Tidy configuration will look like this:
+我们将运行最近为测试方法重命名而创建的misc-methodrename检查，参见第7.3节，Clang-Tidy作为代码修改工具。我们的Clang-Tidy配置将如下所示：
 
 \begin{shell}
 Checks: '-*,misc-methodrename'
 \end{shell}
 
 \begin{center}
-Figure 8.32: .clang-tidy config for IDE integration
+图8.32：用于IDE集成的.clang-tidy配置
 \end{center}
 
-The .clang-tidy file with the configuration should be placed in the folder with our test project.
+带有配置的.clang-tidy文件应放置在我们的测试项目文件夹中。
 
-If we rename our helper class to TestHelper, we will be able to observe that the lint check we created in Section 7.3, Clang-Tidy as a code modification tool will start reporting diagnostics about the incorrect method name used for the test class. The corresponding diagnostic is displayed in the drop-down pane and in the PROBLEMS tab, as we can see in the following screenshot:
+如果我们把helper类重命名为TestHelper，我们将能够观察到在第7.3节，Clang-Tidy作为代码修改工具中创建的lint检查开始报告关于测试类使用的不正确方法名的诊断信息。相应的诊断信息显示在下拉窗格和PROBLEMS标签页中，如下面的屏幕截图所示：
 
-\myGraphic{0.7}{content/part2/chapter8/images/13.png}{Figure 8.33: Clang-Tidy integration}
+\myGraphic{0.7}{content/part2/chapter8/images/13.png}{图8.33：Clang-Tidy集成}
 
-The message is displayed as part of diagnostics. Specifically, the following notification is sent from Clang to VS Code:
+消息作为诊断信息的一部分显示。具体来说，以下通知是从Clang发送到VS Code的：
 
 \begin{shell}
 {
@@ -181,14 +181,14 @@ The message is displayed as part of diagnostics. Specifically, the following not
 \end{shell}
 
 \begin{center}
-Figure 8.34: Clangd to VS Code (publishDiagnostics notification)
+图8.34：Clangd向VS Code发送（publishDiagnostics通知）
 \end{center}
 
-As we can see in the figure (Line 11), a fix for the problem is also available. There is an amazing opportunity to apply Clang-Tidy fixes in the IDE. Let's explore how the functionality is implemented with LSP.
+如图所示（第11行），问题的修复也是可用的。在IDE中应用Clang-Tidy修复是一个惊人的机会。让我们探索一下这个功能是如何通过LSP实现的。
 
-\mySamllsection{Applying fixes in the IDE}
+\mySamllsection{在IDE中应用修复}
 
-The fixes can be applied in the IDE and the functionality is provided via the "textDocument/codeAction" method. The method is used by VS Code to prompt Clangd to compute commands for the specific document and range. The most important parts of the command are provided in the following example:
+修复可以在IDE中应用，该功能是通过"textDocument/codeAction"方法提供的。VS Code使用这个方法来提示Clangd计算特定文档和范围的命令。命令的最重要部分在以下示例中提供：
 
 \begin{shell}
 {
@@ -210,10 +210,10 @@ The fixes can be applied in the IDE and the functionality is provided via the "t
 \end{shell}
 
 \begin{center}
-Figure 8.35: VS Code to Clangd (textDocument/codeAction request)
+图8.35：VS Code向Clangd发送（textDocument/codeAction请求）
 \end{center}
 
-The most important part of the request is at Lines 7-11, where we can see a copy of the original diagnostics notification. This information will be used to retrieve the necessary document modifications provided by clang::FixItHint in the activated check. Consequently, Clangd can respond with the action that describes the required modification to be made:
+请求的最重要部分在第7-11行，我们可以看到原始诊断通知的副本。这些信息将被用来检索由激活检查中的clang::FixItHint提供的必要的文档修改。因此，Clangd可以响应描述所需修改的动作：
 
 \begin{shell}
 {
@@ -247,12 +247,12 @@ The most important part of the request is at Lines 7-11, where we can see a copy
 \end{shell}
 
 \begin{center}
-Figure 8.36: Clangd to VS Code (codeAction response)
+图8.36：Clangd向VS Code返回（codeAction响应）
 \end{center}
 
-The "edit" field in Figure 8.36 is the most important part of the response, as it describes the changes to be applied to the original text.
+图8.36中的"edit"字段是响应的最重要部分，因为它描述了要应用于原始文本的更改。
 
-The integration with Clang-Tidy is possible without extra computation because the AST is built for navigation and diagnostics purposes by Clangd core. The AST can be used as the seed for Clang-Tidy checks, eliminating the need to run a separate Clang-Tidy executable to retrieve messages from the linter. This is not the only optimization made in Clangd; let's now look at another example of performance optimizations in Clangd.
+与Clang-Tidy的集成可以在不进行额外计算的情况下实现，因为Clangd核心为了导航和诊断目的构建了AST（抽象语法树）。AST可以作为Clang-Tidy检查的种子，从而消除了运行单独的Clang-Tidy可执行文件以从代码检查器检索消息的需要。这并不是Clangd进行的唯一优化；现在让我们来看另一个Clangd性能优化的例子。
 
 
 

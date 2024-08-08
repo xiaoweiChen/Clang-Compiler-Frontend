@@ -1,30 +1,30 @@
-A compilation database (CDB) is a JSON file that specifies how each source file in a code base should be compiled. This JSON file is typically named compile\_commands.json and resides in the root directory of a project. It provides a machine-readable record of all compiler invocations in the build process and is often used by various tools for more accurate analysis, refactoring, and more. Each entry in this JSON file typically contains the following fields:
+编译数据库（CDB）是一个JSON文件，它指定了代码库中每个源文件应该如何编译。这个JSON文件通常命名为compile\_commands.json，位于项目的根目录中。它提供了构建过程中所有编译器调用的机器可读记录，通常被各种工具用于更准确的分析、重构等。这个JSON文件中的每个条目通常包含以下字段：
 
 \begin{itemize}
 \item
-directory: The working directory of the compilation.
+directory: 编译的工作目录。
 
 \item
-command: The actual compile command, including compiler options.
+command: 实际的编译命令，包括编译器选项。
 
 \item
-arguments: Another field that can be used to specify compilation arguments. It contains the list of arguments.
+arguments: 另一个可以用来指定编译参数的字段。它包含参数列表。
 
 \item
-file: The path to the source file being compiled.
+file: 正在编译的源文件的路径。
 
 \item
-output: The path to the output created by this compilation step.
+output: 此编译步骤创建的输出的路径。
 \end{itemize}
 
-As we can see from the fields description, there are two ways to specify compilation flags: using the command or arguments field. Let's look at a specific example. Suppose our C++ file ProjectLib.cpp is located at the /home/user/project/src/lib folder and can be compiled with Clang using the following invocation command (the command is used as an example, and you can ignore the meaning of its arguments)
+从字段描述中我们可以看到，有两种方法可以指定编译标志：使用command字段或arguments字段。让我们看一个具体的例子。假设我们的C++文件ProjectLib.cpp位于/home/user/project/src/lib文件夹，并且可以使用以下调用命令用Clang进行编译（命令仅作为示例，你可以忽略其参数的含义）：
 
 \begin{shell}
 $ cd /home/user/project/src/lib
 $ clang -Wall -I../headers ProjectLib.cpp -o ProjectLib.o
 \end{shell}
 
-The following CDB can be used to represent the command:
+以下CDB可以用来表示该命令：
 
 \begin{shell}
 [
@@ -38,10 +38,10 @@ The following CDB can be used to represent the command:
 \end{shell}
 
 \begin{center}
-Figure 9.1: Compilation Database for ProjectLib.cpp
+图 9.1：ProjectLib.cpp 的编译数据库
 \end{center}
 
-The "command" field was used in the example. We can also create the CDB in another form and use the arguments field. The result will be as follows:
+在示例中使用了command字段。我们也可以以另一种形式创建CDB，并使用arguments字段。结果如下：
 
 \begin{shell}
 [
@@ -62,9 +62,9 @@ The "command" field was used in the example. We can also create the CDB in anoth
 \end{shell}
 
 \begin{center}
-Figure 9.2: CDB for ProjectLib.cpp
+图 9.2：ProjectLib.cpp 的CDB
 \end{center}
 
-The CDB shown in Figure 9.2 represents the same compilation recipe as in Figure 9.1, but it uses a list of arguments (the "arguments" field) instead of the invocation command (the "command" field) used in Figure 9.1. It's important to note that the list of arguments also contains the executable "clang" as its first argument. CDB processing tools can use this argument to make a decision about which compiler should be used for the compilation in environments where different compilers are available, such as GCC versus Clang.
+图 9.2 中的CDB表示与图 9.1 中相同的编译配方，但它使用参数列表（arguments字段）而不是图 9.1 中使用的调用命令（command字段）。需要注意的是，参数列表也包含了可执行文件clang作为其第一个参数。CDB处理工具可以使用这个参数来决定在存在不同编译器的环境中应该使用哪个编译器进行编译，比如GCC与Clang。
 
-The provided CDB example contains only one record for one file. A real project might contain thousands of records. LLVM is a good example, and if you look at the build folder that we used for the LLVM build (see Section 1.3.1, Configuration with CMake), you may notice that it contains a compile\_commands.json file with the CDB for the projects we selected to be built. It's worth noting that LLVM creates the CDB by default, but your project might require some special manipulations to create it. Let's look at how the CDB can be created in detail.
+提供的CDB示例仅包含一个文件的一条记录。一个真实的项目可能包含数千条记录。LLVM就是一个很好的例子，如果你查看我们用于LLVM构建的构建文件夹（见第1.3.1节，使用CMake的配置），你可能会注意到它包含一个compile\_commands.json文件，其中包含了我们选择构建的项目的CDB。值得注意的是，LLVM默认创建CDB，但你的项目可能需要一些特殊操作来创建它。让我们详细看看如何创建CDB。

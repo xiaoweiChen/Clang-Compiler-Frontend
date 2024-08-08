@@ -1,54 +1,55 @@
-We will begin our environment setup by building Clangd. Then, we will install VS Code, set up the Clangd extension, and configure Clangd within it.
+我们将开始通过构建Clangd来设置我们的环境。然后，我们将安装VS Code，设置Clangd扩展，并在其中配置Clangd。
 
-\mySubsubsection{8.3.1.}{Clangd build}
+\mySubsubsection{8.3.1.}{构建Clangd}
 
-It's worth building Clangd in release mode, as we did for LLDB in Section 1.3.3, The LLVM debugger, its build, and usage. This is because performance is crucial in IDEs. For instance, Clangd requires building an AST to provide code navigation functionality. If a user modifies a document, the document should be rebuilt, and the navigation functionality will not be available until the rebuild process is completed. This can result in delays in IDE responses. To prevent IDE slowness in responses, we should ensure that Clangd is built with all the required optimizations. You can use the following project configuration command:
+值得在发布模式下构建Clangd，就像我们在第1.3.3节中为LLDB所做的那样。这是因为性能对于IDE至关重要。例如，Clangd需要构建一个AST来提供代码导航功能。如果用户修改了一个文档，该文档应该被重建，导航功能在重建过程完成之前是不可用的。这可能导致IDE响应延迟。为了防止IDE响应缓慢，我们应该确保Clangd在构建时包含了所有所需的优化。您可以使用以下项目配置命令：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" ../llvm
 \end{shell}
 
 \begin{center}
-Figure 8.3: Release configuration for Clangd build
+图8.3：Clangd的发布配置构建
 \end{center}
 
-The command has to be run from the release folder that we created in Section 1.3.3, The LLVM debugger, its build, and usage, as shown in Figure 1.8. As you can see, we have enabled two projects in Figure 8.3: clang and clang-tools-extra .
+该命令需要从我们在第1.3.3节中创建的发布文件夹运行，如图1.8所示。如图8.3所示，我们已经启用了两个项目：clang和clang-tools-extra。
 
-You can use the following command to build and install Clangd:
+您可以使用以下命令构建和安装Clangd：
 
 \begin{shell}
 $ ninja install-clangd -j $(nproc)
 \end{shell}
 
-This command will utilize the maximum available threads on the system and install the binary into the folder specified in our CMake command in Figure 8.3, which is the install folder under the LLVM source tree.
+此命令将利用系统上可用的最大线程数，并将二进制文件安装到我们在图8.3中的CMake命令中指定的文件夹中，该文件夹位于LLVM源树下的安装文件夹中。
 
-After building the Clangd binary, our next step will include installing VS Code and configuring it to work with Clangd.
+构建Clangd二进制文件后，我们的下一步包括安装VS Code并配置它与Clangd一起工作。
 
-\mySubsubsection{8.3.2.}{VS Code installation and setup}
+\mySubsubsection{8.3.2.}{VS Code安装和设置}
 
-You can download and install VS Code from the VS Code website: \url{https://code.visualstudio.com/download}.
+您可以从VS Code网站下载并安装VS Code： \url{https://code.visualstudio.com/download}.
 
-The first step after running VS Code is to install the Clangd extension. An open source extension is available to work with Clangd via LSP. The extension's source code can be found on GitHub: https://github.com/clangd/vscode-clangd. However, we can easily install the latest version of the extension directly from within VS Code.
+运行VS Code后的第一步是安装Clangd扩展。一个开源扩展可用于通过LSP与Clangd一起工作。该扩展的源代码可以在GitHub上找到: https://github.com/clangd/vscode-clangd。然而，我们可以直接从VS Code内部轻松安装最新版本的扩展。
 
-To do this, press Ctrl+Shift+X (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png}+Shift+X for macOS) to open the extensions panel. Search for Clangd and click the Install button.
+要做到这一点，请按Ctrl+Shift+X（或对于macOS，\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png}+Shift+X）打开扩展面板。搜索Clangd并点击安装按钮。
 
-\myGraphic{0.5}{content/part2/chapter8/images/4.png}{Figure 8.4: Installing the Clangd extension}
+\myGraphic{0.7}{content/part2/chapter8/images/4.png}{图8.4：安装Clangd扩展}
 
-After installing the extension, we need to set it up. The main step is to specify the path to the Clangd executable.
+安装扩展后，我们需要对其进行设置。主要步骤是指定Clangd可执行文件的路径。
 
-You can access this setting via the File — Preferences — Settings menu or by pressing Ctrl + , (or \includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +, for macOS), as shown in the following screenshot:
+您可以通过File -> Preferences -> Settings菜单（或按Ctrl + ,，对于macOS，\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +,）访问此设置，如图8.5所示：
 
-\myGraphic{0.5}{content/part2/chapter8/images/5.png}{Figure 8.5: Setting up the Clangd extension}
+\myGraphic{0.7}{content/part2/chapter8/images/5.png}{图8.5：设置Clangd扩展}
 
-As shown in Figure 8.5, we have configured the Clangd path to be /home/ivanmurashko /clangbook/llvm-project/install/bin/clangd . This path was used during the installation of the Clangd binary in Section 8.3.1, Clangd build.
+如图8.5所示，我们已经配置了Clangd路径为/home/ivanmurashko/clangbook/llvm-project/install/bin/clangd。这是我们在第8.3.1节中用于安装Clangd二进制文件的路径。
 
-You can open your favorite C/C++ source file and try to navigate through it. For instance, you can search for a definition for a token, switch between a source and a header, and so on. In our next example, we will investigate how navigation, and especially go-to definition, works through LSP.
+您可以打开您最喜欢的C/C++源文件并尝试在其中导航。例如，您可以搜索一个令牌的定义，在源文件和头文件之间切换等。在下一个示例中，我们将调查如何通过LSP实现导航，特别是跳转到定义的功能。
 
-\begin{myNotic}{Important note}
-Our setup works only for simple projects that do not require special compilation flags. If your project requires special configuration to build, then you have to use a generated compile\_commands.json file that should be placed at the root of your project. This file should contain a Compilation Database (CDB) in JSON format, specifying compilation flags for each file in your project. For more information about the setup, please refer to Figure 9.5, Clangd Setup for Large Projects.
+\begin{myNotic}{重要提示}
+我们的设置仅适用于不需要特殊编译标志的简单项目。如果您项目需要特殊的配置才能构建，那么您必须使用一个生成的compile\_commands.json文件，该文件应放置在项目的根目录下。该文件应包含JSON格式的编译数据库（CDB），指定项目中每个文件的编译标志。有关设置的更多信息，请参阅图9.5，Clangd大型项目的设置。
 \end{myNotic}
 
-With the required components installed, we are now ready for an LSP demo where we will emulate typical development activities in an IDE (open and modify a document, jump to a token definition, etc.) and explore how it's represented via LSP.
+在安装了所需的组件之后，我们现在准备进行一个LSP演示，其中我们将模拟IDE中的典型开发活动（例如打开和修改文档、跳转到令牌定义等），并探索它是如何通过LSP表示的。
+
 
 
 

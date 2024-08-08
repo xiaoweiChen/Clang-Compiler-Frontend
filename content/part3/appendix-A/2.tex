@@ -1,23 +1,23 @@
-The shellcompile˙commands.json file can be generated in various ways. For example, the build system CMake has built-in support for generating a compilation database. Some tools can also generate this file from Makefiles or other build systems. There are even tools such as Bear and intercept-build that can generate a CDB by intercepting the actual compile commands as they are run.
+生成 compile\_commands.json 文件有多种方式。例如，构建系统 CMake 内置了对生成编译数据库的支持。一些工具还可以从 Makefile 或其他构建系统中生成这个文件。甚至还有像 Bear 和 intercept-build 这样的工具，可以通过截取实际运行的编译命令来生成 CDB。
 
-So while the term is commonly associated with Clang and LLVM-based tools, the concept itself is more general and could theoretically be used by any tool that needs to understand the compilation settings for a set of source files. We will start with CDB generation using CMake, one of the most popular build systems.
+尽管这个术语通常与 Clang 和基于 LLVM 的工具相关联，但这个概念本身更为通用，理论上可以被任何需要理解一组源文件编译设置的工具使用。我们将从使用 CMake 这款最受欢迎的构建系统之一来生成 CDB 开始。
 
-\mySamllsection{Generating a CDB with CMake}
+\mySamllsection{使用 CMake 生成 CDB}
 
-Generating a CDB with CMake involves a few steps:
+使用 CMake 生成 CDB 需要几个步骤：
 
 \begin{enumerate}
 \item
-First, open a terminal or command prompt and navigate to your project's root directory.
+首先，打开一个终端或命令提示符，并导航到你的项目根目录。
 
 \item
-Then, run CMake with the -DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON option, which instructs CMake to create a compile\_commands.json file. This file contains the compilation commands for all source files in your project.
+然后，运行带有 -DCMAKE\_EXPORT\_COMPILE\_COMMANDS=ON 选项的 CMake，这会指示 CMake 创建一个 compile\_commands.json 文件。这个文件包含了你项目中所有源文件的编译命令。
 
 \item
-After configuring your project with CMake, you can find the compile\_commands.json file in the same directory where you ran the configuration command.
+在用 CMake 配置项目之后，你可以在运行配置命令的同一目录中找到 compile\_commands.json 文件。
 \end{enumerate}
 
-As we noticed before, LLVM created the CDB by default. It's achievable because llvm/CMakeLists.txt contains the following setup:
+正如我们之前注意到的，LLVM 默认创建了 CDB。这是可行的，因为 llvm/CMakeLists.txt 包含以下设置：
 
 \begin{cmake}
 # Generate a CompilationDatabase (compile_commands.json file) for our build,
@@ -26,26 +26,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 \end{cmake}
 
 \begin{center}
-Figure 9.3: LLVM-18.x CMake configuration from llvm/CMakeLists.txt
+图 9.3：来自 llvm/CMakeLists.txt 的 LLVM-18.x CMake 配置
 \end{center}
 
-i.e., it set up the CDB generation by default.
+即，它默认设置了 CDB 生成。
 
-\mySamllsection{Ninja to Generate a CDB}
+\mySamllsection{使用 Ninja 生成 CDB}
 
-The Ninja can also be used to generate a CDB. We can use a Ninja subtool called "compdb" to dump the CDB to stdout. To run the subtool, we use the -t <subtool> command-line option in Ninja. Thus, we will use the following command to produce the CDB with Ninja:
+Ninja 也可以用来生成 CDB。我们可以使用 Ninja 的一个子工具 “compdb” 将 CDB 输出到标准输出。要运行这个子工具，我们在 Ninja 中使用 -t <subtool> 命令行选项。因此，我们将使用以下命令通过 Ninja 生成 CDB：
 
 \begin{shell}
 $ ninja -t compdb > compile_commands.json
 \end{shell}
 
 \begin{center}
-Figure 9.4: Creating a CDB with Ninja
+图 9.4：使用 Ninja 创建 CDB
 \end{center}
 
-This command instructs Ninja to generate the CDB information and save it in the compile\_commands.json file.
+这个命令指示 Ninja 生成 CDB 信息，并将其保存在 compile\_commands.json 文件中。
 
-The generated compilation database can be used with the different Clang tools that we have described in the book. Let's look at two of the most valuable examples, which include Clang-Tidy and Clangd.
+生成的编译数据库可以与我们在本书中描述的不同 Clang 工具一起使用。让我们看看两个最有价值的示例，包括 Clang-Tidy 和 Clangd。
 
 
 

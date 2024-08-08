@@ -1,6 +1,6 @@
-Precompiled headers PCH, are a Clang feature designed to improve Clang's frontend performance. The basic idea is to create an AST (Abstract Syntax Tree) for a header file and reuse this AST during compilation for sources that include the header file.
+预编译头文件（PCH）是Clang的一个特性，旨在提高Clang前端性能。其基本思想是为头文件创建一个AST（抽象语法树）并在编译包含该头文件的源文件时重用这个AST。
 
-Generating a precompiled header file is simple [5]. Suppose you have the following header file, header.h :
+生成预编译头文件很简单[5]。假设您有以下头文件，header.h：
 
 \begin{cpp}
 #pragma once
@@ -10,10 +10,10 @@ void foo() {
 \end{cpp}
 
 \begin{center}
-Figure 10.1: Header file to be compiled to PCH
+图 10.1：要编译为PCH的头文件
 \end{center}
 
-You can generate a PCH for it with the following command:
+您可以使用以下命令为其生成PCH：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-pch        \
@@ -21,9 +21,9 @@ $ <...>/llvm-project/install/bin/clang -cc1 -emit-pch        \
                                       -o header.pch
 \end{shell}
 
-Here, we use the -x c++-header option to specify that the header file should be treated as a C++ header file. The output file will be named header.pch .
+在这里，我们使用-x c+±header选项来指定头文件应该被视为C++头文件。输出文件将被命名为header.pch。
 
-Simply generating precompiled headers is not enough; you need to start using them. A typical C++ source file that includes the header may look like this:
+仅仅生成预编译头文件是不够的；您需要开始使用它们。一个典型的包含该头的C++源文件可能如下所示：
 
 \begin{cpp}
 #include "header.h"
@@ -35,20 +35,20 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 10.2: Source file that includes header.h
+图 10.2：包含header.h的源文件
 \end{center}
 
-As you can see, the header is included as follows:
+如您所见，头文件是以下方式包含的：
 
 \begin{cpp}
 #include "header.h"
 \end{cpp}
 
 \begin{center}
-Figure 10.3: Header header.h inclusion
+图 10.3：头文件header.h的包含
 \end{center}
 
-By default, Clang will not use a PCH, and you have to specify it explicitly with the following command:
+默认情况下，Clang不会使用PCH，并且您需要通过以下命令明确指定它：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj        \
@@ -56,9 +56,9 @@ $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj        \
                                      main.cpp -o main.o
 \end{shell}
 
-Here, we use -include-pch to specify the included precompiled header: header.pch .
+在这里，我们使用-include-pch来指定包含的预编译头文件：header.pch。
 
-You can check this command with a debugger, and it will give you the following output:
+您可以使用调试器检查这个命令，它将给出以下输出：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj -include-pch header.pch main.cpp -o main.o
@@ -76,12 +76,12 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj -include-pch heade
 \end{shell}
 
 \begin{center}
-Figure 10.4: Loading precompiled header at clang::ASTReader::ReadAST
+图 10.4：在clang::ASTReader::ReadAST处加载预编译头文件
 \end{center}
 
-From this example, you can see that Clang reads the AST from the precompiled header file. It's important to note that the precompiled header is read before parsing, allowing Clang to obtain all symbols from the header file before parsing the main source file. This makes explicit header inclusion unnecessary. Therefore, you can remove the \#include "header.h" directive from the source file and achieve successful compilation.
+从这个例子中，您可以看到Clang从预编译头文件中读取AST。重要的是要注意，预编译头文件是在解析之前读取的，这使得Clang能够在解析主源文件之前从头文件中获得所有符号。这使得显式头文件包含变得不必要。因此，您可以删除源文件中的\#include "header.h"指令并成功编译。
 
-This is impossible without precompiled headers, where you would encounter the following compilation error:
+如果没有预编译头文件，这是不可能的，您会遇到以下编译错误：
 
 \begin{shell}
 main.cpp:4:3: error: use of undeclared identifier 'foo'
@@ -91,11 +91,11 @@ main.cpp:4:3: error: use of undeclared identifier 'foo'
 \end{shell}
 
 \begin{center}
-Figure 10.5: Compilation error generated due to missing includes
+图 10.5：由于缺少包含而产生的编译错误
 \end{center}
 
-It's worth noting that only the first -{}-include-pch option will be processed; all others will be ignored. This reflects the fact that there can be only one precompiled header for a translation unit. On the other hand, a precompiled header can include another precompiled header. This functionality is known as chained precompiled headers [3], as it creates a chain of dependencies where one precompiled header depends on another precompiled header.
+值得注意的是，只有一个–include-pch选项会被处理；所有其他选项都会被忽略。这反映了一个事实，即一个翻译单元只能有一个预编译头文件。另一方面，一个预编译头文件可以包含另一个预编译头文件。这种功能称为链式预编译头文件\footnote{LLVM Community. Precompiled Header and Modules Internals. URL \url{https://clang.llvm.org/docs/PCHInternals.html}}，因为它创建了一个依赖链，其中一个预编译头文件依赖于另一个预编译头文件。
 
-The usage of precompiled headers is not limited to regular compilation. As we saw in Figure 8.38, AST build at Clangd, precompiled headers are actively used for performance optimizations in Clangd as placeholders for a cache for the preamble that contains included headers.
+预编译头文件的使用不仅限于常规编译。正如我们在图8.38中看到的，Clangd中的AST构建，预编译头文件被积极用于性能优化，作为包含头文件的预编译部分的高速缓存占位符。
 
-Precompiled headers are a technique that has been used for a long time, but they have some limitations. One of the most important limitations is that there can be only one precompiled header, which significantly limits the usage of PCH in real projects. Modules address some of the problems related to precompiled header. Lets explore them.
+预编译头文件是一种长期使用的技术，但它们有一些局限性。最重要的限制之一是只能有一个预编译头文件，这在实际项目中大大限制了PCH的使用。模块解决了一些与预编译头文件相关的问题。让我们来探讨它们。

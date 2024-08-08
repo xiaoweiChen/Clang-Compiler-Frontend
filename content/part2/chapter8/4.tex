@@ -1,18 +1,18 @@
-In this brief LSP demo, we will demonstrate how Clangd opens a file and finds a symbol's definition. Clangd features a comprehensive logging subsystem that offers valuable insights into its interaction with the IDE. We will use the log subsystem to obtain the necessary information.
+在这个简短的LSP演示中，我们将展示Clangd如何打开一个文件并查找一个符号的定义。Clangd拥有一个全面的日志子系统，提供了深入了解其与IDE交互的宝贵信息。我们将使用日志子系统来获取必要的信息。
 
-\mySubsubsection{8.4.1.}{Demo description}
+\mySubsubsection{8.4.1.}{演示描述}
 
-In our example, we open a test file as shown in the following screenshot and retrieve the definition of the doPrivateWork token:
+在我们的例子中，我们打开一个如以下屏幕截图所示的测试文件，并检索doPrivateWork标记的定义：
 
-\myGraphic{0.5}{content/part2/chapter8/images/6.png}{Figure 8.6: Go-to definition and hover for the doPrivateWork token}
+\myGraphic{0.7}{content/part2/chapter8/images/6.png}{图8.6：跳转到doPrivateWork标记的定义和悬停}
 
-VS Code communicates with Clangd via standard input/output, and we will use Clangd logs to capture the interaction.
+VS Code通过标准输入/输出与Clangd通信，我们将使用Clangd日志来捕获交互。
 
-This can be achieved by setting up a wrapper shell script instead of using the actual clangd binary in the VS Code settings:
+这可以通过在VS Code设置中创建一个包装shell脚本，而不是使用实际的clangd二进制文件来实现：
 
-\myGraphic{0.5}{content/part2/chapter8/images/7.png}{Figure 8.7: Wrapper shell script setup in VS Code}
+\myGraphic{0.7}{content/part2/chapter8/images/7.png}{图8.7：在VS Code中设置包装shell脚本}
 
-We can use the following script, clangd.sh :
+我们可以使用以下脚本，clangd.sh：
 
 \begin{shell}
 #!/bin/sh
@@ -20,26 +20,26 @@ $HOME/clangbook/llvm-project/install/bin/clangd -log verbose -pretty 2> /tmp/cla
 \end{shell}
 
 \begin{center}
-Figure 8.8: Wrapper shell script for clangd
+图8.8：用于clangd的包装shell脚本
 \end{center}
 
-In Figure 8.8, we use two log options:
+在图8.8中，我们使用了两个日志选项：
 
 \begin{itemize}
 \item
-The first one, -log verbose , activates verbose logging to ensure that actual LSP messages from and to Clangd will be logged.
+第一个，-log verbose，激活详细日志记录，以确保实际来自Clangd的LSP消息将被记录。
 
 \item
-The second option, -pretty , is used to provide nicely formatted JSON messages. We also redirect stderr output to the log file, /tmp/clangd.log , in our case.
+第二个选项，-pretty，用于提供格式化的JSON消息。我们还将标准错误输出重定向到日志文件，在我们的例子中是/tmp/clangd.log。
 \end{itemize}
 
-As a result, the file will contain logs from our example session. We can view these logs using the following command::
+结果，文件将包含我们示例会话的日志。我们可以使用以下命令查看这些日志：
 
 \begin{shell}
 $ cat /tmp/clangd.log
 \end{shell}
 
-In the logs, we can find "textDocument/definition" that was sent by VS Code:
+在日志中，我们可以找到由VS Code发送的"textDocument/definition"：
 
 \begin{shell}
 V[16:24:39.336] <<< {
@@ -60,10 +60,10 @@ V[16:24:39.336] <<< {
 
 
 \begin{center}
-Figure 8.9: The "textDocument/definition" request sent by the IDE
+图8.9：由IDE发送的"textDocument/definition"请求
 \end{center}
 
-The request sent by the IDE is received and processed by Clangd. The corresponding log is recorded as follows:
+IDE发送的请求由Clangd接收并处理。相应的日志记录如下：
 
 \begin{shell}
 I[16:24:39.336] <-- textDocument/definition(13)
@@ -73,10 +73,10 @@ helper.hpp
 
 
 \begin{center}
-Figure 8.10: Handling of the "textDocument/definition" request in Clangd
+图8.10：Clangd中"textDocument/definition"请求的处理
 \end{center}
 
-Finally, Clangd creates the response and sends it to the IDE. The corresponding log record shows that the reply was sent:
+最后，Clangd创建响应并将其发送到IDE。相应的日志记录显示回复已发送：
 
 \begin{shell}
 I[16:24:39.336] --> reply:textDocument/definition(13) 0 ms
@@ -103,22 +103,22 @@ V[16:24:39.336] >>> {
 
 
 \begin{center}
-Figure 8.11: The "textDocument/definition" reply from Clangd
+图8.11：来自Clangd的"textDocument/definition"回复
 \end{center}
 
-The logs will be our primary tool to investigate LSP internals. Let's dive into more complex examples.
+日志将是我们调查LSP内部的主要工具。让我们深入到更复杂的例子。
 
-\mySubsubsection{8.4.2.}{LSP session}
+\mySubsubsection{8.4.2.}{LSP会话}
 
-An LSP session consists of several requests to and responses from the Clangd server. It starts with an "initialize" request. Then, we open a document, and VS Code sends a "textDocument/didOpen" notification. After the request, Clangd will periodically respond with "textDocument/publishDiagnostics" notifications when the state of the opened file changes. For example, this occurs when compilation is finished and its ready to process navigation requests. Next, we initiate a go-to definition request for a token, and Clangd responds with the location information for the found definition. We also investigate how Clangd processes file modifications that are notified by the client via "textDocument /didChange" notifications. We finish our session with a "textDocument/didClose" request when we close the opened file. A diagram depicting the interaction is presented in the following figure:
+LSP会话包括与Clangd服务器的多个请求和响应。会话从“initialize”请求开始。然后，我们打开一个文档，VS Code发送一个"textDocument/didOpen"通知。在此请求之后，当打开的文件状态发生变化时，Clangd将定期响应"textDocument/publishDiagnostics"通知。例如，这种情况发生在编译完成并准备好处理导航请求时。接下来，我们为某个标记发起一个转到定义的请求，Clangd响应找到的定义的位置信息。我们还研究了Clangd如何处理客户端通过"textDocument/didChange"通知的文件修改。当我们关闭打开的文件时，我们通过"textDocument/didClose"请求结束会话。下面是一张描述交互的图表：
 
-\myGraphic{0.5}{content/part2/chapter8/images/8.png}{Figure 8.12: LSP session example}
+\myGraphic{0.5}{content/part2/chapter8/images/8.png}{图8.12：LSP会话示例}
 
-Let's look at the example in detail. We will start with the "initialize" request.
+让我们详细看看这个例子。我们将从“initialize”请求开始。
 
-\mySamllsection{Initialization}
+\mySamllsection{初始化}
 
-To establish communication, the client (code editor or IDE) and the language server exchange JSON-RPC messages. The initialization process begins with the client sending an "initialize" request to the language server, specifying the capabilities it supports. The actual request sent by VS Code is quite large, and a simplified version, where some parts of the request are replaced with "..." , is shown as follows:
+为了建立通信，客户端（代码编辑器或IDE）和语言服务器交换JSON-RPC消息。初始化过程从客户端向语言服务器发送一个“initialize”请求开始，指定它支持的功能。VS Code实际发送的请求相当大，下面是一个简化版本，其中请求的部分内容用“…”代替：
 
 \begin{shell}
 {
@@ -147,12 +147,12 @@ To establish communication, the client (code editor or IDE) and the language ser
 
 
 \begin{center}
-Figure 8.13: VS Code to Clangd (initialize request)
+图8.13：VS Code到Clangd（初始化请求）
 \end{center}
 
-In the request, the client (VS Code) tells the server (Clangd) what capabilities are supported on the client side; for example, at Lines 10-13 in Figure 8.13, the client says that it supports the "textDocument/definition" request type that is used for go-to definition requests.
+在请求中，客户端（VS Code）告诉服务器（Clangd）客户端支持哪些功能；例如，在图8.13的第10-13行，客户端表示它支持用于转到定义请求的"textDocument/definition"请求类型。
 
-The language server replies to the request with a response that contains capabilities supported by the server:
+语言服务器用包含服务器支持的功能的响应来回复请求：
 
 \begin{shell}
 {
@@ -172,11 +172,13 @@ The language server replies to the request with a response that contains capabil
 }
 \end{shell}
 
-Figure 8.14: Clangd to VS Code (initialize reply)
+\begin{center}
+图8.14：Clangd到VS Code（初始化回复）
+\end{center}
 
-As we can see, the same id is used to connect the request with its reply. Clangd replied that it supports go-to definition requests as specified in Line 7 in Figure 8.14. Thus our client (VS Code) can send the navigation request to the server, which we will explore later in Figure 8.19, Go-to definition.
+我们可以看到，相同的id用于将请求与其回复连接起来。Clangd回复称它支持图8.14第7行中指定的转到定义请求。因此，我们的客户端（VS Code）可以向服务器发送导航请求，我们将在后面的图8.19（转到定义）中探讨。
 
-VS Code acknowledges the initialization by sending an "initialized" notification:
+VS Code通过发送一个“initialized”通知来确认初始化：
 
 \begin{shell}
 {
@@ -185,11 +187,11 @@ VS Code acknowledges the initialization by sending an "initialized" notification
 }
 \end{shell}
 
-Contrary to the "initialize" request, there is a notification, and it does not expect any response from the server. As a result, it does not have an "id" field. The "initialized" notification can be sent only once, and it should be received before any other requests or notifications are sent from the client side. After the initialization, we are ready to open a document and send the corresponding "textDocument/didOpen" notification.
+与“initialize”请求相反，这是一个通知，它不期望服务器有任何响应。因此，它没有“id”字段。"initialized"通知只能发送一次，并且应该在客户端发送任何其他请求或通知之前收到。初始化后，我们准备好打开一个文档并发送相应的"textDocument/didOpen"通知。
 
-\mySamllsection{Open document}
+\mySamllsection{打开文档}
 
-When a developer opens a C++ source file, the client sends a "textDocument/didOpen" notification to inform the language server about the newly opened file. In our example, the opened file is located at /home/ivanmurashko/clangbook/helper.hpp , and the corresponding notification sent by VS Code will look like this:
+当开发者打开一个C++源文件时，客户端发送一个"textDocument/didOpen"通知以告知语言服务器关于新打开的文件。在我们的例子中，打开的文件位于/home/ivanmurashko/clangbook/helper.hpp，VS Code发送的通知如下所示：
 
 \begin{shell}
 {
@@ -208,12 +210,12 @@ When a developer opens a C++ source file, the client sends a "textDocument/didOp
 
 
 \begin{center}
-Figure 8.15: VS Code to Clangd (didOpen notification)
+图8.15：VS Code到Clangd (didOpen通知)
 \end{center}
 
-As we can see, VS Code sends the notification with parameters included in the "params/ textDocument" field. These parameters consist of the filename in the "uri" field and the source file text within the "text" field.
+如我们所见，VS Code发送通知，其中包含在"params/ textDocument"字段中的参数。这些参数包括在"uri"字段中的文件名和在"text"字段中的源文件文本。
 
-Clangd starts compiling the file upon receiving the 'didOpen' notification. It builds an AST and extracts semantic information about different tokens from it. The server uses this information to distinguish between different tokens with the same name. For example, we can use a token named 'foo' that may serve as a class member or a local variable depending on the scope in which it is used, as shown in the following code fragment:
+Clangd在接收到'didOpen'通知后开始编译文件。它构建了一个抽象语法树（AST）并从中提取有关不同标记的语义信息。服务器使用此信息来区分具有相同名称的不同标记。例如，我们可以使用一个名为'foo'的标记，它可能作为类成员或局部变量，具体取决于其使用的范围，如下面的代码片段所示：
 
 \begin{cpp}
 class TestClass {
@@ -229,14 +231,14 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 8.16: Occurrences of the 'foo' token in foo.hpp
+图8.16：foo.hpp中的'foo'标记的出现
 \end{center}
 
-As we can see in Line 8, we use the 'foo' token two times: as a function call and in a local variable definition.
+如第8行所示，我们在两个地方使用了'foo'标记：作为函数调用和局部变量定义。
 
-The go-to definition request will be delayed until the compilation process is finished. It's worth noting that the majority of requests are put in a queue and wait until the compilation process is finished. The rule has some exemptions, and some requests can be executed without an AST with a limited provided functionality. One of the examples is the code-formatting requests. The code formatting does not require an AST and therefore the formatting functionality can be provided before the AST is built.
+转到定义请求将在编译过程完成后延迟。值得注意的是，大多数请求被放入队列中，等待编译过程完成。该规则有一些例外，一些请求可以在不具有AST的情况下执行，并提供有限的提供功能。其中一个例子是代码格式化请求。代码格式化不需要AST，因此格式化功能可以在构建AST之前提供。
 
-If the state of the file is changed, then Clangd will notify VS Code with the "textDocument/publishDiagnostics" notification. For example, when the compilation process is finished, then Clangd will send the notification to VS Code:
+如果文件的状态发生变化，Clangd将使用"textDocument/publishDiagnostics"通知通知VS Code。例如，当编译过程完成后，Clangd将向VS Code发送通知：
 
 \begin{shell}
 {
@@ -252,10 +254,10 @@ If the state of the file is changed, then Clangd will notify VS Code with the "t
 
 
 \begin{center}
-Figure 8.17: Clangd to VS Code (publishDiagnostics notification)
+图8.17：Clangd到VS Code (publishDiagnostics通知)
 \end{center}
 
-As we can see, there are no compilation errors; params/diagnostics is empty. It will contain errors or warning descriptions if our code contains a compilation error or warning, as shown here:
+如我们所见，没有编译错误；params/diagnostics为空。如果我们的代码包含编译错误或警告，它将包含错误或警告描述，如图8.18所示。
 
 \begin{shell}
 {
@@ -288,17 +290,18 @@ As we can see, there are no compilation errors; params/diagnostics is empty. It 
 \end{shell}
 
 \begin{center}
-Figure 8.18: Clangd to VS Code (publishDiagnostics with compilation error)
+图8.18：Clangd到VS Code (带有编译错误的publishDiagnostics)
 \end{center}
 
-VS Code processes the diagnostics and displays it, as shown in the following screenshot:
+VS Code处理诊断并显示它，如下面的截图所示:
 
-\myGraphic{0.5}{content/part2/chapter8/images/9.png}{Figure 8.19: Compilation error in helper.hpp}
+\myGraphic{0.7}{content/part2/chapter8/images/9.png}{图8.19:helper.hpp中的编译错误}
 
-After the compilation finished and we got "textDocument/publishDiagnostics" , Clangd is ready to process navigation requests, such as "textDocument/definition" (go-to definition).
+在编译完成后，我们收到了"textDocument/publishDiagnostics"，Clangd准备好处理导航请求，例如"textDocument/definition"（转到定义）。
 
-Go-to definition
-To find the definition of a symbol in a C++ file, the client sends a "textDocument/definition" request to the language server:
+\mySamllsection{转到定义}
+
+为了在C++文件中找到符号的定义，客户端向语言服务器发送一个"textDocument/definition"请求：
 
 \begin{shell}
 {
@@ -318,12 +321,12 @@ To find the definition of a symbol in a C++ file, the client sends a "textDocume
 \end{shell}
 
 \begin{center}
-Figure 8.20: VS Code to Clangd (textDocument/definition request)
+图8.20：VS Code到Clangd (textDocument/definition请求)
 \end{center}
 
-The line position is specified as 7 instead of the actual line 8 in the editor, as shown in Figure 8.6. This is because line numbering starts at 0.
+在编辑器中，行位置被指定为7而不是实际的8行，如图8.6所示。这是因为行编号从0开始。
 
-The language server responds with the definition location in the C++ code:
+语言服务器响应C++代码中的定义位置：
 
 \begin{shell}
 {
@@ -348,17 +351,19 @@ The language server responds with the definition location in the C++ code:
 \end{shell}
 
 \begin{center}
-Figure 8.21: Clangd to VS Code (textDocument/definition response)
+图8.21：Clangd到VS Code (textDocument/definition响应)
 \end{center}
 
-As we can see, the server responded with the actual position of the definition. Another popular action in the IDE is document modification. This functionality is served by the "textDocument/didChange" notification. Let's look at it.
+如我们所见，服务器响应了实际的定义位置。IDE中的另一个常见操作是文档修改。此功能由"textDocument/didChange"通知提供。让我们看看它。
 
-Change document
-As part of the document modification, let's insert a comment, // Constructor, at Line 6, as shown in this screenshot:
 
-\myGraphic{0.5}{content/part2/chapter8/images/10.png}{Figure 8.22: Change document}
+\mySamllsection{修改文档}
 
-VS Code will detect that the document has been modified and notify the LSP server (Clangd) using the following notification:
+作为文档修改的一部分，让我们在第6行插入一个注释，// 构造函数，如图8.22所示。
+
+\myGraphic{0.7}{content/part2/chapter8/images/10.png}{图 8.22: 修改文档}
+
+VS Code将检测到文档已被修改，并通过以下通知通知LSP服务器（Clangd）：
 
 \begin{shell}
 {
@@ -390,14 +395,14 @@ VS Code will detect that the document has been modified and notify the LSP serve
 \end{shell}
 
 \begin{center}
-Figure 8.23: VS Code to Clangd (didChange notification)
+图8.23：VS Code到Clangd (didChange通知)
 \end{center}
 
-As we can see, the notification contains the range specification and the text for replacing the specified range in the document. One important part of the notification is the "version" field, which specifies the version of the document.
+如我们所见，通知包含要替换文档中指定范围的文本和范围。通知的一个重要部分是"version"字段，它指定了文档的版本。
 
-We can observe that version changed from 1, as used in the document open (see Line 9 in Figure 8.15), to 2 for the document modification (see Line 23 in Figure 8.23).
+我们可以观察到版本从1（用于文档打开，如图8.15所示的第9行）更改为2（用于文档修改，如图8.23所示的第23行）。
 
-Clangd starts the document compilation because the document modification can cause a significant change in the resulting AST, which is used for navigation requests. Once the compilation is finished, the server will respond with the corresponding "textDocument/publishDiagnostics" notification, as shown here:
+Clangd开始编译文档，因为文档修改可能导致结果AST发生重大变化，这用于导航请求。一旦编译完成，服务器将相应地响应"textDocument/publishDiagnostics"通知，如图8.24所示。
 
 \begin{shell}
 {
@@ -412,16 +417,16 @@ Clangd starts the document compilation because the document modification can cau
 
 
 \begin{center}
-Figure 8.24: Clangd to VS Code (publishDiagnostics notification)
+图8.24：Clangd到VS Code (publishDiagnostics通知)
 \end{center}
 
-As we can see, the diagnostic was sent for the modified document because it contains the version field pointing to version 2, which corresponds to the modified document, as seen in Line 7 of Figure 8.24.
+如我们所见，修改后的文档发送了诊断，因为它包含指向版本2的版本字段，这与修改后的文档对应，如图8.24所示的第7行。
 
-Our last action in the example is to close the document. Let's take a closer look at it.
+我们的最后一个操作是关闭文档。让我们更详细地看看它。
 
-\mySamllsection{Closing a document}
+\mySamllsection{关闭文档}
 
-When we finish our work with the document and close it, VS Code sends a "textDocument/didClose" notification to the language server:
+当完成对文档的工作并关闭它时，VS Code向语言服务器发送一个"textDocument/didClose"通知：
 
 \begin{shell}
 {
@@ -436,10 +441,10 @@ When we finish our work with the document and close it, VS Code sends a "textDoc
 \end{shell}
 
 \begin{center}
-Figure 8.25: VS Code to Clangd (textDocument/didClose request)
+图8.25：VS Code到Clangd (textDocument/didClose请求)
 \end{center}
 
-After receiving the request, Clangd will remove the document from its internal structures. Clangd will not send any updates for the document anymore, thus it will empty out the list of diagnostics shown on the client (e.g., in the Problems pane of VS Code) by sending the final empty "textDocument/publishDiagnostics" message, as shown here:
+收到请求后，Clangd将从其内部结构中移除文档。Clangd将不再发送文档的任何更新，因此它将通过发送最终的空"textDocument/publishDiagnostics"消息来清空客户端（例如，VS Code中的问题窗格）显示的诊断列表，如图8.26所示。
 
 \begin{shell}
 {
@@ -453,10 +458,10 @@ After receiving the request, Clangd will remove the document from its internal s
 \end{shell}
 
 \begin{center}
-Figure 8.26: Clangd to VS Code (textDocument/didClose request)
+图8.26：Clangd到VS Code (textDocument/didClose请求)
 \end{center}
 
-The shown example demonstrates the typical interactions between Clangd and VS Code. The provided example utilizes functionality from the Clang frontend, that is, basic Clang functionality. On the other hand, Clangd has a strong connection with other Clang tools, such as Clang-Format and Clang-Tidy, and can reuse the functionality provided by these tools. Let's take a closer look at this.
+所展示的例子演示了Clangd和VS Code之间的典型交互。提供的例子利用了Clang前端的功能，即基本Clang功能。另一方面，Clangd与Clang的其他工具（如Clang-Format和Clang-Tidy）有着紧密的联系，并可以重用这些工具提供的功能。让我们更详细地看看这一点。
 
 
 

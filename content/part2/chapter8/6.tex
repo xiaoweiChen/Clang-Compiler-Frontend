@@ -1,11 +1,12 @@
-Obtaining a smooth IDE experience with accurate results provided without visible delays is a challenging task. One of the ways to achieve this experience is through compiler performance optimization, as good navigation can be provided with well-parsed source code. Clangd offers excellent examples of performance optimization, which we will explore in some detail. We will start with the optimizations for code modifications.
+为了获得平滑的IDE体验，并能够在没有明显延迟的情况下提供准确的结果，这是一个具有挑战性的任务。实现这一体验的一种方式是通过编译器性能优化，因为良好的导航可以通过解析良好的源代码来实现。Clangd提供了许多性能优化的优秀例子，我们将进行一些详细探讨。我们将从修改代码的优化开始。
 
-8.6.1 Optimizations for modified documents
-As we saw in Line 4, Open document, navigation support requires the AST as the basic data structure, so we have to use the Clang frontend to obtain it. Additionally, we have to rebuild the AST when there are document modifications. Document modification is a common activity for developers, and we won't be able to provide a good IDE experience if we always start the build process from scratch.
+\mySubsubsection{8.6.1.}{修改文档的优化}
 
-\mySamllsection{Source code preamble}
+正如我们在第4行所看到的，打开文档时，导航支持需要AST作为基本数据结构，因此我们需要使用Clang前端来获取它。此外，当文档发生修改时，我们还需要重建AST。文档修改是开发者的常见活动，如果我们总是从头开始构建过程，我们将无法提供良好的IDE体验。
 
-To gain insights into the ideas used to speed up AST building for modified documents, let's examine a simple C++ program:
+\mySamllsection{源代码前缀}
+
+为了深入了解用于加快修改文档的AST构建的速度，让我们检查一个简单的C++程序：
 
 \begin{cpp}
 #include <iostream>
@@ -17,10 +18,10 @@ int main() {
 \end{cpp}
 
 \begin{center}
-Figure 8.37: C++ program: helloworld.cpp
+图8.37：C++程序：helloworld.cpp
 \end{center}
 
-The program has six lines of code, but the conclusion can be deceptive. The \#include directive inserts a lot of additional code. We can estimate the amount of code inserted by the preprocessor if we run Clang with the -E command-line option and calculate the number of lines, as follows:
+该程序有六行代码，但结论可能会产生误导。\#include指令插入了很多额外的代码。如果我们运行Clang并使用-E命令行选项，我们可以估算预处理器插入的代码量，并计算行数，如下所示：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -E helloworld.cpp | wc -l
@@ -28,44 +29,44 @@ $ <...>/llvm-project/install/bin/clang -E helloworld.cpp | wc -l
 \end{shell}
 
 \begin{center}
-Figure 8.38: Number of lines in the post-processed program
+图8.38：预处理后的程序行数
 \end{center}
 
-where <...> is the folder where llvm-project was cloned; see Figure 1.1.
+其中<…>是克隆llvm-project文件夹的目录；参见图1.1。
 
-As we can see, the code that should be parsed contains more than 36,000 lines of code. This is a common pattern, and the majority of the code to be compiled is inserted from included headers. The part of the document located at the beginning of the source file and containing the include directives is called the preamble.
+如我们所见，应该解析的代码包含超过36,000行代码。这是一种常见模式，大部分需要编译的代码都是从包含的头文件中插入的。文档开头部分，包含\#include指令的部分被称为前缀。
 
-It's worth noting that preamble modifications are possible but rare, for instance, when we insert a new header. The majority of the modifications are located in the code outside the preamble.
+值得注意的是，前缀的修改是可能的但很少见，例如，当我们插入一个新的头文件时。大多数修改位于前缀之外。
 
-The primary idea for performance optimization is to cache the preamble AST and reuse it for any compilation of a modified document.
+性能优化的主要思想是缓存前缀AST并在任何修改文档的编译中重用它。
 
-\mySamllsection{AST build at Clangd}
+\mySamllsection{Clangd中的AST构建}
 
-The performance optimization made in Clangd involves a two-part compilation process. In the first part, the preamble that contains all included header files is compiled into a precompiled header; see Section 10.2, Precompiled headers. This precompiled header is then used in the second stage of the compilation process to build the AST.
+Clangd中的性能优化涉及一个两部分的编译过程。在第一部分，包含所有包含的头文件的前缀被编译成预编译头；参见第10.2节，预编译头。然后，在编译过程的第二阶段使用这个预编译头来构建AST。
 
-This complex process serves as a performance optimization, especially when a user makes changes to a file that requires recompilation. Although a significant portion of compilation time is spent on header files, these files are typically not modified frequently. To address this, Clangd caches the AST for header files within the precompiled header file.
+这个复杂的过程作为性能优化，特别是在用户需要重新编译文件时。虽然编译时间的大部分花在了头文件上，但这些文件通常不会频繁修改。为了解决这个问题，Clangd在预编译头文件中缓存了头文件的AST。
 
-As a result, when modifications are made outside header files, Clangd does not need to rebuild them from scratch. Instead, it can reuse the cached AST for headers, significantly improving compilation performance and reducing the time needed for recompilation when working with header files. If a user modification affects header files, then the entire AST should be rebuilt, resulting in a cache miss in such cases. It's worth noting that modifications to headers are not as common as modifications to the primary source code (outside the included headers). Therefore, we can expect a pretty good cache hit rate for ordinary document modifications.
+因此，当在头文件之外进行修改时，Clangd不需要从头开始重建它们。相反，它可以重用头文件的缓存AST，显著提高编译性能并减少处理头文件时重新编译所需的时间。如果用户修改影响了头文件，那么整个AST应该被重建，在这种情况下会发生缓存缺失。值得注意的是，头文件的修改并不像修改主源代码（不在包含的头文件中）那么常见。因此，我们可以期望普通文档修改的缓存命中率相当高。
 
-The precompiled header can be stored on a disk as a temporary file but can also reside in memory, which can also be considered a performance optimization.
+预编译头可以存储在磁盘上的临时文件中，也可以驻留在内存中，这也可以视为一种性能优化。
 
-The cached preamble is a powerful tool that significantly improves Clangd's performance in processing document changes made by a user. On the other hand, we should always consider edge cases that involve preamble modification. The preamble can be modified in two main ways:
+缓存的前缀是一个强大的工具，显著提高了Clangd处理用户修改的文档的能力。另一方面，我们应该始终考虑涉及前缀修改的边缘情况。前缀可以通过两种主要方式进行修改：
 
 \begin{itemize}
 \item
-Explicitly: When the user explicitly modifies the preamble, for instance, by inserting a new header into it or deleting an existing one
+显式：当用户显式修改前缀时，例如，通过在其中插入新的头文件或删除现有的一个
 
 \item
-Implicitly: When the user implicitly modifies the preamble, for instance, by modifying the headers that are included in the preamble
+隐式：当用户隐式修改前缀时，例如，通过修改预编译头中包含的头文件
 \end{itemize}
 
-The first one can be easily detected via a "textDocument/didChange" notification that affects the range where the preamble is located. The second one is tricky, and Clangd should monitor the modifications in the included headers to correctly process navigation requests.
+第一个可以通过影响前缀所在范围的"textDocument/didChange"通知轻松检测到。第二个则比较棘手，Clangd应该监控包含头文件的修改，以便正确处理导航请求。
 
-Clangd also has some modifications aimed at making preamble compilation faster. Some of these modifications required specific processing in Clang. Let's delve into it in detail.
+Clangd还进行了一些修改，旨在使前缀编译更快。其中一些修改需要Clang中特定的处理。让我们深入探讨一下。
 
-\mySubsubsection{8.6.2.}{Building preamble optimization}
+\mySubsubsection{8.6.2.}{构建前缀的优化}
 
-An interesting optimization can be applied to function bodies. A function body can be considered an essential part of primary indexing because it contains symbols that a user can click on, such as getting a definition for the symbol. This primarily applies to function bodies that are visible to the user in the IDE. On the other hand, many functions and their implementations (bodies) are hidden from the user in included headers. As a result, the user cannot request information about symbols from such function bodies. However, these bodies are visible to the compiler because it resolves include directives and parses the header files from the directives. The time spent by the compiler can be significant, considering that a complex project can have numerous dependencies, resulting in many header files being included in the document opened by the user. One obvious optimization is to skip function bodies when parsing header files from the preamble. This can be achieved using a special frontend option:
+在Clangd中，可以对函数体进行一种有趣的优化。函数体可以被视为主要索引的重要组成部分，因为它包含用户可以点击的符号，例如获取符号的定义。这主要适用于IDE中可见的函数体。另一方面，许多函数及其实现（函数体）在包含的头文件中隐藏对用户可见。因此，用户无法请求这些函数体中的符号信息。然而，这些体对编译器可见，因为它解析包含指令并从指令中解析头文件。考虑到复杂项目可能具有许多依赖关系，因此可能会包含许多用户打开的文档中的头文件，编译器花费的时间可能会相当长。一个明显的优化是，在解析预编译头中的头文件时跳过函数体。这可以通过使用一个特殊的前端选项来实现：
 
 \begin{cpp}
 /// FrontendOptions - Options for controlling the behavior of the frontend.
@@ -79,10 +80,10 @@ class FrontendOptions {
 \end{cpp}
 
 \begin{center}
-Figure 8.39: The FrontendOptions class from clang/Frontend/FrontendOptions.h
+图8.39:clang/Frontend/FrontendOptions.h中的FrontendOptions类
 \end{center}
 
-Clangd utilizes this option when building the preamble in the following manner:
+Clangd在以以下方式构前序时使用此选项:
 
 \begin{cpp}
 std::shared_ptr<const PreambleData>
@@ -106,14 +107,14 @@ buildPreamble(PathRef FileName, CompilerInvocation CI,
 \end{cpp}
 
 \begin{center}
-Figure 8.40: buildPreamble from clang-tools-extra/clangd/Preamble.cpp
+图8.40:clang-tools-extra/clangd/Preamble.cpp中的buildPreamble
 \end{center}
 
-As we can see, Clangd uses the frontend option to skip function bodies in headers but disables it just before building the AST for the main document; see Lines 10 and 16 in Figure 8.40.
+如我们所见，Clangd使用前端选项在构建预编译头时跳过头文件中的函数体，但在构建主文件的AST之前禁用它；参见图8.40中的第10行和第16行。
 
-Such optimization can significantly improve the document readiness time (when the opened document is ready for navigation requests from the user) for complex C++ source files.
+这种优化可以显著提高复杂C++源文件的文档准备时间（即打开的文档准备好响应用户的导航请求时）。
 
-While the performance optimizations discussed here offer valuable insights into Clangd's efficiency, it's important to note that Clangd employs a multitude of other techniques to ensure its reliability and speed. Clangd serves as an excellent platform for experimenting with and implementing various optimization strategies, making it a versatile environment for performance enhancements and innovations.
+尽管这里讨论的性能优化为Clangd的效率提供了有价值的见解，但重要的是要记住，Clangd还采用了多种其他技术来确保其可靠性和速度。Clangd是一个极好的平台，用于实验和实施各种优化策略，使其成为一个多功能的环境，适用于性能提升和创新。
 
 
 

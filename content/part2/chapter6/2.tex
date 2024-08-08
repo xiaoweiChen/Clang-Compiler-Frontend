@@ -1,23 +1,23 @@
-Static analysis is a crucial technique in software development that involves inspecting the code without actually running the program. This method focuses on analyzing either the source code or its compiled version to detect a variety of issues, such as errors, vulnerabilities, and deviations from coding standards. Unlike dynamic analysis, which requires the execution of the program, static analysis allows for examining the code in a non-runtime environment.
+静态分析是软件开发中的一个关键技术，它涉及在不实际运行程序的情况下检查代码。这种方法专注于分析源代码或其编译版本，以检测各种问题，如错误、漏洞和违反编码标准的情况。与动态分析不同，后者需要在程序执行时进行检查，静态分析允许在非运行时环境中检查代码。
 
-More generally, static analysis aims to check a specific property of a computer program based on its meaning; that is, it can be considered a part of semantic analysis (see Figure 2.6, Parser). For instance, if $\mathcal{C}$ is the set of all C/C++ programs and $\mathcal{P}$ is a property of such a program, then the goal of static analysis is to check the property for a specific program $\mathcal{P} \in \mathcal{C}$, that is, to answer the question of whether $\mathcal{P}$(P) is true or false.
+更广泛地说，静态分析旨在根据程序的意义检查特定属性；也就是说，它可以被认为是语义分析的一部分（参见图 2.6，解析器）。例如，如果 $\mathcal{C}$ 是所有 C/C++ 程序的集合，而 $\mathcal{P}$ 是这类程序的一种属性，那么静态分析的目标就是针对特定程序 $\mathcal{P} \in \mathcal{C}$，判断 $\mathcal{P}(P)$ 是否为真或假。
 
-Our Clang-Tidy check from the previous chapter (see Section 5.4, Custom Clang-Tidy check) is a good example of such a property. In reality, it takes C++ code with a class definition and decides whether the class is complex or not based on the number of methods it has.
+我们在前一章中创建的 Clang-Tidy 检查（参见第 5.4 节，自定义 Clang-Tidy 检查）就是一个这样的属性的例子。实际上，它接收带有类定义的 C++ 代码，并根据类的方法数量决定该类是否复杂。
 
-It's worth noting that not all properties of a program can be checked. The most obvious example is the famous halting problem \footnote{Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230.}.
+值得注意的是，并非所有程序属性都可以被检查。最明显的例子就是著名的停机问题。 \footnote{Alan M. Turing. On Computable Numbers, with an Application to the Entscheidungsproblem. Proceedings of the London Mathematical Society, s2-42(1):230–265, 1937. doi: 10.1112/plms/s2-42.1.230}。
 
-\begin{myNotic}{Important note}
-The halting problem can be formulated as follows: Given a program P and an input I, determine whether P halts or continues to run indefinitely when executed with I.
+\begin{myNotic}{重要说明}
+停机问题可以这样表述：给定一个程序 P 和输入 I，确定当使用 I 执行 P时，P是否会停止运行或无限期地继续运行。
 \end{myNotic}
 
-Formally, the problem is to decide, for a given program P and an input I, whether the computation of P(I) eventually stops (halts) or will never terminate (loops indefinitely).
+正式地说，问题是要决定，对于给定的程序P和输入I，P(I)的计算是否最终停止（停止）或永远不会终止（无限循环）。
 
-Alan Turing proved that there is no general algorithmic method for solving this problem for all possible program-input pairs. This result implies that there is no single algorithm that can correctly determine for every pair (P,I) whether P halts when run with I.
+艾伦·图灵证明了，对于所有可能的程序-输入对，没有通用的算法方法可以解决这个问题的。这意味着没有单一的算法可以正确确定每一对（P,I）在运行I时P是否停止。
 
-Despite the fact that not all properties of programs can be proven, it can be done for some cases. There is a reasonable number of such cases that make static analysis a practical tool for usage. Thus, we can use the tools in these cases to systematically scan the code to determine properties of the code. These tools are adept at identifying issues ranging from simple syntax errors to more complex potential bugs. One of the key benefits of static analysis is its ability to catch problems early in the development cycle. This early detection is not only efficient but also resource-saving, as it helps identify and rectify issues before the software is run or deployed.
+尽管并非所有程序的属性都可以证明，但在某些情况下可以做到这一点。有一些这样的案例使得静态分析成为一个实用的工具。因此，在这些情况下，我们可以使用这些工具系统地扫描代码，以确定代码的属性。这些工具擅长识别从简单的语法错误到更复杂的潜在错误。静态分析的一个关键优点是它能够尽早地在开发周期中捕捉到问题。这种早期检测不仅高效，而且节省资源，因为它帮助我们在软件运行或部署之前识别和修复问题。
 
-Static analysis plays a significant role in ensuring the quality and compliance of software. It checks that the code adheres to prescribed coding standards and guidelines, which is particularly important in large-scale projects or industries with strict regulatory requirements. Moreover, it is highly effective in uncovering common security vulnerabilities such as buffer overflows, SQL injection flaws, and cross-site scripting vulnerabilities.
+静态分析在确保软件质量和合规性方面发挥着重要作用。它检查代码是否符合规定的编码标准和指南，这在大型项目或具有严格监管要求的行业中尤为重要。此外，它非常有效于揭示常见的安全漏洞，如缓冲区溢出、SQL注入缺陷和跨站脚本漏洞。
 
-Additionally, static analysis contributes to code refactoring and optimization by pinpointing areas of redundancy, unnecessary complexity, and opportunities for improvement. It's a common practice to integrate these tools into the development process, including continuous integration pipelines. This integration allows for ongoing analysis of the code with each new commit or build, ensuring continual quality assurance.
+此外，静态分析通过指出冗余、不必要的复杂性和改进的机会，有助于代码重构和优化。将这类工具集成到开发流程中，包括持续集成管道，是一种常见的做法。这种集成允许对每次新的提交或构建进行持续的代码分析，确保持续的质量保证。
 
-The Clang-Tidy checks that we created in the last chapter can be considered an example of a static analysis program. In this chapter, we will consider more advanced topics involving data structures such as CFGs, which we will see next.
+我们在上一章中创建的Clang-Tidy检查可以被视为一个静态分析程序的例子。在本章中，我们将考虑涉及数据结构如CFGs的更高级主题，我们将在下一节看到。

@@ -1,21 +1,21 @@
 
-In this part of the chapter, we will transform our plugin example (see Section 4.6, Clang plugin project) into a Clang-Tidy check. This check will estimate the complexity of a C++ class based on the number of methods it contains. We will define a threshold as a parameter for the check.
+在本章的这一部分，我们将把我们的插件示例（参见第4.6节，Clang插件项目）转换为一个Clang-Tidy检查。这个检查将基于类中包含的方法数量来估计C++类的复杂性。我们将定义一个阈值作为检查的参数。
 
-Clang-Tidy offers a tool designed to aid in the creation of checks. Let's begin by creating a skeleton for our check.
+Clang-Tidy提供了一个工具，旨在帮助创建检查。让我们首先为我们的检查创建一个框架。
 
-\mySubsubsection{5.4.1}{Creating a skeleton for the check}
+\mySubsubsection{5.4.1}{为检查创建框架}
 
-Clang-Tidy provides a specific Python script, add\_new\_check.py , to assist in creating new checks. This script is located in the clang-tools-extra/clang-tidy directory. The script requires two positional parameters:
+Clang-Tidy提供了一个特定的Python脚本，add\_new\_check.py，以协助创建新的检查。该脚本位于clang-tools-extra/clang-tidy目录中。该脚本需要两个位置参数：
 
 \begin{itemize}
 \item
-module : This refers to the module directory where the new tidy check will be placed. In our case, this will be misc.
+模块：这指的是新tidy检查将要放置的模块目录。在我们的例子中，这将是misc。
 
 \item
-check : This is the name of the new tidy check to add. For our purposes, we will name it classchecker.
+检查：这是要添加的新tidy检查的名称。为了我们的目的，我们将它命名为classchecker。
 \end{itemize}
 
-By running the script in the llvm-project directory (which contains the cloned LLVM repository), we receive the following output:
+通过在包含克隆的LLVM仓库的llvm-project目录中运行脚本，我们收到以下输出：
 
 \begin{shell}
 $ ./clang-tools-extra/clang-tidy/add_new_check.py misc classchecker
@@ -33,39 +33,39 @@ Done. Now it's your turn!
 \end{shell}
 
 \begin{center}
-Figure 5.15: Creating a skeleton for the misc-classchecker check
+图5.15：为misc-classchecker检查创建框架
 \end{center}
 
-From the output, we can observe that several files under the clang-tools-extra/clang-tidy directory have been updated. These files pertain to checks registration, such as misc/MiscTidyModule.cpp, or build configuration, such as misc/CMakeLists.txt. The script also generated several new files, which we need to modify in order to implement our check's desired logic:
+从输出中，我们可以观察到clang-tools-extra/clang-tidy目录下的几个文件已被更新。这些文件涉及检查注册，例如misc/MiscTidyModule.cpp，或构建配置，例如misc/CMakeLists.txt。脚本还生成了几个新文件，我们需要修改这些文件以实现我们检查所需逻辑：
 
 \begin{itemize}
 \item
-misc/ClasscheckerCheck.h : This is the header file for our check
+misc/ClasscheckerCheck.h : 这是我们检查的头文件
 
 \item
-misc/ClasscheckerCheck.cpp : This file will house the implementation of our check
+misc/ClasscheckerCheck.cpp : 此文件将包含我们检查的实现
 \end{itemize}
 
-Additionally, the script has generated a LIT test for our check, named ClassChecker.cpp. This test can be found in the clang-tools-extra/test/clang-tidy/checkers/misc directory.
+此外，脚本还为我们的检查生成了一个LIT测试，名为ClassChecker.cpp。这个测试可以在clang-tools-extra/test/clang-tidy/checkers/misc目录中找到。
 
-Apart from the source files, the script also modifies some documentation files in the clang-tools-extra/docs directory:
+除了源文件之外，脚本还修改了clang-tools-extra/docs目录中的一些文档文件：
 
 \begin{itemize}
 \item
-ReleaseNotes.rst : This file contains updated release notes with placeholder entries for our new check
+ReleaseNotes.rst : 此文件包含更新后的发行说明，其中为我们新的检查提供了占位条目
 
 \item
-clang-tidy/checks/misc/classchecker.rst : This serves as the primary documentation for our check
+clang-tidy/checks/misc/classchecker.rst : 这将成为我们检查的主要文档
 
 \item
-clang-tidy/checks/list.rst : The list of checks has been updated to include our new check alongside other checks from the 'misc' module
+clang-tidy/checks/list.rst : 检查列表已更新，包括我们新的检查以及其他来自'misc'模块的检查
 \end{itemize}
 
-We will now turn our attention to implementing the check and the subsequent build process.
+现在，我们将转向实现检查及其后续构建过程。
 
-\mySubsubsection{5.4.2}{Clang-Tidy check implementation}
+\mySubsubsection{5.4.2}{Clang-Tidy检查实现}
 
-We'll begin by modifying ClasscheckerCheck.cpp. The generated file can be found in the clang-tools-extra/clang-tidy/misc directory. Let's replace the generated code with the following (note: the generated comment containing the license info has been omitted for brevity):
+我们将从修改ClasscheckerCheck.cpp开始。生成的文件可以在clang-tools-extra/clang-tidy/misc目录中找到。让我们用以下代码替换生成的代码（注意：为了简洁，已省略包含许可证信息的注释）：
 
 \begin{cpp}
 #include "ClasscheckerCheck.h"
@@ -99,14 +99,14 @@ void ClasscheckerCheck::check(const MatchFinder::MatchResult &Result) {
 \end{cpp}
 
 \begin{center}
-Figure 5.16: Modifications to ClasscheckerCheck.cpp
+图5.16：对ClasscheckerCheck.cpp的修改
 \end{center}
 
-We replaced the original stub with Lines 15-35 to implement the necessary changes.
+我们用第15-35行的代码替换了原始存根，以实现必要的更改。
 
-To integrate our check into the Clang-Tidy binary, we can execute the standard build procedure from the build directory within the LLVM source tree; see Figure 5.2.
+要将我们的检查集成到Clang-Tidy二进制文件中，我们可以从LLVM源树的构建目录中执行标准的构建过程；请参见图5.2。
 
-The name of our check is defined in the modified MiscTidyModule.cpp file in clang-tools-extra/clang-tidy/misc folder:
+我们的检查名称在clang-tools-extra/clang-tidy/misc文件夹中修改的MiscTidyModule.cpp文件中定义：
 
 \begin{cpp}
 class MiscModule : public ClangTidyModule {
@@ -119,16 +119,16 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 5.17: Modifications to MiscTidyModule.cpp
+图5.17：对MiscTidyModule.cpp的修改
 \end{center}
 
-As illustrated in Figure 5.17 (Lines 43-44), we registered the new check under the name "misc-classchecker". After the code modification, we are ready to recompile Clang-Tidy with
+如图5.17（第43-44行）所示，我们以"misc-classchecker"的名称注册了新的检查。修改代码后，我们准备重新编译Clang-Tidy：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-We can verify that the check has been added by executing Clang-Tidy with the -list-checks argument as follows:
+我们可以通过执行Clang-Tidy并使用-list-checks参数来验证检查是否已添加：
 
 \begin{shell}
 <...>/llvm-project/install/bin/clang-tidy -checks '*' -list-checks
@@ -138,12 +138,12 @@ misc-classchecker
 \end{shell}
 
 \begin{center}
-Figure 5.18: Clang-Tidy -list-checks option
+图5.18：Clang-Tidy -list-checks选项
 \end{center}
 
-It's worth noting that we enabled all checks using the -checks '*' command-line option, as shown in Figure 5.18.
+值得注意的是，我们使用图5.18中显示的-checks '*'命令行选项启用了所有检查。
 
-To test the check, we can use the file from the clang plugin project, as seen in Figure 4.39:
+要测试检查，我们可以使用来自Clang插件项目的文件，如图4.39所示：
 
 \begin{cpp}
 class Simple {
@@ -155,10 +155,10 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 5.19: Test file for the misc-classchecker clang-tidy check: test.cpp
+图5.19：misc-classchecker clang-tidy检查的测试文件: test.cpp
 \end{center}
 
-This file contains three methods. To trigger a warning, we must set the threshold to 2, as demonstrated:
+此文件包含三个方法。为了触发警告，我们必须将阈值设置为2，如下所示：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy                           \
@@ -170,10 +170,10 @@ $ <...>/llvm-project/install/bin/clang-tidy                           \
 
 
 \begin{center}
-Figure 5.20: Run a misc-classchecker check on the test file: test.cpp
+图5.20：在测试文件test.cpp上运行misc-classchecker检查
 \end{center}
 
-The output will be as follows:
+输出将如下所示：
 
 \begin{shell}
 test.cpp:1:7: warning: class Simple is too complex: method count = 3
@@ -183,14 +183,14 @@ class Simple {
 \end{shell}
 
 \begin{center}
-Figure 5.21: Output of the misc-classchecker check for the test.cpp test file
+图5.21：测试文件test.cpp的misc-classchecker检查输出
 \end{center}
 
-After testing the file with custom source code, it's time to create an LIT test for our check.
+在用自定义源代码测试文件后，是时候为我们的检查创建一个LIT测试了。
 
-\mySubsubsection{5.4.3}{LIT test}
+\mySubsubsection{5.4.3}{LIT测试}
 
-For the LIT test, we will use the slightly modified code from Figure 4.43. Let's modify classchecker.cpp, located in the clang-tools-extra/test/clang-tidy/checkers/misc folder, as follows:
+对于LIT测试，我们将使用来自图4.43的稍作修改的代码。让我们修改位于clang-tools-extra/test/clang-tidy/checkers/misc文件夹中的classchecker.cpp文件，如下所示：
 
 \begin{cpp}
 // RUN: %check_clang_tidy %s misc-classchecker %t
@@ -213,12 +213,12 @@ public:
 \end{cpp}
 
 \begin{center}
-Figure 5.22: LIT test: classchecker.cpp
+图5.22: LIT测试: classchecker.cpp
 \end{center}
 
-As we can see, the only difference compared to Figure 4.43 is in Line 1, where we specify which commands should be run, and in Line 9, where we define the test pattern.
+我们可以看到，与图4.43的唯一区别在于第1行，我们在这里指定了应该运行的命令，以及第9行，我们在这里定义了测试模式。
 
-We can run the test as follows:
+我们可以按以下方式运行测试：
 
 \begin{shell}
 $ cd <...>/llvm-project
@@ -227,10 +227,10 @@ clang-tools-extra/test/clang-tidy/checkers/misc/classchecker.cpp
 \end{shell}
 
 \begin{center}
-Figure 5.23: Testing the misc-classchecker clang-tidy check
+图5.23: 测试misc-classchecker clang-tidy检查
 \end{center}
 
-The command produces the following output:
+该命令产生以下输出：
 
 \begin{shell}
 -- Testing: 1 tests, 1 workers --
@@ -241,18 +241,18 @@ Testing Time: 0.12s
 \end{shell}
 
 \begin{center}
-Figure 5.24: Testing output for misc-classchecker
+图5.24: misc-classchecker的测试输出
 \end{center}
 
-We can also use the command shown in Figure 5.3 to run all clang-tidy checks, including our newly added one.
+我们还可以使用图5.3中显示的命令来运行所有clang-tidy检查，包括我们新添加的检查。
 
-When we run our check on a real code base, as opposed to synthetic tests, we may encounter unexpected results. One such issue has already been discussed in Section 3.7, Processing AST in the case of errors and pertains to the impact of compilation errors on Clang-Tidy results. Let's delve into this problem using a specific example.
+当我们在实际代码库上运行我们的检查，而不是合成测试时，我们可能会遇到意外结果。这类问题中的一个已经在第3.7节"处理错误情况下的AST"中讨论过，涉及编译错误对Clang-Tidy结果的影响。让我们通过一个具体的例子来深入研究这个问题。
 
-\mySubsubsection{5.4.4}{Results in the case of compilation errors}
+\mySubsubsection{5.4.4}{编译错误情况下的结果}
 
-Clang-Tidy uses AST as the information provider for checks, and the checks can produce wrong results if the information source is broken. The typical case is when the analyzed code has compilation errors (see Section 3.7, Processing AST in the case of errors).
+Clang-Tidy使用AST作为检查的信息提供者，如果信息源损坏，检查可能会产生错误的结果。典型的案例是在分析的代码中存在编译错误（参见第3.7节，处理错误情况下的AST）。
 
-Consider the following code as an example:
+考虑以下代码作为示例：
 
 \begin{cpp}
 class MyClass {
@@ -264,10 +264,10 @@ void MyClass::doSometing() {}
 \end{cpp}
 
 \begin{center}
-Figure 5.25: Test file with compilation errors: error.cpp
+图5.25：含有编译错误的测试文件：error.cpp
 \end{center}
 
-In the example, we made a syntax error in Line 6: the method name is incorrectly written as 'doSometing' instead of 'doSomething'. If we run our check on the file without any parameters, we will receive the following output:
+在这个例子中，我们在第6行犯了语法错误：方法名称被错误地写为'doSometing,而不是'doSomething'。如果我们不带任何参数运行我们的检查，我们将得到以下输出：
 
 \begin{shell}
 error.cpp:1:7: warning: class MyClass is too complex: method count = 7
@@ -287,16 +287,16 @@ Found compiler error(s).
 
 
 \begin{center}
-Figure 5.26: Running a misc-classchecker check on a file containing compilation errors
+图5.26：在含有编译错误的文件上运行misc-classchecker检查
 \end{center}
 
-Our check seems to be working incorrectly with this code. It assumes the class has seven methods when, in fact, it has only one.
+我们的检查似乎在这个代码上工作不正确。它假设类有七个方法，而实际上它只有一个。
 
-The case of compilation errors can be considered an edge case, and we can process it correctly. Before addressing these cases, we should investigate the produced AST to examine the issue.
+编译错误的情况可以被视为一个边缘情况，我们可以正确处理它。在处理这些情况之前，我们应该调查产生的AST以检查问题。
 
-\mySubsubsection{5.4.5}{Compilation errors as edge cases}
+\mySubsubsection{5.4.5}{编译错误作为边缘情况}
 
-Let's use clang-query (see Section 3.6, Explore Clang AST with clang-query) to explore what has happened with the AST. The program with the error fixed is shown in the following figure:
+让我们使用clang-query（参见第3.6节，使用clang-query探索Clang AST）来探索发生了什么。修复错误的程序如下所示：
 
 \begin{cpp}
 class MyClass {
@@ -309,20 +309,20 @@ void MyClass::doSomething() {}
 
 
 \begin{center}
-Figure 5.27: noerror.cpp test file with compilation errors fixed
+图5.27：无错误的测试文件
 \end{center}
 
-The clang-query command can be run on the file as follows:
+clang-query命令可以按照以下方式在文件上运行：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-query noerror.cpp -- --std=c++17
 \end{shell}
 
 \begin{center}
-Figure 5.28: Clang-Query run on noerror.cpp file with compilation errors fixed
+图5.28：使用clang-query运行无错误的文件
 \end{center}
 
-Then, we will set up Clang-Query's output as dump and find all matches for CXXRecordDecl
+然后，我们将Clang-Query的输出设置为dump，并找到所有匹配的CXXRecordDecl
 
 \begin{shell}
 clang-query> set output dump
@@ -330,10 +330,10 @@ clang-query> match cxxRecordDecl()
 \end{shell}
 
 \begin{center}
-Figure 5.29: Setup Clang-Query output and run matchers
+图5.29：设置Clang-Query输出并运行匹配器
 \end{center}
 
-The result is shown below
+结果如下：
 
 \begin{shell}
 Match #1:
@@ -355,10 +355,10 @@ definition
 \end{shell}
 
 \begin{center}
-Figure 5.30: AST for the noerror.cpp file with compilation errors fixed
+图5.30：无错误的noerror.cpp文件的AST
 \end{center}
 
-Compare it with the output for the code with an error (see Figure 5.25). We run Clang-Query on the error.cpp file and set up the required matcher as follows
+与含有错误的代码的输出（参见图5.25）进行比较。我们对含有错误的error.cpp文件运行Clang-Query，并设置所需的匹配器如下
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-query error.cpp -- --std=c++17
@@ -367,10 +367,10 @@ clang-query> match cxxRecordDecl()
 \end{shell}
 
 \begin{center}
-Figure 5.31: Clang-Query run on error.cpp
+图5.31：在error.cpp文件上运行Clang-Query
 \end{center}
 
-The found match is shown below:
+找到的匹配如下所示：
 
 \begin{shell}
 CXXRecordDecl ... <error.cpp:1:1, line:4:1> line:1:7 class MyClass
@@ -405,10 +405,10 @@ default ...
 \end{shell}
 
 \begin{center}
-Figure 5.32: AST for the error.cpp file with a compilation error
+图5.32：带有编译错误的error.cpp文件的AST
 \end{center}
 
-As we can see, all additional methods are added implicitly. We can exclude them by modifying Line 30 (see Figure 5.16) of our check code, as shown:
+正如我们所看到的，所有额外的方法都被隐式添加了。我们可以通过修改我们检查代码的第30行（参见图5.16）来排除它们，如下所示：
 
 \begin{cpp}
 for (const auto *D : ClassDecl->decls()) {
@@ -419,10 +419,10 @@ for (const auto *D : ClassDecl->decls()) {
 
 
 \begin{center}
-Figure 5.33: Exclude implicit declaration from the check report
+图5.33：从检查报告中排除隐式声明
 \end{center}
 
-If we run the modified check on the file that contains compilation errors, we will get the following output:
+如果我们运行经过修改的检查来处理包含编译错误的文件，我们将得到以下输出：
 
 \begin{shell}
 error.cpp:6:15: error: out-of-line definition of 'doSometing' ...
@@ -437,15 +437,15 @@ Found compiler error(s).
 \end{shell}
 
 \begin{center}
-Figure 5.34: Running a fixed misc-classchecker check on a file containing compilation errors
+图5.34：在包含编译错误的文件上运行已修复的misc-classchecker检查
 \end{center}
 
-As we can see, the compiler error is reported, but our check does not trigger any warnings.
+正如我们所看到的，编译错误被报告，但我们的检查没有触发任何警告。
 
-Despite the fact that we correctly processed the unusual clang-tidy result, it's worth noting that not every compilation error can be correctly processed. As mentioned in Section 3.7, Processing AST in the case of errors, the Clang compiler tries to produce an AST even when encountering compilation errors. This approach is because it's designed for use by IDEs and other tools that benefit from as much information as possible, even in the presence of errors. However, this "error-recovery" mode of the AST can produce structures that Clang-Tidy might not anticipate. Therefore, we should adhere to the following rule:
+尽管我们正确处理了不寻常的clang-tidy结果，但值得注意的是，并非每个编译错误都能被正确处理。正如第3.7节所述，在遇到编译错误时，Clang编译器仍试图生成AST，这是因为它是为IDE和其他工具设计的，这些工具在存在错误的情况下仍从尽可能多的信息中受益。然而，这种“错误恢复”模式的AST可能会产生Clang-Tidy可能没有预料到的结构。因此，我们应该遵循以下规则：
 
 
-\begin{myTip}{Tip}
-Always ensure your code compiles without errors before running Clang-Tidy and other Clang Tools. This guarantees that the AST is both accurate and complete.
+\begin{myTip}{提示}
+在运行Clang-Tidy和其他Clang工具之前，始终确保您的代码没有编译错误。这样可以保证AST既准确又完整。
 \end{myTip}
 

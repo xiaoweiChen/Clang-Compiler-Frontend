@@ -1,16 +1,16 @@
 
-It's worth mentioning some limitations of the analysis that can be conducted with Clang's AST and CFG. The most notable ones are mentioned here \footnote{Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}.}:
+使用 Clang 的抽象语法树（AST）和控制流图（CFG）进行分析有一些局限性。最显著的局限性如下所述\footnote{Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}}:
 
 
 \begin{itemize}
 \item
-Limitations of Clang's AST: Clang's AST is unsuitable for data flow analysis and control flow reasoning, leading to inaccurate results and inefficient analysis due to the loss of vital language information. Soundness of analysis is also a consideration, where the precision of certain analyses, such as liveness analysis, can be valuable if they are precise enough rather than always being conservative.
+Clang的AST局限性：Clang的AST不适合进行数据流分析和控制流推理，这导致了结果的不准确性和分析的低效，因为丢失了重要的语言信息。分析的健全性也是一个考虑因素，某些分析，如活性分析，如果它们足够精确而不是总是保守的，那么它们的精确性将非常有价值。
 
 \item
-Issues with Clang's CFG: While Clang's CFG aims to bridge the gap between AST and LLVM IR, it encounters known problems, has limited interprocedural capabilities, and lacks adequate testing coverage.
+Clang的CFG问题：虽然Clang的CFG旨在弥合AST和LLVM IR之间的差距，但它遇到了已知的问题，具有有限的跨过程能力，并且缺乏足够的测试覆盖。
 \end{itemize}
 
 
-One example mentioned in \footnote{Bruno Cardoso Lopes and Nathan Lanza. [RFC] An MLIR based Clang IR (CIR). June 2022. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}.} relates to C++ coroutines, a new feature introduced in C++20. Some aspects of this functionality are implemented outside the Clang frontend and are not visible with tools such as Clang's AST and CFG. This limitation makes analysis, especially lifetime analysis, tricky for such functionalities.
+在\footnote{Bruno Cardoso Lopes和Nathan Lanza. [RFC] 基于MLIR的Clang IR (CIR). 2022年6月. URL \url{https://discourse.llvm.org/t/rfc-an-mlir-based-clang-ir-cir/63319}.}提到的一个例子是与C++20中引入的新特性——C++协程相关。这个功能的某些方面是在Clang前端之外实现的，使用Clang的AST和CFG等工具无法看到。这一限制使得对这种功能的分析，尤其是生命周期分析，变得复杂。
 
-Despite these limitations, Clang's CFG remains a powerful tool widely used in compiler and compiler tool development. There is also active development of other tools \footnote{Bruno Cardoso Lopes. [RFC] Upstreaming ClangIR. January 2024. URL \url{https://discourse.llvm.org/t/rfc-upstreaming-clangir/76587}.} that aim to close the gaps in Clang's CFG capabilities.
+尽管存在这些局限性，Clang的CFG仍然是一个在编译器和编译器工具开发中广泛使用的强大工具。还有其他工具正在积极开发中\footnote{Bruno Cardoso Lopes. [RFC] 将ClangIR上游化. 2024年1月. URL \url{https://discourse.llvm.org/t/rfc-upstreaming-clangir/76587}.}，旨在弥补Clang的CFG功能上的不足。

@@ -1,16 +1,16 @@
 
-Clang-Tidy checks, as discussed in the previous chapter, rely on advanced matching provided by the AST. However, this approach might not be sufficient for detecting more complex problems, such as lifetime issues (that is, when an object or resource is accessed or referenced after it has been deallocated or has gone out of scope, potentially leading to unpredictable behavior or crashes). In this chapter, we will introduce advanced code analysis tools based on the Control Flow Graph (CFG). The Clang Static Analyzer is an excellent example of such tools, and Clang-Tidy also integrates some aspects of CFGs. We will begin with typical usage examples and then delve into the implementation details. The chapter will conclude with a custom check that employs advanced techniques and extends the concept of class complexity to method implementations. We will define cyclomatic complexity and demonstrate how to calculate it using the CFG library provided by Clang. In this chapter, we will explore the following topics:
+正如前一章中所讨论的，Clang-Tidy 检查依赖于抽象语法树（AST）所提供的高级匹配功能。然而，这种方法可能不足以检测更复杂的问题，例如生命周期问题（即当一个对象或资源在其被释放或超出作用域后仍被访问或引用，这可能导致不可预测的行为或程序崩溃）。在本章中，我们将介绍基于控制流图（CFG）的高级代码分析工具。Clang 静态分析器是这类工具的一个优秀示例，而 Clang-Tidy 也集成了 CFG 的某些方面。我们将从典型的使用示例开始，然后深入探讨实现细节。本章将以一个自定义检查作为结尾，该检查采用高级技术，并将类复杂性的概念扩展到方法实现上。我们将定义环形复杂度，并展示如何使用 Clang 提供的 CFG 库来计算它。在本章中，我们将探讨以下主题：
 
 \begin{itemize}
 \item
-What static analysis is
+静态分析是什么
 
 \item
-Gaining knowledge of CFGs – the basic data structure used for static analysis
+了解CFG——静态分析中使用的基本数据结构
 
 \item
-How CFGs can be used in a custom Clang-Tidy check
+如何在一个自定义的Clang-Tidy检查中使用CFG
 
 \item
-What analysis tools are provided in Clang and what are their limitations
+Clang提供的分析工具及其局限性
 \end{itemize}

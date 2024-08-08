@@ -1,19 +1,19 @@
-A CFG is a fundamental data structure in compiler design and static program analysis, representing all paths that might be traversed through a program during execution.
+控制流图（CFG）是编译器设计和静态程序分析中的一个基本数据结构，它表示程序在执行过程中可能遍历的所有路径。
 
-A CFG consists of the following key components:
+CFG包含以下关键组件：
 
 \begin{itemize}
 \item
-Nodes: Correspond to basic blocks, a straight-line sequence of operations with one entry and one exit point
+节点：对应于基本块，是一系列直线的操作序列，具有一个入口和一个出口点。
 
 \item
-Edges: Represent the flow of control from one block to another, including both conditional and unconditional branches
+边：代表从一个块到另一个块的控制流，包括条件分支和无条件分支。
 
 \item
-Start and end nodes: Every CFG has a unique entry node and one or more exit nodes
+开始和结束节点：每个CFG都有一个唯一的入口节点和一个或多个出口节点。
 \end{itemize}
 
-As an example of a CFG, consider the function to calculate the maximum of two integer numbers that we used as an example before; see Figure 2.5:
+例如，考虑我们之前用作示例的计算两个整数中最大值的函数；见图2.5：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -24,76 +24,76 @@ int max(int a, int b) {
 \end{cpp}
 
 \begin{center}
-Figure 6.1: CFG example C++ code: max.cpp
+图6.1：CFG示例C++代码: max.cpp
 \end{center}
 
-The corresponding CFG can be represented as follows:
+相应的CFG可以表示如下：
 
-\myGraphic{0.5}{content/part2/chapter6/images/2.png}{Figure 6.2: CFG example for max.cpp}
+\myGraphic{0.5}{content/part2/chapter6/images/2.png}{图6.2：max.cpp的CFG示例}
 
-The diagram shown in Figure 6.2 visually represents a CFG for the max function (from Figure 6.1) with a series of connected nodes and directed edges:
+图6.2中显示的图表以视觉方式表示了max函数（来自图6.1）的CFG，由一系列连接的节点和有向边组成：
 
 
 \begin{itemize}
 \item
-Entry node: At the top, there is an "entry" node, representing the starting point of the function's execution.
+入口节点：顶部有一个"entry"节点，代表函数执行的起始点。
 
 \item
-Conditional node: Below the entry node, there is a node labeled "a > b". This node represents the conditional statement in the function, where the comparison between a and b is made.
+条件节点：在入口节点下方，有一个标记为"a > b"的节点。这个节点代表函数中的条件语句，其中a和b进行比较。
 
 \item
-Branches for true and false conditions:
+真和假条件的分支：
 \begin{itemize}
 \item
-On the true branch (left side), there is a node labeled "Return a", connected by an edge from the "a > b" node. This edge is labeled "true", indicating that if a is greater than b, the flow goes to this node.
+在真分支（左侧），有一个标记为"Return a"的节点，通过一条从"a > b"节点连接的边。这条边标记为"true"，表示如果a大于b，则流程进入此节点。
 
 \item
-On the false branch (right side), there is a node labeled "Return b", connected by an edge from the "a > b" node. This edge is labeled "false", indicating that if a is not greater than b, the flow goes to this node.
+在假分支（右侧），有一个标记为"Return b"的节点，通过一条从"a > b"节点连接的边。这条边标记为"false"，表示如果a不大于b，则流程进入此节点。
 \end{itemize}
 
 \item
-Exit node: Below both the "Return a" and "Return b" nodes, converging at a point, there is an "exit" node. This represents the termination point of the function, where the control flow exits the function after returning either a or b.
+出口节点：在"Return a"和"Return b"节点下方，汇聚于一点，有一个"exit"节点。这代表函数的终止点，即在返回a或b后控制流退出函数的点。
 \end{itemize}
 
-This CFG effectively illustrates how the max function processes input and reaches a decision on which value to return based on the comparison.
+这个CFG有效地展示了max函数如何处理输入并根据比较做出决定返回哪个值。
 
-The CFG representation can also be used to estimate function complexity. In brief, a more complex picture corresponds to a more complex system. We will use a precise definition of complexity known as cyclomatic complexity, or M \footnote{Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.}, which can be calculated as follows:
+CFG表示还可以用于估计函数的复杂性。简而言之，更复杂的图对应于更复杂的系统。我们将使用一个精确的复杂度定义，称为循环复杂度（或M\footnote{Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.}），可以按照以下方式计算:
 
 $M = E - N + 2P$
 
-where:
+其中：
 
 \begin{itemize}
 \item
-E is the number of edges in the graph
+E是图中的边数
 
 \item
-N is the number of nodes in the graph
+N是图中的节点数
 
 \item
-P is the number of connected components (for a single CFG, P is usually 1)
+P是连接组件数（对于单个CFG，P通常为1）
 \end{itemize}
 
-For the max function discussed earlier, the CFG can be analyzed as follows:
+对于前面讨论的max函数，CFG可以分析如下：
 
 \begin{itemize}
 \item
-Nodes (N): There are five nodes (Entry, a > b, Return a, b, Exit)
+节点（N）：有五个节点（Entry，a > b，Return a，b，Exit）
 
 \item
-Edges (E): There are five edges (from Entry to a > b, from a > b to Return a, from a > b to Return b, from Return a to Exit, and from Return b to Exit)
+边（E）：有五条边（从Entry到a > b，从a > b到Return a，从a > b到Return b，从Return a到Exit，以及从Return b到Exit）
 
 \item
-Connected components (P): As it's a single function, P = 1
+连接组件（P）：因为它是单个函数，P = 1
 \end{itemize}
 
-Substituting these values into the formula, we get the following:
+将这些值代入公式，我们得到以下结果：
 
 $ M = 5 − 5 + 2 × 1 = 2$
 
-Thus, the cyclomatic complexity of the max function, based on the given CFG, is 2. This indicates that there are two linearly independent paths through the code, corresponding to the two branches of the if statement.
+因此，根据给定的CFG，max函数的循环复杂度为2。这表明代码中有两条线性独立的路径，对应于if语句的两个分支。
 
-Our next step will be to create a Clang-Tidy check that uses a CFG to calculate cyclomatic complexity.
+我们的下一步将是创建一个使用CFG计算循环复杂度的Clang-Tidy检查。
 
 
 

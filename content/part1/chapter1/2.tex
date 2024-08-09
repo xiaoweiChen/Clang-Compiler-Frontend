@@ -1,24 +1,24 @@
-让我们从了解一些关于LLVM的基础信息开始，包括项目历史及其结构。
+从了解一些关于LLVM的基础信息开始，包括项目历史及其结构。
 
 \mySubsubsection{1.2.1.}{LLVM简史}
 
-Clang编译器是LLVM项目的一部分。该项目始于2000年，由Chris Lattner和Vikram Adve在伊利诺伊大学厄巴纳-香槟分校作为他们的项目而启动\footnote{Chris Lattner and Vikram Adve. LLVM: A Compilation Framework for Lifelong Program Analysis \& Transformation. 2004年国际代码生成与优化研讨会(CGO'04)论文集, 2004年3月。}。
+Clang编译器是LLVM项目的一部分。该项目始于2000年，由Chris Lattner和Vikram Adve在伊利诺伊大学厄巴纳-香槟分校启动\footnote{Chris Lattner and Vikram Adve. LLVM: A Compilation Framework for Lifelong Program Analysis \& Transformation. 2004年国际代码生成与优化研讨会(CGO'04)论文集, 2004年3月。}。
 
-LLVM最初被设计为一个下一代代码生成基础设施，可以用来构建多种编程语言的优化编译器。然而，它已经发展成为一个全功能的平台，可以用来构建各种工具，包括调试器、分析器和静态分析工具。
+LLVM最初设计为一个下一代代码生成工具，可以用来构建多种编程语言的优化编译器。然而，它已经发展成为一个全功能的平台，可以用来构建各种工具，包括调试器、分析器和静态分析工具。
 
-LLVM在软件行业得到了广泛采用，许多公司和组织使用它来构建各种工具和应用。它也用于学术研究和教学，并启发了其他领域类似项目的发展。
+LLVM在软件行业得到了广泛采用，许多公司和组织使用它来构建各种工具和应用。也用于学术研究和教学，并启发了其他领域类似项目的发展。
 
-当苹果公司在2005年雇佣了Chris Lattner并组建了一个团队来开发LLVM时，该项目获得了额外的推动。LLVM成为了苹果公司创建的开发工具（XCode）的重要组成部分。
+苹果公司在2005年雇佣Chris Lattner，并组建了一个团队来开发LLVM，该项目获得了特别的推动。LLVM也成为了苹果公司创建的开发工具（XCode）的重要组成部分。
 
-最初，GNU编译器集合（GCC）用作LLVM的C/C++前端。但这存在一些问题。其中一个问题是与GNU通用公共许可证（GPL）相关，它阻止了前端在某些专有项目中的使用。另一个缺点是当时GCC对Objective-C的支持有限，这对苹果来说很重要。Chris Lattner在2006年启动了Clang项目来解决这些问题。
+最初，GNU编译器集合（GCC）用作LLVM的C/C++前端，但这存在一些问题。其中一个问题是与GNU通用公共许可证（GPL）相关，阻止了前端在某些专有项目中的使用。另一个缺点是当时GCC对Objective-C的支持有限，这对苹果来说很头痛。Chris Lattner在2006年启动了Clang项目来解决这些问题。
 
-Clang最初被设计为一个统一的解析器，用于C语言家族，包括C、Objective-C、C++和Objective-C++。这种统一旨在通过为多种语言使用单一的前端实现来简化维护，而不是为每种语言维护多个实现。该项目很快获得了成功。Clang和LLVM成功的主要原因之一是它们的模块化。LLVM中的所有内容都是一个库，包括Clang。这为基于Clang和LLVM创建许多惊人的工具打开了机会，例如稍后将在本书中介绍的clang-tidy和clangd）。
+Clang最初被设计为一个统一的解析器，用于C语言家族，包括C、Objective-C、C++和Objective-C++。这种统一旨在通过为多种语言使用单一的前端实现来简化维护，而不是为每种语言维护多个实现。该项目很快获得了成功，Clang和LLVM成功的主要原因之一是模块化。LLVM中的所有内容都是一个库，包括Clang。这为基于Clang和LLVM创建许多惊人的工具打开了机会，例如clang-tidy和clangd。
 
-LLVM和Clang具有非常清晰的架构，并且是用C++编写的。这使得任何C++开发者都可以研究和使用它。我们可以看到围绕LLVM建立起来的庞大社区以及其使用的飞速增长。
+LLVM和Clang具有非常清晰的架构，并且是用C++编写的，这使得C++开发者都可以研究和使用。我们可以看到围绕LLVM建立起来的庞大社区，以及其使用的飞速增长。
 
 \mySubsubsection{1.2.2.}{操作系统支持}
 
-我们在这里计划专注于个人电脑的操作系统，如Linux、Darwin和Windows。另一方面，Clang不仅限于个人电脑，还可以用来为移动平台，如iOS和不同的嵌入式系统编译代码。
+这里计划专注于个人电脑的操作系统，如Linux、Darwin和Windows。另一方面，Clang不仅限于个人电脑，还可以用来为移动平台，如iOS和不同的嵌入式系统编译代码。
 
 \mySamllsection{Linux}
 
@@ -26,7 +26,7 @@ GCC是Linux上的默认开发工具集，特别是gcc（用于C程序）和g++�
 
 \mySamllsection{Darwin (macOS)}
 
-Clang被认为是Darwin的主要构建工具。整个构建基础设施基于LLVM，Clang是默认的C/C++编译器。开发者工具，如调试器（LLDB），也来自LLVM。您可以从XCode获取主要的开发者工具，这些工具基于LLVM。然而，您可能需要安装额外的命令行工具，如CMake和Ninja，可以作为单独的包安装，或通过包管理系统如MacPorts或Homebrew安装。
+Clang认为是Darwin的主要构建工具。整个构建基础设施基于LLVM，Clang是默认的C/C++编译器。开发者工具，如调试器（LLDB），也来自LLVM。可以从XCode获取主要的开发者工具，这些工具基于LLVM。也可能需要安装命令行工具，如CMake和Ninja，可以作为单独的包安装，或通过包管理系统如MacPorts或Homebrew安装。
 
 例如，可以使用Homebrew以下列方式获取CMake：
 
@@ -42,19 +42,17 @@ $ sudo port install cmake
 
 \mySamllsection{Windows}
 
-在Windows上，Clang可以用作命令行编译器，也可以作为更大开发环境的一部分，如Visual Studio。Windows上的Clang包括对Microsoft Visual C++ (MSVC) ABI的支持，因此您可以使用Clang来编译使用Microsoft C运行时库（CRT）和C++标准模板库（STL）的程序。Clang也支持GCC的许多相同语言特性，因此在许多情况下，它可以作为GCC在Windows上的直接替代品。
+在Windows上，Clang可以用作命令行编译器，也可以作为更大开发环境的一部分，如Visual Studio。Windows上的Clang包括对Microsoft Visual C++ (MSVC) ABI的支持，因此可以使用Clang来编译使用Microsoft C运行时库（CRT）和C++标准模板库（STL）的程序。Clang也支持GCC的许多相同语言特性，在许多情况下，可以作为GCC在Windows上的替代品。
 
-值得一提的是clang-cl \footnote{LLVM社区. MSVC兼容性. 2023. URL \url{https://clang.llvm.org/docs/MSVCCompatibility.html}.}。它是一个为Clang设计的命令行编译器驱动程序，旨在用作MSVC编译器cl.exe的直接替代品。它是作为Clang编译器的一部分引入的，并且是为了与LLVM工具链一起使用而创建的。
+值得一提的是clang-cl \footnote{LLVM社区. MSVC兼容性. 2023. URL \url{https://clang.llvm.org/docs/MSVCCompatibility.html}}是一个为Clang设计的命令行编译器驱动程序，旨在用作MSVC编译器cl.exe的直接替代品。它是作为Clang编译器的一部分引入的，并且是为了与LLVM工具链一起使用而创建的。
 
-与cl.exe一样，clang-cl用于Windows程序的构建过程，并且它支持MSVC编译器的许多相同命令行选项。它可以在Windows上用于编译C、C++和Objective-C代码，并且还可以用于链接对象文件和库以创建可执行程序或动态链接库（DLL）。
+与cl.exe一样，clang-cl用于Windows程序的构建过程，并且它支持MSVC编译器的许多相同命令行选项。可以在Windows上用于编译C、C++和Objective-C代码，并且还可以用于链接对象文件和库，以创建可执行程序或动态链接库（DLL）。
 
-Windows的开发过程与类Unix系统不同，它需要额外的特定细节，这可能会使本书的材料变得相当复杂。为了避免这种复杂性，我们的主要目标是专注于基于Unix的系统，如Linux和Darwin，并且我们将在本书中省略Windows特定的示例。
-
+Windows的开发过程与类Unix系统不同，需要更多的配置，这可能会使本书变得相当复杂。为了避免这种复杂性，我们主要目标是基于Unix的系统，如Linux和Darwin，并且我们将在本书中省略Windows的示例。
 
 \mySubsubsection{1.2.3.}{LLVM/Clang项目结构}
 
-
-Clang源代码是LLVM单体仓库（monorepo）的一部分。LLVM从2019年开始使用单体仓库作为其过渡到Git的一部分\footnote{LLVM社区. 将LLVM项目迁移到GitHub. 2019. URL \url{https://llvm.org/docs/Proposals/GitHubMove.html}.}。这个决定是由几个因素驱动的，比如更好的代码重用、提高效率和协作。因此，您可以在一个地方找到所有的LLVM项目。如前言所述，本书我们将使用LLVM版本18.x。用以下命令下载：
+Clang源代码是LLVM单体仓库（monorepo）的一部分。LLVM从2019年开始使用单体仓库作为其过渡到Git的一部分\footnote{LLVM社区. 将LLVM项目迁移到GitHub. 2019. URL \url{https://llvm.org/docs/Proposals/GitHubMove.html}}。这个决定由几个因素驱动，比如更好的代码重用、提高效率和协作。因此，您可以在一个地方找到所有的LLVM项目。如前言所述，本书将使用LLVM版本18.x。可用以下命令下载源码：
 
 \begin{shell}
 $ git clone https://github.com/llvm/llvm-project.git -b release/18.x
@@ -65,27 +63,25 @@ $ cd llvm-project
 图1.1: 获取LLVM代码
 \end{center}
 
-
 \begin{myNotic}{重要提示}
-版本18是LLVM的最新版本，预计将于2024年3月发布。本书基于2024年1月23日的版本，当时创建了发布分支。
+LLVM 18是目前最新版本，预计将于2024年3月发布。本书基于2024年1月23日的版本，当时创建了发布分支。
 \end{myNotic}
 
+本书将使用的llvm-project最重要的部分，如图1.2所示。
 
-本书将使用的llvm-project最重要的部分如图1.2所示。
-
-\myGraphic{0.6}{content/part1/chapter1/images/1.png}{图1.2: LLVM项目树}
+\myGraphic{0.4}{content/part1/chapter1/images/1.png}{图1.2: LLVM项目树}
 
 其中包括
 
 \begin{itemize}
 \item
-lld : LLVM链接器工具。您可能希望将其用作标准链接器工具的替代品，例如GNU ld
+lld : LLVM链接器工具。可将其用作标准链接器工具的替代品，例如GNU ld
 
 \item
 llvm : LLVM项目的通用库
 
 \item
-clang :  Clang驱动程序和前端
+clang : Clang驱动程序和前端
 
 \item
 clang-tools-extra :本书第二部分将介绍的不同Clang工具
@@ -93,34 +89,32 @@ clang-tools-extra :本书第二部分将介绍的不同Clang工具
 
 大多数项目具有图1.3所示的结构。
 
-\myGraphic{0.5}{content/part1/chapter1/images/2.png}{图1.3: 典型的LLVM项目结构}
+\myGraphic{0.4}{content/part1/chapter1/images/2.png}{图1.3: LLVM的项目结构}
 
 LLVM项目，如clang或llvm，通常包含两个主要文件夹：include和lib。include文件夹包含项目接口（头文件），而lib文件夹包含实现。每个LLVM项目都有各种不同的测试，可以分为两个主要组：位于unittests文件夹中的单元测试，使用Google Test框架实现，以及使用LLVM集成测试器（LIT）框架实现的端到端测试。
 
-对我们来说最重要的项目是clang和clang-tools-extra。clang文件夹包含前端和驱动程序。
+对我们来说最重要的项目是clang和clang-tools-extra，clang文件夹包含前端和驱动程序。
 
 \begin{myNotic}{重要提示}
 编译器驱动程序用于运行编译的不同阶段（解析、优化、链接等）。
 \end{myNotic}
 
+例如，词法分析器实现位于clang/lib/Lex文件夹中。还可以看到clang/test文件夹，其中包含端到端测试，以及clang/unittest文件夹，其中包含前端和驱动程序的单元测试。
 
-例如，词法分析器的实现位于clang/lib/Lex文件夹中。您还可以看到clang/test文件夹，其中包含端到端测试，以及clang/unittest文件夹，其中包含前端和驱动程序的单元测试。
-
-另一个重要的文件夹是clang-tools-extra。它包含一些基于不同Clang库的工具。它们如下：
-
+另一个重要的文件夹是clang-tools-extra，包含一些基于不同Clang库的工具：
 
 \begin{itemize}
 \item
 clang-tools-extra/clangd : 为VSCode等IDE提供导航信息的语言服务器
 
 \item
-clang-tools-extra/clang-tidy : 一个强大的代码检查框架，包含数百种不同的检查
+clang-tools-extra/clang-tidy : 强大的代码检查框架，包含数百种不同的检查
 
 \item
-clang-tools-extra/clang-format :  一个代码格式化工具
+clang-tools-extra/clang-format :  代码格式化工具
 \end{itemize}
 
-获取源代码并设置构建工具后，我们就可以准备编译LLVM源代码了。
+获取源代码并设置构建工具后，就可以准备编译LLVM源代码了。
 
 
 

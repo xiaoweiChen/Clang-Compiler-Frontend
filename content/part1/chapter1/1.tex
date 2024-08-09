@@ -1,4 +1,4 @@
-下载和构建LLVM代码非常简单，不需要任何付费工具。需要准备：
+下载和构建LLVM代码非常简单，不需要付费工具。需要准备：
 
 \begin{itemize}
 \item
@@ -13,13 +13,13 @@
 
 我们将使用调试器作为源代码调查工具。LLVM有自己的调试器，LLDB。我们将从LLVM仓库中构建它，作为我们的第一个工具：\url{https://github.com/llvm/llvm-project.git}。
 
-任何构建过程都包含两个步骤。第一个是项目配置，最后一个是构建本身。LLVM使用CMake作为项目配置工具，还可以使用其他构建工具，如Unix Makefiles和Ninja。可以为流行的IDE，如Visual Studio和XCode生成项目文件。这里，我们将使用Ninja作为构建工具，它可以加快构建过程，并且大多数LLVM开发者都使用它。可以在以下链接找到有关工具的更多信息：\url{https://llvm.org/docs/GettingStarted.html}。
+构建过程都包含两个步骤。第一个是项目配置，最后一个是构建本身。LLVM使用CMake作为项目配置工具，还可以使用其他构建工具，如Unix Makefiles和Ninja。可以为流行的IDE，如Visual Studio和XCode生成项目文件。这里使用Ninja作为构建工具，它可以加快构建过程，并且大多数LLVM开发者都使用它。可以在以下链接找到有关工具的更多信息：\url{https://llvm.org/docs/GettingStarted.html}。
 
 本章的源代码位于本书GitHub仓库的\textbf{chapter1}文件夹中：\url{https://github.com/PacktPublishing/Clang-Compiler-Frontend-Packt/tree/main/chapter1}。
 
 \mySubsubsection{1.1.1.}{项目配置工具CMake}
 
-CMake是一个开源的、跨平台的构建系统生成器。自2013年发布的版本3.3起，它一直作为LLVM的主要构建工具。
+CMake是一个开源的、跨平台的构建系统生成器。自2013年发布的版本3.3起，一直作为LLVM的主要构建工具。
 
 LLVM使用CMake之前使用的时autoconf，这是一个生成配置脚本的工具，可以在类Unix系统中用来构建和安装软件。然而，autoconf有几个限制，比如使用和维护困难，以及对跨平台构建的支持不佳。CMake选为autoconf的替代品，解决了这些限制，并且更易于使用和维护。
 
@@ -27,17 +27,17 @@ LLVM使用CMake之前使用的时autoconf，这是一个生成配置脚本的工
 
 \mySubsubsection{1.1.2.}{Ninja作为构建工具}
 
-Ninja是一个小型构建系统，专注于速度。它与构建生成器一起使用，如CMake，后者生成描述项目构建规则的构建文件。
+Ninja是一个小型构建系统，专注于速度。可与构建生成器一起使用，如CMake，后者生成描述项目构建规则的构建文件。
 
 Ninja的主要优势之一是其速度,能够比其他构建系统，如Unix Makefiles，执行构建得更快，只重新构建完成构建所需的最小文件集。因为它跟踪构建目标之间的依赖关系，并且只重新构建过时的目标。
 
 此外，Ninja简单易用。有一个小而直接的命令行界面，使用的构建文件是简单易读的文本文件。
 
-总的来说，当构建系统的速度是一个关注点，并且需要一个简单易用的工具时，Ninja是一个不错的选择。
+当构建系统的速度是一个关注点，并且需要一个简单易用的工具时，Ninja是一个不错的选择。
 
-Ninja最有用的选项之一是-j,这个选项允许指定并行运行的线程数。开发者可能希望，根据使用的硬件来指定数量。
+Ninja最有用的选项是-j，这个选项允许指定并行运行的线程数。
 
-我们的下一个目标是下载LLVM代码并调查项目结构，所以还需要设置构建过程所需的必要工具，并为未来使用LLVM代码的实验建立环境。这将确保我们拥有进行高效工作的工具和依赖项。
+我们的下一个目标是下载LLVM代码并调查项目结构，还需要设置构建过程所需的必要工具，并为未来使用LLVM代码的实验建立环境。这将确保我们拥有进行高效工作的工具和依赖项。
 
 
 

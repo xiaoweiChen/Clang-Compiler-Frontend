@@ -1,6 +1,6 @@
 
 
-我们正在以调试模式编译源代码，使其适合未来使用调试器进行调查。我们将使用LLDB作为调试器。我们将从构建过程概述开始，并以构建LLDB作为具体示例来完成。
+我们以调试模式编译源代码，使其适合未来使用调试器进行调试，并使用LLDB作为调试器。我们将从构建过程概述开始，并以构建LLDB作为具体示例来完成。
 
 \mySubsubsection{1.3.1.}{使用CMake进行配置}
 
@@ -11,15 +11,15 @@ $ mkdir build
 $ cd build
 \end{shell}
 
-最小的配置命令如下所示：
+最小的配置命令：
 
 \begin{shell}
 $ cmake -DCMAKE_BUILD_TYPE=Debug ../llvm
 \end{shell}
 
-该命令需要指定构建类型（例如，在我们的案例中为Debug）以及指向包含构建配置文件文件夹的主参数。配置文件存储为CMakeLists.txt，位于llvm文件夹中，这解释了为什么使用../llvm参数。该命令在构建文件夹中生成了Makefile，因此您可以使用简单的make命令来启动构建过程。
+该命令需要指定构建类型（例如，Debug）以及指向包含构建配置文件文件夹的主参数。配置文件存储为CMakeLists.txt，位于llvm文件夹中，这解释了为什么使用../llvm参数。该命令在构建文件夹中生成了Makefile，因此可以使用的make命令来启动构建过程。
 
-在本书中，我们将使用更高级的配置命令。其中一条命令如下：
+本书中，我们将使用更高级的配置命令：
 
 \begin{shell}
 cmake -G Ninja \
@@ -39,35 +39,33 @@ cmake -G Ninja \
 
 \begin{itemize}
 \item
--G Ninja指定了Ninja作为构建生成器，否则将使用make（这会较慢）。
+\textbf{-G Ninja}指定了Ninja作为构建生成器，否则将使用make（这会较慢）。
 
 \item
--DCMAKE\_BUILD\_TYPE=Debug 置了构建模式。将创建带有调试信息的构建。这是对Clang内部调查的主要构建配置。
+\textbf{-DCMAKE\_BUILD\_TYPE=Debug} 置了构建模式，将创建带有调试信息的构建。这是对Clang内部调查的主要构建配置。
 
 \item
--DCMAKE\_INSTALL\_PREFIX=../install 指定了安装文件夹。
+\textbf{-DCMAKE\_INSTALL\_PREFIX=../install} 指定了安装文件夹。
 
 \item
--DLLVM\_TARGETS\_TO\_BUILD="X86" 设置了要构建的确切目标。这将避免构建不必要的目标。
+\textbf{-DLLVM\_TARGETS\_TO\_BUILD="X86"} 设置了要构建的确切目标，将避免构建不必要的目标。
 
 \item
--DLLVM\_ENABLE\_PROJECTS="lldb;clang;clang-tools-extra" 指定了我们想要构建的LLVM项目。
+\textbf{-DLLVM\_ENABLE\_PROJECTS="lldb;clang;clang-tools-extra"} 指定了想要构建的LLVM项目。
 
 \item
--DLLVM\_USE\_SPLIT\_DWARF=ON 将调试信息分割成单独的文件。这个选项可以节省磁盘空间以及LLVM构建过程中的内存消耗。
+\textbf{-DLLVM\_USE\_SPLIT\_DWARF=ON} 将调试信息分割成单独的文件。这个选项可以节省磁盘空间，以及LLVM构建过程中的内存消耗。
 \end{itemize}
 
-我们使用了-DLLVM\_USE\_SPLIT\_DWARF=ON来节省一些磁盘空间。例如，启用该选项的Clang构建（ninja clang build命令）占用了20 GB的空间，但禁用该选项时则占用了27 GB的空间。请注意，该选项需要用于构建的编译器支持。您可能还会注意到，我们为特定架构创建了构建：X86。这个选项也节省了我们一些空间，因为否则，所有支持的架构都将被构建，所需的磁盘空间也将从20 GB增加到27 GB。
+我们使用了-DLLVM\_USE\_SPLIT\_DWARF=ON来节省一些磁盘空间。例如，启用该选项的Clang构建（ninja clang build命令）占用了20 GB的空间，但禁用该选项时则占用了27 GB的空间，该选项需要编译器支持。我们为特定架构创建了构建：X86。这个选项也节省了一些空间；否则，所有支持的架构都将构建，所需的磁盘空间也将从20GB增加到27GB。
 
 \begin{myNotic}{重要提示}
-如果您的主平台与X86不同，例如ARM，您可能希望避免使用-DLLVM\_TARGETS\_TO\_BUILD="X86"设置。对于ARM，您可以使用以下配置：-DLLVM\_TARGETS\_TO\_BUILD="ARM;X86;AArch64" \footnote{LLVM社区. 在ARM上构建. 2024. URL \url{https://llvm.org/docs/HowToBuildOnARM.html}.}。截至2023年3月，支持的完整平台列表可以在\footnote{LLVM社区. 使用CMake构建LLVM. 2023. URL \url{https://llvm.org/docs/CMake.html}.}中找到，包括19个不同的目标。
+如果您的主平台与X86不同，例如ARM，可能希望避免使用-DLLVM\_TARGETS\_TO\_BUILD="X86"设置。对于ARM，可以使用以下配置：-DLLVM\_TARGETS\_TO\_BUILD="ARM;X86;AArch64" \footnote{LLVM社区. 在ARM上构建. 2024. URL \url{https://llvm.org/docs/HowToBuildOnARM.html}}。截至2023年3月，支持的完整平台列表可以在\footnote{LLVM社区. 使用CMake构建LLVM. 2023. URL \url{https://llvm.org/docs/CMake.html}}中找到，包括19个不同的目标。
 \end{myNotic}
 
+也可以使用默认设置，而不指定LLVM\_TARGETS\_TO\_BUILD配置设置。准备好应对构建时间和使用空间的增长。
 
-您也可以使用默认设置，而不指定LLVM\_TARGETS\_TO\_BUILD配置设置。准备好应对构建时间和使用空间的增长。
-
-如果您使用动态库而不是静态库，可以节省更多空间。配置设置-DBUILD\_SHARED\_LIBS=ON将每个LLVM组件构建为动态库。空间使用将减少到14 GB，整体配置命令将如下所示：
-
+如果使用动态库，可以节省更多空间。配置设置-DBUILD\_SHARED\_LIBS=ON将每个LLVM组件构建为动态库。空间使用将减少到14 GB。
 
 \begin{shell}
 cmake -G Ninja \
@@ -81,10 +79,10 @@ cmake -G Ninja \
 \end{shell}
 
 \begin{center}
-图 1.5: 启用共享库而非静态库的CMake配置
+图 1.5: 启用动态库的CMake配置
 \end{center}
 
-出于性能考虑，在Linux上，您可能希望使用gold链接器而不是默认链接器。gold链接器是GNU二进制工具包（binutils）的一部分，它是一种GNU链接器的替代品。它设计得比GNU链接器更快、更高效，尤其是在链接大型项目时。它通过使用更有效的符号解析算法和更紧凑的执行文件格式来实现这一点。可以使用-DLLVM\_USE\_LINKER=gold选项启用它。结果配置命令将如下所示：
+出于性能考虑，在Linux上，可能希望使用gold链接器而不是默认链接器。gold链接器是GNU二进制工具包（binutils）的一部分，是一种GNU链接器的替代品。它设计得比GNU链接器更快、更高效，尤其是在链接大型项目时。通过使用更有效的符号解析算法，使的执行文件格式更紧凑。可以使用-DLLVM\_USE\_LINKER=gold选项启用：
 
 \begin{shell}
 cmake -G Ninja \
@@ -102,8 +100,7 @@ cmake -G Ninja \
 图 1.6: 使用gold链接器的CMake配置
 \end{center}
 
-调试构建可能会非常慢，因此您可能需要考虑其他替代方案。在可调试性和性能之间取得良好平衡的折衷方案是带有调试信息的发布构建。要获得这种构建，您可以将CMAKE\_BUILD\_TYPE标志更改为您的整体配置命令中的RelWithDebInfo。命令将如下所示：
-
+调试构建可能会非常慢，因此需要考虑其他替代方案。在可调试性和性能之间取得良好平衡的折衷方案是带有调试信息的发布构建。要获得这种构建，可以将CMAKE\_BUILD\_TYPE标志更改为整体配置命令中的RelWithDebInfo：
 
 \begin{shell}
 cmake -G Ninja \
@@ -119,7 +116,7 @@ cmake -G Ninja \
 图 1.7: 使用RelWithDebInfo构建类型的CMake配置
 \end{center}
 
-以下表格列出了一些流行的选项(\url{https://llvm.org/docs/CMake.html})。
+以下表格列出了一些主要的选项(\url{https://llvm.org/docs/CMake.html})。
 
 
 % Please add the following required packages to your document preamble:
@@ -140,7 +137,7 @@ CMAKE\_C,CXX\_FLAGS    & 编译时使用的C/C++标志                         \
 CMAKE\_C,CXX\_COMPILER &
 \begin{tabular}[c]{@{}l@{}}用于编译的C/C++编译器。\\ 可能需要指定一个非默认编译器，以便使用默认编译器不可用或\\不支持的一些选项。
 \end{tabular} \\ \hline
-LLVM\_ENABLE\_PROJECTS & 要启用的项目。我们将使用clang;clang-tools-extra。
+LLVM\_ENABLE\_PROJECTS & 要启用的项目。(我们将使用clang;clang-tools-extra)
  \\ \hline
 LLVM\_USE\_LINKER &
 \begin{tabular}[c]{@{}l@{}}指定要使用的链接器。 有几种选项，包括gold和lld。
@@ -151,10 +148,9 @@ LLVM\_USE\_LINKER &
 表1.1: 配置选项
 \end{center}
 
-
 \mySubsubsection{1.3.2.}{构建}
 
-我们需要调用Ninja来构建项目。如果您想要构建所有指定的项目，您可以不带参数运行Ninja：
+需要调用Ninja来构建项目。如果想要构建所有指定的项目，可以不带参数运行Ninja：
 
 \begin{shell}
 $ ninja
@@ -172,30 +168,28 @@ $ ninja clang
 $ ninja check-clang
 \end{shell}
 
-编译器二进制文件位于build文件夹中的bin/clang，您可以在那里找到它。
+编译器二进制文件位于build文件夹中的bin/clang。
 
-还可以将二进制文件安装到在-DCMAKE\_INSTALL\_PREFIX选项中指定的文件夹中。这可以通过以下方式完成：
+还可以将二进制文件安装到在-DCMAKE\_INSTALL\_PREFIX选项中指定的文件夹中：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-../install文件夹（在图1.4中作为安装文件夹指定）将具有以下结构：
-
+../install文件夹（图1.4中作为安装文件夹指定）将具有以下结构：
 
 \begin{shell}
 $ ls ../install
 bin  include  lib  libexec  share
 \end{shell}
 
-
 \mySubsubsection{1.3.3.}{LLVM调试器、其构建和使用}
 
-LLVM调试器，LLDB，在GNU调试器（GDB）的基础上创建。它的某些命令重复了GDB的对应命令。您可能会问：“既然我们有一个好的调试器，为什么还需要一个新的调试器呢？”答案可以在GCC和LLVM使用的不同架构解决方案中找到。LLVM使用模块化架构，编译器的不同部分可以被重用。例如，Clang前端可以在调试器中重用，从而支持现代C/C++特性。例如，lldb的print命令可以指定任何有效的语言构造，并且可以使用一些现代C++特性与lldb的print命令一起使用。
+LLVM调试器，LLDB，在GNU调试器（GDB）的基础上创建。某些命令重复了GDB的对应命令。有读者可能会问：“既然我们有一个好的调试器，为什么还需要一个新的调试器呢？”答案可以在GCC和LLVM使用的架构解决方案中找到。LLVM使用模块化架构，编译器的不同部分可以重用。例如，Clang前端可以在调试器中重用，从而支持现代C/C++特性。例如，lldb的print命令可以指定有效的语言构造，并且可以使用一些现代C++特性与lldb的print命令一起使用。
 
 相反，GCC使用单体架构，很难将C/C++前端与其他部分分离。因此，GDB必须分别实现语言特性，这可能需要一些时间，直到GCC中实现的现代语言特性在GDB中可用。
 
-可以在以下示例中找到有关LLDB构建和典型使用场景的一些信息。我们将为发布构建创建一个单独的文件夹：
+可以在以下示例中找到，有关LLDB构建和典型使用场景的一些信息。我们将为发布构建创建一个单独的文件夹：
 
 \begin{shell}
 $ cd llvm-project
@@ -207,7 +201,7 @@ $ cd release
 图 1.8: LLVM的发布构建
 \end{center}
 
-我们在发布模式下配置项目，并只指定lldb和clang项目：
+在发布模式下配置项目，并只指定lldb和clang项目：
 
 \begin{shell}
 cmake -G Ninja \
@@ -222,7 +216,7 @@ cmake -G Ninja \
 图 1.9: 使用发布构建类型的CMake配置
 \end{center}
 
-我们将使用系统中可用的最大线程数来构建Clang和LLDB：
+使用系统中可用的最大线程数来构建Clang和LLDB：
 
 \begin{shell}
 $ ninja clang lldb -j $(nproc)
@@ -234,10 +228,9 @@ $ ninja clang lldb -j $(nproc)
 $ ninja install-clang install-lldb
 \end{shell}
 
+二进制文件将安装到-DCMAKE\_INSTALL\_PREFIX指定的文件夹中。
 
-二进制文件将被安装到通过-DCMAKE\_INSTALL\_PREFIX配置命令参数指定的文件夹中。
-
-我们将使用以下简单的C++程序作为示例调试器会话：
+我们将使用以下简单的C++程序作为示例，演示调试器的使用：
 
 \begin{cpp}
 int main() {
@@ -255,9 +248,9 @@ int main() {
 $ <...>/llvm-project/install/bin/clang main.cpp -o main -g -O0
 \end{shell}
 
-如您所注意到的，我们没有使用优化（通过-O0选项）并在二进制文件中存储调试信息（通过-g选项）。
+这里，没有使用优化（通过-O0选项）并在二进制文件中存储调试信息（通过-g选项）。
 
-为创建的可执行文件进行的典型调试会话如图1.11所示。
+为创建的可执行文件进行的调试交互如图1.11所示。
 
 \begin{shell}
 1  $ <...>/llvm-project/install/bin/lldb main
@@ -277,29 +270,29 @@ $ <...>/llvm-project/install/bin/clang main.cpp -o main -g -O0
 \end{shell}
 
 \begin{center}
-图1.11: LLDB会话示例
+图1.11: LLDB交互示例
 \end{center}
 
-进行了以下几项操作：
+其中进行了以下几项操作：
 
 \begin{itemize}
 \item
-使用<…>/llvm-project/install/bin/lldb main运行调试会话，其中main是我们想要调试的可执行文件。见图1.11，第1行。
+使用<…>/llvm-project/install/bin/lldb main运行调试，其中main是我们想要调试的可执行文件。见图1.11，第1行。
 
 \item
-我们在主函数中设置了一个断点。见图1.11，第4行。
+在主函数中设置了一个断点。见图1.11，第4行。
 
 \item
-使用"r"命令运行会话。见图1.11，第6行。
+使用"r"命令运行程序。见图1.11，第6行。
 
 \item
-我们可以看到进程在断点处中断。见图1.11，第8、12行。
+可以看到进程在断点处中断。见图1.11，第8、12行。
 
 \item
-我们使用"q"命令结束会话。见图1.11，第14行。
+我们使用"q"命令结束程序。见图1.11，第14行。
 \end{itemize}
 
-使用LLDB作为我们探究Clang内部的工具之一，还会使用图1.11中显示的相同命令序列。这里，还可以使用另一个调试器，如GDB，它具有与LLDB类似的命令集。
+使用LLDB作为我们探究Clang内部的工具，还会使用图1.11中显示的相同命令序列。这里，还可以使用另一个调试器，如GDB，它具有与LLDB类似的命令集。
 
 
 

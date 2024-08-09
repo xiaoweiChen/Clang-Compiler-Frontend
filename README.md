@@ -3,7 +3,7 @@ Get to grips with the internals of a C/C++ compiler frontend and create your own
 
 * 作者：Ivan Murashko
 * 译者：陈晓伟
-* Packt Publishing Ltd. (首次出版于: March 2024)
+* Packt Publishing Ltd. (首次出版于: 2024年3月)
 
 > [!IMPORTANT]
 > 翻译是译者用自己的思想，换一种语言，对原作者想法的重新阐释。鉴于我的学识所限，误解和错译在所难免。如果你能买到本书的原版，且有能力阅读英文，请直接去读原文。因为与之相较，我的译文可能根本不值得一读。
@@ -12,19 +12,19 @@ Get to grips with the internals of a C/C++ compiler frontend and create your own
 
 ## 本书概述
 
-**Low Level Virtual Machine** (**LLVM**), is a collection of modular and reusable compiler and toolchain technologies used to develop compilers and compiler tools, such as linters and refactoring tools. LLVM is written in C++ and can be considered a good example of a well-structured project that uses interesting techniques aimed at making it reusable and efficient. The project can also be considered an excellent example of compiler architecture; diving into it will give you a sense of how compilers are organized and how they function. This should help to understand usage patterns and apply them accordingly.
+**Low Level Virtual Machine** (LLVM)是一套模块化和可重用的编译器及工具链技术，用于开发编译器和编译器工具，例如:代码检查器和重构工具。LLVM用C++编写，一个结构良好的项目。它使用了一些有趣的技术，旨在使其可重用且高效。该项目也可视为编译器架构的杰出示例，深入研究，将了解编译器的组织方式和功能，这有助于理解使用模式并应用。
 
-One of the key components of LLVM is the C/C++ compiler known as Clang. This compiler is widely used across various companies and has been designated as the default compiler for certain development environments, notably for macOS development. Clang will be the primary focus of our investigation in this book, with particular attention to its frontend—the part that is closest to the C/C++ programming language. Specifically, the book will include examples demonstrating how the C++ standard is implemented within the compiler.
+LLVM的关键组件是名为Clang的C/C++编译器。这款编译器在多家公司中得到了广泛使用，并指定为某些开发环境中的默认编译器，尤其是在macOS开发中。Clang将是我们在本书中的主要研究对象，特别关注其前端——即与C/C++编程语言最接近的部分。具体来说，书中将包括示例，展示C++标准如何在编译器中实现。
 
-A pivotal aspect of LLVM's design is its modularity, which facilitates the creation of custom tools that exploit the compiler's comprehensive capabilities. A notable example covered in the book is the Clang-Tidy linter framework, designed to identify undesirable code patterns and recommend corrections. Although it includes several hundred checks, you may not find one specific to your project's needs. However, the book will provide you with the foundation necessary to develop such a check from the beginning.
+LLVM设计的核心要素是其模块性，这便于创建利用编译器全面能力的定制工具。书中一个示例是Clang-Tidy代码检查框架，旨在识别不良的代码模式并更正。尽管它包含了数百项检查，但可能找不到特定于自己项目需求的检查，所以这本书将提供从头开始开发此类检查所需的基础知识。
 
-LLVM is an actively evolving project with two major releases each year. At the time the book was written, the latest stable release was version 17. Meanwhile, a release candidate for version 18 was introduced in January 2024, with its official release anticipated to coincide with the publication of the book. The book's content has been verified against the latest compiler version, 18, ensuring it provides insights based on the most current compiler implementation available.
+LLVM是一个积极发展的项目，每年会有两个主要版本发布。撰写本书时，最新的稳定版本是17版。与此同时，18版的发布候选版本已于2024年1月推出，预计其正式发布将与本书的出版同步。本书的内容已经针对最新的编译器版本18进行了验证，确保内容是基于当前最新编译器实现的见解。
 
 
 
 ## 作者简介
 
-**Ivan Murashko** is a C++ software engineer. He earned his Ph.D. in Physics from Peter the Great St. Petersburg Polytechnic University and has over 20 years of C++ programming experience, mostly on Linux. Since 2020, he has worked with LLVM compilers and has been an LLVM committer since 2021. His areas of interest include the Clang compiler frontend, Clang Tools (such as Clang-Tidy and Clangd), and performance optimizations for compilers and compiler tools.
+**Ivan Murashko**是一位C++软件工程师，在彼得大帝圣彼得堡国立理工大学获得了物理学博士学位，并拥有超过20年的C++编程经验，主要在Linux平台上。自2020年以来，他一直与LLVM编译器合作，并自2021年起成为LLVM的提交者。兴趣领域包括Clang编译器前端、Clang工具（如Clang-Tidy和Clangd），以及编译器和编译器工具的性能优化。
 
 
 

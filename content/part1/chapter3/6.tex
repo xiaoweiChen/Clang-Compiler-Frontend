@@ -1,4 +1,4 @@
-AST匹配器非常有用，有一个工具可以方便地检查各种匹配器并分析源代码的AST，这个工具就是clang-query。您可以使用以下命令来构建和安装这个工具：
+AST匹配器非常有用，有一个工具可以方便地检查各种匹配器并分析源代码的AST，这个工具就是clang-query。可以使用以下命令来构建和安装这个工具：
 
 \begin{shell}
 $ ninja install-clang-query
@@ -8,7 +8,7 @@ $ ninja install-clang-query
 图3.29：clang-query安装
 \end{center}
 
-您可以通过以下方式运行该工具：
+可以通过以下方式运行该工具：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-query minmax.cpp
@@ -18,7 +18,7 @@ $ <...>/llvm-project/install/bin/clang-query minmax.cpp
 图3.30：在测试文件上运行clang-query
 \end{center}
 
-我们可以按以下方式使用匹配命令：
+可以按以下方式使用匹配命令：
 
 \begin{shell}
 clang-query> match functionDecl(decl().bind("match-id"), matchesName("max"))
@@ -56,7 +56,7 @@ clang-query>
 图3.32：使用clang-query的dump输出
 \end{center}
 
-当您想要测试特定的匹配器或调查AST树的一部分时，这个工具非常有用。我们将使用这个工具来探索Clang如何处理编译错误。
+想要测试特定的匹配器或调查AST树的一部分时，这个工具非常有用。我们将使用这个工具来探索Clang如何处理编译错误。
 
 
 

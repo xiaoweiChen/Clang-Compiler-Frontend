@@ -2,7 +2,7 @@ Clang是一个编译器前端，其最重要的操作与诊断相关。诊断需
 
 \mySubsubsection{4.4.1.}{SourceManager 和 SourceLocation}
 
-Clang作为一个编译器，操作文本文件（程序），而定位程序中的特定位置是最常请求的操作之一。让我们看看典型的Clang错误报告。考虑第三章中的程序，如图3.33所示。Clang为该程序生成的错误消息如下：
+Clang作为一个编译器，操作文本文件（程序），而定位程序中的特定位置是最常请求的操作。典型的Clang错误报告，Clang为该程序生成的错误消息如下：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only maxerr.cpp
@@ -23,15 +23,15 @@ maxerr.cpp:3:12: error: use of undeclared identifier 'ab'
 文件名: 在我们的例子中，它是maxerr.cpp
 
 \item
-文件中的行：在我们的例子中，它是3
+文件行：在我们的例子中，它是3
 
 \item
-文件中的列：在我们的例子中，它是12
+文件列：在我们的例子中，它是12
 \end{itemize}
 
 存储这些信息的结构体应该尽可能紧凑，因为编译器经常使用它。Clang将这些信息存储在clang::SourceLocation对象中。
 
-这个对象经常被使用，所以它应该尽可能小且快速复制。我们可以使用lldb检查对象的大小。例如，如果我们使用调试器运行Clang，我们可以如下确定大小：
+这个对象经常使用，应该尽可能小且快速复制。可以使用lldb检查对象的大小。如果使用调试器运行Clang，可以确定其大小：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/clang
@@ -45,17 +45,17 @@ $ lldb <...>/llvm-project/install/clang
 图4.13：在调试器下确定clang::SourceLocation的大小
 \end{center}
 
-也就是说，信息是通过一个无符号长整数编码的。这是如何可能的呢？这个数字仅仅作为文本文件中位置的标识符。另外，需要一个额外的类来正确提取和表示这些信息，这个类是clang::SourceManager。SourceManager对象包含有关特定位置的所有详细信息。在Clang中，管理源位置可能具有挑战性，因为存在宏、包含和其他预处理指令。因此，有几种方式可以解释给定的源位置。主要方式如下：
+信息是通过一个无符号长整数编码，这是如何做到的呢？这个数字仅仅作为文本文件中位置的标识符。另外，需要一个额外的类来正确提取和表示这些信息，这个类是clang::SourceManager，SourceManager对象包含有关特定位置的详细信息。Clang中，管理源位置可能具有挑战性，因为存在宏、包含和其他预处理指令。有几种方式可以解释给定的源位置：
 
 \begin{itemize}
 \item
-拼写位置：指的是某个东西在源中实际拼写出来的位置。如果你有一个指向宏体内部的源位置，拼写位置将给你源代码中宏内容定义的位置。
+拼写位置：指的是某个东西在源中实际拼写出来的位置。如果有一个指向宏体内部的源位置，拼写位置将给你源代码中宏内容定义的位置。
 
 \item
-扩展位置：指的是宏在哪里被扩展。如果你有一个指向宏体内部的源位置，扩展位置将给你源代码中使用宏（扩展）的位置。
+扩展位置：指的是宏在哪里被扩展。如果有一个指向宏体内部的源位置，扩展位置将给你源代码中使用宏（扩展）的位置。
 \end{itemize}
 
-让我们看一个具体的例子：
+看一个具体的例子：
 
 \begin{cpp}
 #define BAR void bar()
@@ -67,9 +67,9 @@ BAR;
 图4.14：测试不同类型的源位置的示例程序：functions.hpp
 \end{center}
 
-在图4.14中，我们在第1行定义了两个函数：int foo()在第2行和void bar()在第3行。对于第一个函数，拼写位置和扩展位置都指向第2行。然而，对于第二个函数，拼写位置在第1行，而扩展位置在第3行。
+图4.14中，第1行定义了两个函数：int foo()在第2行和void bar()在第3行。对于第一个函数，拼写位置和扩展位置都指向第2行。对于第二个函数，拼写位置在第1行，而扩展位置在第3行。
 
-让我们用一个测试Clang工具来检查这个例子。我们将使用第3.4节的测试项目，Recursive AST visitor，并在此处替换一些代码部分。首先，我们必须将clang::ASTContext传递给我们的Visitor实现。这是必要的，因为clang::ASTContext提供对clang::SourceManager的访问。我们将替换图3.8中的第11行，并如下传递ASTContext：
+用一个测试Clang工具来检查这个例子。将使用第3.4节的测试项目，Recursive AST visitor，并在此处替换一些代码部分。首先，必须将clang::ASTContext传递给我们的Visitor实现，因为clang::ASTContext提供对clang::SourceManager的访问。替换图3.8中的第11行，并如下传递ASTContext：
 
 \begin{cpp}
 CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef File) {
@@ -83,7 +83,7 @@ Consumer(clang::ASTContext *Context)
   : V(std::make_unique<Visitor>(Context)) {}
 \end{cpp}
 
-主要的更改是在Visitor类中，它几乎被重写。首先，我们将clang::ASTContext传递给类构造函数：
+主要的修改是在Visitor类中，几乎重写。首先，将clang::ASTContext传递给类构造函数：
 
 \begin{cpp}
 class Visitor : public clang::RecursiveASTVisitor<Visitor> {
@@ -95,7 +95,7 @@ public:
 图4.15：Visitor类实现：构造函数
 \end{center}
 
-AST Context类作为我们类的私有成员存储，如下所示：
+AST Context类作为私有成员存储：
 
 \begin{cpp}
 private:
@@ -106,7 +106,7 @@ private:
 图4.16：Visitor类实现：private部分
 \end{center}
 
-主要处理逻辑在Visitor::VisitFunctionDecl方法中，您接下来可以看到：
+主要处理逻辑在Visitor::VisitFunctionDecl方法中：
 
 \begin{cpp}
 bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
@@ -130,7 +130,7 @@ bool VisitFunctionDecl(const clang::FunctionDecl *FD) {
 图4.17：Visitor类实现：VisitFunctionDecl方法
 \end{center}
 
-如果我们编译并运行图4.14中的测试文件，以下输出将被生成：
+如果编译并运行图4.14中的测试文件，输出为：
 
 \begin{shell}
 Spelling : foo at functions.hpp:2
@@ -143,11 +143,11 @@ Expansion : bar at functions.hpp:3
 图4.18：recursivevisitor可执行文件在functions.hpp测试文件上的输出
 \end{center}
 
-clang::SourceLocation和clang::SourceManager是非常强大的类。与诸如clang::SourceRange（两个源位置的配对，用于指定源范围的开始和结束）等其他类结合使用，它们为Clang中使用的诊断提供了坚实的基础。
+clang::SourceLocation和clang::SourceManager是非常强大的类。与诸如clang::SourceRange（两个源位置的配对，用于指定源范围的开始和结束）等其他类结合使用，为Clang中使用的诊断提供了坚实的基础。
 
 \mySubsubsection{4.4.2.}{诊断支持}
 
-Clang的诊断子系统负责生成和报告警告、错误和其他消息\footnote{LLVM Community. “Clang” CFE Internals Manual. 2023. URL \url{https://clang.llvm.org/docs/InternalsManual.html}}。涉及的主要类包括：
+Clang的诊断子系统负责生成和报告警告、错误和其他消息\footnote{LLVM Community. "Clang" CFE Internals Manual. 2023. URL \url{https://clang.llvm.org/docs/InternalsManual.html}}。涉及的主要类包括：
 
 \begin{itemize}
 \item
@@ -160,7 +160,7 @@ DiagnosticConsumer: 诊断消费者的抽象基类
 DiagnosticIDs: 处理诊断标志和内部ID之间的映射
 
 \item
-DiagnosticInfo: 代表单个诊断
+DiagnosticInfo: 单个诊断
 \end{itemize}
 
 以下是一个简单的例子，展示了如何在Clang中发出警告：
@@ -175,9 +175,9 @@ DiagnosticsEngine.Report(DiagnosticsEngine.getCustomDiagID(
 图4.19：使用clang::DiagnosticsEngine发出警告
 \end{center}
 
-在我们的例子中，我们将使用一个简单的DiagnosticConsumer，即clang::TextDiagnosticPrinter，它格式化和打印处理后的诊断消息。
+我们将使用一个简单的DiagnosticConsumer，即clang::TextDiagnosticPrinter，格式化和打印处理后的诊断消息。
 
-我们示例中主函数的完整代码如图4.20所示：
+示例中主函数的完整代码如图4.20所示：
 
 \begin{cpp}
 int main() {
@@ -213,7 +213,7 @@ warning: This is a custom warning.
 图4.21：打印的诊断信息
 \end{center}
 
-在这个例子中，我们首先使用TextDiagnosticPrinter作为其DiagnosticConsumer来设置DiagnosticsEngine。然后，我们使用DiagnosticsEngine的Report方法发出一个自定义警告。我们将在创建第4.6节中的Clang插件的测试项目时添加一个更现实的例子。
+这个例子中，首先使用TextDiagnosticPrinter作为其DiagnosticConsumer来设置DiagnosticsEngine。然后，使用DiagnosticsEngine的Report方法发出一个自定义警告。我们将在创建第4.6节中的Clang插件的测试项目时添加一个更现实的例子。
 
 
 

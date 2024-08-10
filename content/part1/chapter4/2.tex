@@ -1,8 +1,8 @@
-LLVM遵循特定的代码风格规则\footnote{LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}}。这些规则的主要目标是促进熟练的C++实践，特别关注性能。如前所述，LLVM使用C++17，并倾向于使用STL（标准模板库）中的数据结构和算法。另一方面，LLVM提供了许多优化版本的数据结构，这些数据结构模仿了STL中的对应结构。例如，llvm::SmallVector<>可以被视为std::vector<>的优化版本，特别是对于小尺寸的向量，这是编译器中使用的数据结构的常见特征。
+LLVM遵循特定的代码风格规则\footnote{LLVM Community. LLVM Coding Standards. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}}。这些规则的主要目标是促进熟练的C++实践，特别关注性能。LLVM使用C++17，并倾向于使用STL（标准模板库）中的数据结构和算法。另一方面，LLVM提供了许多优化版本的数据结构，这些数据结构模仿了STL中的对应结构。例如，llvm::SmallVector<>可以被视为std::vector<>的优化版本，特别是对于小尺寸的vector，这是编译器中使用的数据结构的常见特征。
 
 在STL对象/算法及其对应的LLVM版本之间进行选择时，LLVM编码标准建议优先使用LLVM版本。
 
-额外的规则涉及到性能限制的问题。例如，运行时类型信息（RTTI）和C++异常都是不允许的。然而，有些情况下RTTI可能会证明是有益的；因此，LLVM提供了替代方案，如llvm::isa<>以及其他类似的模板辅助函数。有关更多信息，请参见第4.3.1节，RTTI替换和强制转换运算符。LLVM经常使用C风格的断言来替代C++异常。
+规则涉及到性能限制的问题。例如，运行时类型信息（RTTI）和C++异常都是不允许的。然而，有些情况下RTTI可能会证明是有益的；因此，LLVM提供了替代方案，如llvm::isa<>以及其他类似的模板辅助函数。有关更多信息，请参见第4.3.1节，RTTI替换和强制转换运算符。LLVM经常使用C风格的断言来替代C++异常。
 
 有时，断言并不足够信息丰富。LLVM建议向它们添加文本消息以简化调试。以下是Clang代码中的一个典型示例：
 
@@ -19,11 +19,11 @@ static bool unionHasUniqueObjectRepresentations(const ASTContext &Context,
 图4.1：在clang/lib/AST/ASTContext.cpp中使用assert()
 \end{center}
 
-在代码中，我们检查第二个参数（RD）是否为联合体，并在不是的情况下使用相应的消息引发断言。
+检查第二个参数（RD）是否为联合体，并在不是的情况下使用相应的消息引发断言。
 
-除了性能考虑之外，LLVM还引入了一些额外的要求。其中之一涉及到注释。代码注释非常重要。此外，LLVM和Clang都有从代码生成的全面文档。它们使用Doxygen（\url{https://www.doxygen.nl/}）来实现这一点。这个工具是C/C++程序中注释的事实标准，您可能之前已经遇到过。
+除了性能考虑之外，LLVM还引入了一些额外的要求。其中之一涉及到注释，代码注释非常重要。此外，LLVM和Clang都有从代码生成的全面文档。使用Doxygen（\url{https://www.doxygen.nl/}）来实现，这个工具是C/C++程序中注释的事实标准。
 
-Clang和LLVM不是单一的大块代码；相反，它们被实现为一组库。这种设计在代码和功能重用方面提供了优势，我们将在第8章"IDE支持和Clangd"中探讨这一点。这些库也是LLVM代码风格执行的优秀示例。让我们详细检查这些库。
+Clang和LLVM不是单一的大块代码；相反，其实现为一组库。这种设计在代码和功能重用方面提供了优势，我们将在第8章"IDE支持和Clangd"中探讨这一点。这些库也是LLVM代码风格执行的优秀示例。
 
 
 

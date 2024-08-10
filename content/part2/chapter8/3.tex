@@ -1,8 +1,8 @@
-我们将开始通过构建Clangd来设置我们的环境。然后，我们将安装VS Code，设置Clangd扩展，并在其中配置Clangd。
+我们将开始通过构建Clangd来设置我们的环境。然后，安装VS Code，设置Clangd扩展，并在其中配置Clangd。
 
 \mySubsubsection{8.3.1.}{构建Clangd}
 
-值得在发布模式下构建Clangd，就像我们在第1.3.3节中为LLDB所做的那样。这是因为性能对于IDE至关重要。例如，Clangd需要构建一个AST来提供代码导航功能。如果用户修改了一个文档，该文档应该被重建，导航功能在重建过程完成之前是不可用的。这可能导致IDE响应延迟。为了防止IDE响应缓慢，我们应该确保Clangd在构建时包含了所有所需的优化。您可以使用以下项目配置命令：
+在发布模式下构建Clangd，就像我们在第1.3.3节中为LLDB所做的那样。这是因为性能对于IDE至关重要。例如，Clangd需要构建一个AST来提供代码导航功能。如果用户修改了一个文档，该文档应该重建，导航功能在重建过程完成之前是不可用的。这可能导致IDE响应延迟。为了防止IDE响应缓慢，我们应该确保Clangd在构建时包含了所有所需的优化。可以使用以下项目配置命令：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" ../llvm
@@ -14,41 +14,41 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DLL
 
 该命令需要从我们在第1.3.3节中创建的发布文件夹运行，如图1.8所示。如图8.3所示，我们已经启用了两个项目：clang和clang-tools-extra。
 
-您可以使用以下命令构建和安装Clangd：
+可以使用以下命令构建和安装Clangd：
 
 \begin{shell}
 $ ninja install-clangd -j $(nproc)
 \end{shell}
 
-此命令将利用系统上可用的最大线程数，并将二进制文件安装到我们在图8.3中的CMake命令中指定的文件夹中，该文件夹位于LLVM源树下的安装文件夹中。
+此命令将利用系统上可用的最大线程数，并将二进制文件安装到图8.3中的CMake命令中指定的文件夹中，该文件夹位于LLVM源树下的安装文件夹中。
 
-构建Clangd二进制文件后，我们的下一步包括安装VS Code并配置它与Clangd一起工作。
+构建Clangd二进制文件后，下一步包括安装VS Code并配置它与Clangd一起工作。
 
 \mySubsubsection{8.3.2.}{VS Code安装和设置}
 
-您可以从VS Code网站下载并安装VS Code： \url{https://code.visualstudio.com/download}.
+可以从VS Code网站下载并安装VS Code： \url{https://code.visualstudio.com/download}.
 
-运行VS Code后的第一步是安装Clangd扩展。一个开源扩展可用于通过LSP与Clangd一起工作。该扩展的源代码可以在GitHub上找到: https://github.com/clangd/vscode-clangd。然而，我们可以直接从VS Code内部轻松安装最新版本的扩展。
+运行VS Code后的第一步是安装Clangd扩展，开源扩展可用于通过LSP与Clangd一起工作。该扩展的源代码可以在GitHub上找到: https://github.com/clangd/vscode-clangd。可以直接从VS Code内部轻松安装最新版本的扩展。
 
 要做到这一点，请按Ctrl+Shift+X（或对于macOS，\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png}+Shift+X）打开扩展面板。搜索Clangd并点击安装按钮。
 
 \myGraphic{0.7}{content/part2/chapter8/images/4.png}{图8.4：安装Clangd扩展}
 
-安装扩展后，我们需要对其进行设置。主要步骤是指定Clangd可执行文件的路径。
+安装扩展后，需要对其进行设置。主要步骤是指定Clangd可执行文件的路径。
 
-您可以通过File -> Preferences -> Settings菜单（或按Ctrl + ,，对于macOS，\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +,）访问此设置，如图8.5所示：
+可以通过File -> Preferences -> Settings菜单（或按Ctrl + ,，对于macOS，\includegraphics[width=0.02\textwidth]{content/part2/chapter8/images/3.png} +,）访问此设置，如图8.5所示：
 
 \myGraphic{0.7}{content/part2/chapter8/images/5.png}{图8.5：设置Clangd扩展}
 
-如图8.5所示，我们已经配置了Clangd路径为/home/ivanmurashko/clangbook/llvm-project/install/bin/clangd。这是我们在第8.3.1节中用于安装Clangd二进制文件的路径。
+如图8.5所示，已经配置了Clangd路径为/home/ivanmurashko/clangbook/\\llvm-project/install/bin/clangd。这是第8.3.1节中用于安装Clangd二进制文件的路径。
 
-您可以打开您最喜欢的C/C++源文件并尝试在其中导航。例如，您可以搜索一个令牌的定义，在源文件和头文件之间切换等。在下一个示例中，我们将调查如何通过LSP实现导航，特别是跳转到定义的功能。
+可以打开您喜欢的C/C++源文件并尝试在其中导航。例如，可以搜索一个token的定义，在源文件和头文件之间切换等。下一个示例中，我们将调查如何通过LSP实现导航，特别是跳转到定义的功能。
 
 \begin{myNotic}{重要提示}
-我们的设置仅适用于不需要特殊编译标志的简单项目。如果您项目需要特殊的配置才能构建，那么您必须使用一个生成的compile\_commands.json文件，该文件应放置在项目的根目录下。该文件应包含JSON格式的编译数据库（CDB），指定项目中每个文件的编译标志。有关设置的更多信息，请参阅图9.5，Clangd大型项目的设置。
+我们的设置仅适用于不需要特殊编译标志的简单项目。如果项目需要特殊的配置才能构建，必须使用一个生成的compile\_commands.json文件，该文件应放置在项目的根目录下。该文件应包含JSON格式的编译数据库（CDB），指定项目中每个文件的编译标志。有关设置的更多信息，请参阅图9.5，Clangd大型项目的设置。
 \end{myNotic}
 
-在安装了所需的组件之后，我们现在准备进行一个LSP演示，其中我们将模拟IDE中的典型开发活动（例如打开和修改文档、跳转到令牌定义等），并探索它是如何通过LSP表示的。
+安装了所需的组件之后，现在准备进行一个LSP演示，其中我们将模拟IDE中的典型开发活动（例如打开和修改文档、跳转到token定义等），并探索它是如何通过LSP表示的。
 
 
 

@@ -1,21 +1,21 @@
-我们将从LLVM代码中的RTTI替换开始，并讨论其实现方式。然后，我们将继续讨论基本容器和智能指针。最后，我们将探讨一些用于表示令牌位置的重要类，以及如何在Clang中实现诊断。稍后，在第4.6节“Clang插件项目”中，我们将使用这些类中的某些类在我们的测试项目中。
+我们将从LLVM代码中的RTTI替换开始，并讨论其实现方式。然后，继续讨论基本容器和智能指针。最后，将探讨一些用于表示token位置的重要类，以及如何在Clang中实现诊断。稍后，在第4.6节"Clang插件项目"中，将使用这些类中的某些类在测试项目中。
 
 \mySubsubsection{4.3.1.}{RTTI替换和强制转换运算符}
 
-如前所述，LLVM由于性能问题而避免使用RTTI。LLVM引入了一些辅助函数，这些函数替换了RTTI对应物，允许从一个类型转换到另一个类型。基本函数如下：
+LLVM由于性能问题而避免使用RTTI。LLVM引入了一些辅助函数，这些函数替换了RTTI对应物，允许从一个类型转换到另一个类型。基本函数如下：
 
 \begin{itemize}
 \item
-llvm::isa<>类似于Java的instanceof运算符。它根据测试对象是否属于测试类而返回true或false。
+llvm::isa<>类似于Java的instanceof运算符，根据测试对象是否属于测试类而返回true或false。
 
 \item
-llvm::cast<>：当你确定对象是指定的派生类型时使用此强制转换运算符。如果转换失败（即对象不是预期类型），llvm::cast将终止程序。只有在您确信转换不会失败时才使用它。
+llvm::cast<>：当确定对象是指定的派生类型时，使用此强制转换运算符。如果转换失败（即对象不是预期类型），llvm::cast将终止程序。只有在确信转换不会失败时才使用。
 
 \item
-llvm::dyn\_cast<>：这可能是LLVM中最常使用的强制转换运算符。llvm::dyn\_cast用于当你预期转换通常会成功，但存在一些不确定性时进行安全的向下转换。如果对象不是指定的派生类型，llvm::dyn\_cast<>返回nullptr。
+llvm::dyn\_cast<>：这可能是LLVM中最常使用的强制转换运算符。llvm::dyn\_cast用于当预期转换通常会成功，但存在一些不确定性时进行安全的向下转换。如果对象不是指定的派生类型，llvm::dyn\_cast<>返回nullptr。
 \end{itemize}
 
-强制转换运算符不接受nullptr作为输入。然而，有两个特殊的强制转换运算符可以处理nullptr：
+强制转换运算符不接受nullptr作为输入，但有两个特殊的强制转换运算符可以处理nullptr：
 
 \begin{itemize}
 \item
@@ -25,13 +25,13 @@ llvm::cast\_if\_present<>：llvm::cast<>的变体，接受nullptr值
 llvm::dyn\_cast\_if\_present<>：llvm::dyn\_cast<>的变体，接受nullptr值
 \end{itemize}
 
-这两个运算符都可以处理nullptr值。如果输入为nullptr或转换失败，它们将简单地返回nullptr。
+这两个运算符都可以处理nullptr值。如果输入为nullptr或转换失败，会简单地返回nullptr。
 
 \begin{myNotic}{重要提示}
-值得注意的是，强制转换运算符llvm::cast\_if\_present<>和llvm::dyn\_cast\_if\_present<>最近被引入，具体是在2022年。它们是流行的运算符llvm::cast\_or\_null<>和llvm::dyn\_cast\_or\_null<>的替代品，这些运算符最近仍在使用。旧版本仍然受支持，现在将调用重定向到新的强制转换运算符。有关此更改的更多信息，请参见讨论：\url{https://discourse.llvm.org/t/psa-swapping-out-or-null-with-if-present/65018}
+强制转换运算符llvm::cast\_if\_present<>和llvm::dyn\_cast\_if\_present<>最近被引入，具体是在2022年。是流行的运算符llvm::cast\_or\_null<>和llvm::dyn\_cast\_or\_null<>的替代品，这些运算符最近仍在使用。旧版本仍然受支持，现在将调用重定向到新的强制转换运算符。有关此更改的更多信息，请参见讨论：\url{https://discourse.llvm.org/t/psa-swapping-out-or-null-with-if-present/65018}
 \end{myNotic}
 
-可能出现的问题是：如何在没有RTTI的情况下执行动态转换操作？这可以通过某些特定的装饰来完成，如一个简单的例子所示，该例子受启发于如何为你的类层次结构设置LLVM风格的RTTI\footnote{LLVM Community. How to set up LLVM-style RTTI for your class hierarchy. 2023. URL \url{https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html}}。 我们将从基类clangbook::Animal开始，它有两个派生类：clangbook::Horse和clangbook::Sheep。每匹马都可以根据其速度（以英里/小时为单位）进行分类，而每只羊则可以根据其羊毛重量进行分类。这里是它的使用方式：
+如何在没有RTTI的情况下执行动态转换操作？这可以通过某些特定的装饰来完成，如一个简单的例子所示，该例子受启发于如何为你的类层次结构设置LLVM风格的RTTI\footnote{LLVM Community. How to set up LLVM-style RTTI for your class hierarchy. 2023. URL \url{https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html}}。将从基类clangbook::Animal开始，有两个派生类：clangbook::Horse和clangbook::Sheep。每匹马都可以根据其速度（以英里/小时为单位）进行分类，而每只羊则可以根据其羊毛重量进行分类：
 
 \begin{cpp}
 void testAnimal() {
@@ -57,9 +57,9 @@ void testAnimal() {
 Animal is a Horse and the horse speed is: 10mph
 \end{shell}
 
-图4.2中的第48行展示了llvm::isa<>的使用，而第51行展示了llvm::dyn\_cast<>的使用。在后一种情况下，我们将基类转换为clangbook::Horse并调用该类特有的方法。
+图4.2中的第48行展示了llvm::isa<>的使用，而第51行展示了llvm::dyn\_cast<>的使用。在后一种情况下，将基类转换为clangbook::Horse并调用该类特有的方法。
 
-让我们看看类的实现，这将为我们提供关于RTTI替换工作原理的见解。我们将从基类clangbook::Animal开始：
+看看类的实现，这将为我们提供关于RTTI替换工作原理的见解。将从基类clangbook::Animal开始：
 
 \begin{cpp}
 class Animal {
@@ -79,7 +79,7 @@ private:
 图4.3：clangbook::Animal类
 \end{center}
 
-上述代码中最重要的部分是第11行。它指定了不同类型的动物。一个枚举值用于马（AK\_Horse），另一个用于羊（AK\_Sheep）。因此，基类对其派生类有一些了解。clangbook::Horse和clangbook::Sheep类的实现可以在以下代码中找到：
+代码中最重要的部分是第11行，指定了不同类型的动物。一个枚举值用于马（AK\_Horse），另一个用于羊（AK\_Sheep）。clangbook::Horse和clangbook::Sheep类的实现可以在以下代码中找到：
 
 \begin{cpp}
 class Horse : public Animal {
@@ -111,7 +111,7 @@ private:
 图4.4：clangbook::Horse和clangbook::Sheep类
 \end{center}
 
-第25行和第37行特别重要，因为它们包含classof静态方法的实现。这个方法对于LLVM中的强制转换运算符至关重要。一个典型的实现可能如下所示（简化版本）：
+第25行和第37行特别重要，包含classof静态方法的实现。这个方法对于LLVM中的强制转换运算符至关重要。一个实现可能如下所示（简化版本）：
 
 \begin{cpp}
 template <typename To, typename From>
@@ -126,17 +126,17 @@ bool isa(const From *Val) {
 
 同样的机制可以应用于其他强制转换运算符。
 
-我们接下来将讨论各种类型的容器，它们是STL对应物的更强大的替代品。
+我们接下来将讨论各种类型的容器，是STL对应物的更强大的替代品。
 
 \mySubsubsection{4.3.2.}{容器}
 
-LLVM ADT（抽象数据类型）库提供了一系列容器。其中一些是LLVM特有的，而其他一些可以被视为STL容器的替代品。我们将探索一些由ADT提供的最流行的类。
+LLVM ADT（抽象数据类型）库提供了一系列容器。其中一些是LLVM特有的，而其他一些可以视为STL容器的替代品。接下来，我们将探索一些由ADT提供的最流行的类。
 
 \mySamllsection{字符串操作}
 
-在标准C++库中用于处理字符串的主要类是std::string。尽管这个类被设计为通用，但它存在一些与性能相关的问题。一个重要的问题是复制操作。由于在编译器中复制字符串是一个常见的操作，LLVM引入了一个专门的类，llvm::StringRef，它可以有效地处理这个操作，而无需使用额外的内存。这个类与C++17\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2017(E) – Programming Languages – C++. International Organization for Standardization, 2017. URL \url{https://www.iso.org/standard/69466.html}}中的 和C++20\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}}中的std::spanstd::span类似。
+标准C++库中用于处理字符串的主要类是std::string。尽管这个类设计为通用，但它存在一些与性能相关的问题。一个重要的问题是复制操作。由于在编译器中复制字符串是一个常见的操作，LLVM引入了一个专门的类，llvm::StringRef，可以有效地处理这个操作，而无需使用额外的内存。这个类与C++17\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2017(E) – Programming Languages – C++. International Organization for Standardization, 2017. URL \url{https://www.iso.org/standard/69466.html}}中的 和C++20\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}}中的std::spanstd::span类似。
 
-llvm::StringRef类维护对数据的引用，不需要像传统的C/C++字符串那样以空字符结束。它基本上持有指向数据块的指针和块的大小，使得对象的有效大小为16字节。由于llvm::StringRef保留引用而不是实际数据，它必须从一个现有的数据源构造。这个类可以从基本字符串对象如const char*、std::string和std::string\_view实例化。默认构造函数创建一个空对象。llvm::StringRef的典型使用示例如图4.6所示：
+llvm::StringRef类维护对数据的引用，不需要像传统的C/C++字符串那样以空字符结束。基本上持有指向数据块的指针和块的大小，使得对象的有效大小为16字节。由于llvm::StringRef保留引用而不是实际数据，必须从一个现有的数据源构造。这个类可以从基本字符串对象如const char*、std::string和std::string\_view实例化。默认构造函数创建一个空对象，llvm::StringRef的典型使用示例如图4.6所示：
 
 \begin{cpp}
 #include "llvm/ADT/StringRef.h"
@@ -160,7 +160,7 @@ Original StringRef: Hello, LLVM!
 Substring: Hello
 \end{shell}
 
-LLVM中用于字符串操作的另一个类是llvm::Twine，它特别适合于将多个对象拼接成一个。llvm::Twine类的典型使用示例如图4.7所示：
+LLVM中用于字符串操作的另一个类是llvm::Twine，特别适合于将多个对象拼接成一个。llvm::Twine类的典型使用示例如图4.7所示：
 
 \begin{cpp}
 #include "llvm/ADT/Twine.h"
@@ -184,9 +184,9 @@ llvm::outs() << "Twine result: " << TwineStr << "\n";
 Twine result: Hello, Twine!
 \end{shell}
 
-另一个广泛用于字符串操作的类是llvm::SmallString<>。它表示一个栈上分配的字符串，大小固定，但也可以超过这个大小，此时它会分配堆内存。这是栈分配空间效率和堆分配灵活性的结合。
+另一个广泛用于字符串操作的类是llvm::SmallString<>，表示一个栈上分配的字符串，大小固定，也可以超过这个大小，此时它会分配堆内存。这是栈分配空间效率和堆分配灵活性的结合。
 
-llvm::SmallString<>的优势在于，在许多情况下，尤其是在编译器任务中，字符串往往很小，适合栈上分配的空间。这避免了动态内存分配的开销。但在需要更大字符串的情况下，llvm::SmallString仍然可以容纳，通过过渡到堆内存。llvm::SmallString<>的典型使用示例如图4.8所示：
+llvm::SmallString<>的优势在于，在编译器任务中，字符串往往很小，适合栈上分配的空间。这避免了动态内存分配的开销。但在需要更大字符串的情况下，llvm::SmallString仍然可以容纳，过渡到堆内存。llvm::SmallString<>的典型使用示例如图4.8所示：
 
 \begin{cpp}
 #include "llvm/ADT/SmallString.h"
@@ -209,16 +209,16 @@ llvm::outs() << "SmallString result: " << SmallStr << "\n";
 
 \mySamllsection{顺序容器}
 
-LLVM推荐了一些标准库中的array和vector的优化替代品。最显著的是：
+LLVM推荐了一些标准库中的array和vector的优化替代品：
 
 \begin{itemize}
 \item
 llvm::ArrayRef<>: 一个辅助类，设计用于接受顺序列表元素的接口，仅用于只读访问。这个类类似于llvm::StringRef<>，因为它不拥有底层数据，只是引用它。
 \item
-llvm::SmallVector<>: 对于小尺寸情况的优化向量。它类似于第4.3.2节中讨论的llvm::SmallString，特别是，数组的大小不是固定的，允许存储的元素数量增长。如果元素数量保持在N（模板参数）以下，则无需进行额外的内存分配
+llvm::SmallVector<>: 对于小尺寸情况的优化向量。类似于第4.3.2节中讨论的llvm::SmallString，特别是，数组的大小不是固定的，允许存储的元素数量增长。如果元素数量保持在N（模板参数）以下，则无需进行额外的内存分配
 \end{itemize}
 
-让我们更好地理解这些容器，如图4.9所示：
+更好地理解这些容器，如图4.9所示：
 
 \begin{cpp}
 llvm::SmallVector<int, 10> SmallVector;
@@ -234,31 +234,31 @@ SmallVector.push_back(10);
 
 该vector在Line 1以选择的10（由第二个模板参数指示）大小初始化。该容器提供了类似于std::vector<>的API，使用熟悉的push\_back方法添加新元素，如图4.9，Lines 3和5所示。
 
-前10个元素被添加到vector中，而没有进行额外的内存分配（见图4.9，Lines 2-4）。然而，当在第5行添加第11个元素时，数组的大小超过了为10个元素预分配的空间，触发额外的内存分配。这种容器设计有效地最小化了小对象的内存分配，同时保持了在必要时容纳更大尺寸的灵活性。
+前10个元素被添加到vector中，而没有进行额外的内存分配（见图4.9，Lines 2-4）。当在第5行添加第11个元素时，数组的大小超过了为10个元素预分配的空间，触发额外的内存分配。这种容器设计有效地最小化了小对象的内存分配，同时保持了在必要时容纳更大尺寸的灵活性。
 
 \mySamllsection{类似map的容器}
 
-标准库提供了几种用于存储键值数据的容器。最常见的是一些，如std::map<>用于通用映射和std::unordered\_map<>用于哈希映射。LLVM提供了这些标准容器的额外替代品：
+标准库提供了几种用于存储键值数据的容器，如std::map<>用于通用映射和std::unordered\_map<>用于哈希映射。LLVM提供了这些标准容器的替代：
 
 \begin{itemize}
 \item
-llvm::StringMap<>: 一个使用字符串作为键的映射。通常，这比标准的关联容器std::unordered\_map<std::string, T>更性能优化。它在字符串键占主导地位且性能至关重要的情况下经常使用，例如在LLVM这样的编译器基础设施中。与LLVM中的许多其他数据结构不同，llvm::StringMap<>不存储字符串键的副本。相反，它保留对字符串数据的引用，因此必须确保字符串数据在映射之外生存，以防止未定义的行为。
+llvm::StringMap<>: 使用字符串作为键的映射，这比标准的关联容器std::unordered\_map<std::string, T>更性能优化。在字符串键占主导地位，且性能至关重要的情况下经常使用，例如在LLVM这样的编译器基础设施中。与LLVM中的许多其他数据结构不同，llvm::StringMap<>不存储字符串键的副本。相反，它保留对字符串数据的引用，因此必须确保字符串数据在映射之外生存，以防止未定义的行为。
 
 \item
-llvm::DenseMap<>: 这个map设计在大多数情况下比std::unordered\_map<>更节省内存和时间，尽管它有一些额外的约束（例如，键和值具有平凡的析构函数）。当您具有简单的键值类型并需要高性能查找时，它特别有益。
+llvm::DenseMap<>: 这个map设计在大多数情况下比std::unordered\_map<>更节省内存和时间，尽管它有一些约束（例如，键和值具有平凡的析构函数）。当有简单的键值类型并需要高性能查找时，特别适用。
 
 \item
 llvm::SmallDenseMap<>: 这个映射类似于llvm::DenseMap<>，但针对通常大小较小的实例进行了优化。它为小映射栈分配，并且只在映射超过预定义的大小时才求助于堆分配。
 
 \item
-llvm::MapVector<>: 这个容器保留了插入顺序，类似于Python的OrderedDict。它被实现为std::vector和llvm::DenseMap或llvm::SmallDenseMap的混合体。
+llvm::MapVector<>: 这个容器保留了插入顺序，类似于Python的OrderedDict。它实现为std::vector和llvm::DenseMap或llvm::SmallDenseMap的混合体。
 \end{itemize}
 
-值得注意的是，这些容器利用了二次探查哈希表机制。这种方法在解决哈希冲突时有效，因为在元素查找期间不需要重新计算缓存。这对于性能关键的应用程序，如编译器，至关重要。
+这些容器利用了二次探查哈希表机制。这种方法在解决哈希冲突时有效，因为在元素查找期间不需要重新计算缓存。这对于性能关键的应用程序至关重要。
 
 \mySubsubsection{4.4.3.}{智能指针}
 
-LLVM代码中可以找到不同的智能指针。最受欢迎的来自标准模板库：std::unique\_ptr<>和std::shared\_ptr<>。此外，LLVM还提供了一些辅助类来使用智能指针。其中最著名的是llvm::IntrusiveRefCntPtr<>。这个智能指针设计用于与支持侵入式引用计数的对象一起工作。与std::shared\_ptr不同，后者维护自己的控制块来管理引用计数，IntrusiveRefCntPtr期望对象维护自己的引用计数。这种设计可能更节省内存。一个典型的使用示例如下：
+LLVM代码中可以找到不同的智能指针。最受欢迎的来自标准模板库：std::unique\_ptr<>和std::shared\_ptr<>。此外，LLVM还提供了一些辅助类来使用智能指针。其中最著名的是llvm::IntrusiveRefCntPtr<>。这个智能指针设计用于与支持侵入式引用计数的对象一起工作。与std::shared\_ptr不同，后者维护自己的控制块来管理引用计数，IntrusiveRefCntPtr期望对象维护自己的引用计数。这种设计可能更节省内存。一个使用示例如下所示：
 
 \begin{cpp}
 class MyClass : public llvm::RefCountedBase<MyClass> {
@@ -272,7 +272,7 @@ llvm::IntrusiveRefCntPtr<MyClass> Ptr = new MyClass();
 图4.10：llvm::IntrusiveRefCntPtr<>使用示例
 \end{center}
 
-正如我们所看到的，智能指针显著地使用了CRTP（Curiously Recurring Template Pattern），该模式在前述第3.3节“AST遍历”中提到。CRTP对于当引用计数降至0时必须释放对象的释放操作至关重要。实现如下：
+智能指针使用了CRTP（Curiously Recurring Template Pattern），该模式在前述第3.3节"AST遍历"中提到。CRTP当引用计数降至0时，必须释放对象。实现如下：
 
 \begin{cpp}
 template <class Derived> class RefCountedBase {
@@ -289,9 +289,9 @@ template <class Derived> class RefCountedBase {
 图4.11：llvm::RefCountedBase<>中CRTP的使用。代码来源于llvm/ADT/IntrusiveRefCntPtr.h头文件
 \end{center}
 
-由于图4.10中的MyClass是从RefCountedBase派生的，我们可以在图4.11的Line 6上对其进行类型转换。由于转换的类型已知，因为它是作为模板参数提供的，因此这种转换是可行的。
+由于图4.10中的MyClass是从RefCountedBase派生的，可以在图4.11的Line 6上对其进行类型转换。由于转换的类型已知，其是作为模板参数提供的，因此这种转换可行。
 
-我们刚刚完成了LLVM基本库的学习。现在该转向Clang基本库了。Clang是一个编译器前端，其最重要的操作与诊断相关。诊断需要精确的源代码位置信息。让我们探索Clang为这些操作提供的基本类。
+我们刚刚完成了LLVM基本库的学习，现在该转向Clang基本库了。Clang是一个编译器前端，其最重要的操作与诊断相关。诊断需要精确的源代码位置信息，让我们探索Clang为这些操作提供的基本类。
 
 
 

@@ -2,11 +2,11 @@ LLVM项目有自己的工具支持。最重要的LLVM工具是TableGen和LIT（L
 
 \mySubsubsection{4.5.1.}{TableGen}
 
-TableGen是一种领域特定语言（DSL）和相关工具，用于描述和生成表，特别是那些描述目标架构的表。这对于编译器基础设施非常有用，因为在其中经常需要以结构化方式描述诸如指令集、寄存器和其他目标特定属性。
+TableGen是一种领域特定语言（DSL）和相关工具，用于描述和生成表，特别是那些描述目标架构的表。这对于编译器基础设施非常有用，在其中经常需要以结构化方式描述诸如指令集、寄存器和其他目标特定属性。
 
-TableGen在Clang编译器的各个部分都有应用。它主要用于需要生成大量类似代码的情况。例如，它可用于支持基本类中需要大量枚举声明的强制转换操作，或在诊断子系统中生成代码以处理大量相似的诊断消息。我们将检查TableGen在诊断系统中的功能作为示例。
+TableGen在Clang编译器的各个部分都有应用，主要用于需要生成大量类似代码。例如，可用于支持基本类中需要大量枚举声明的强制转换操作，或在诊断子系统中生成代码以处理大量相似的诊断消息。我们将检查TableGen在诊断系统中的功能作为示例。
 
-我们将从Diagnostic.td文件开始，该文件描述了Clang的诊断。这个文件可以在clang/include/clang/Basic/Diagnostic.td找到。让我们看看如何定义诊断严重性：
+从Diagnostic.td文件开始，该文件描述了Clang的诊断。这个文件可以在clang/include/clang/Basic/Diagnostic.td找到。看看如何定义诊断的严重性：
 
 \begin{shell}
 // Define the diagnostic severities.
@@ -19,7 +19,7 @@ class Severity<string N> {
 图4.22：在clang/include/clang/Basic/Diagnostic.td中定义严重性
 \end{center}
 
-在图4.22中，我们定义了一个用于严重性的类（第17-19行）。每个严重性都与一个字符串相关联，如下所示：
+在图4.22中，定义了一个用于严重性的类（第17-19行）。每个严重性都与一个字符串相关联：
 
 \begin{shell}
 def SEV_Ignored : Severity<"Ignored">;
@@ -51,7 +51,7 @@ class Warning<string str>   : Diagnostic<str, CLASS_WARNING, SEV_Warning>;
 图4.24：在clang/include/clang/Basic/Diagnostic.td中定义诊断
 \end{center}
 
-使用Warning类定义，可以定义该类的不同实例。例如，以下是在DiagnosticSemaKinds.td中定义的未使用参数警告实例：
+使用Warning类定义，可以定义该类的不同实例。以下是在DiagnosticSemaKinds.td中定义的未使用参数警告实例：
 
 \begin{shell}
 def warn_unused_parameter : Warning<"unused parameter %0">,
@@ -72,7 +72,7 @@ DIAG(warn_unused_parameter, CLASS_WARNING, (unsigned)diag::Severity::Ignored, "u
 图4.26：在clang/include/clang/Basic/DiagnosticSemaKinds.inc中定义未使用参数警告
 \end{center}
 
-这个文件保留了所有必要的诊断信息。这些信息可以从Clang源代码中通过不同的DIAG宏定义获取。
+这个文件保留了所有必要的诊断信息，这些信息可以从Clang源代码中通过不同的DIAG宏定义获取。
 
 例如，以下代码利用TableGen生成的代码提取诊断描述，可以在clang/lib/Basic/DiagnosticIDs.cpp中找到：
 
@@ -107,7 +107,7 @@ const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
 图4.28：DIAG宏展开
 \end{center}
 
-提供的示例展示了如何使用TableGen在Clang中生成代码，以及它如何简化Clang开发。诊断子系统并不是TableGen唯一被使用的领域；它还广泛用于Clang的其他部分。例如，用于各种AST访问者的宏也依赖于TableGen生成的代码；请参见第3.3.2节，访问者实现。
+提供的示例展示了如何使用TableGen在Clang中生成代码，以及如何简化Clang开发。诊断子系统并不是TableGen唯一使用的领域；它还广泛应用于Clang的其他部分。例如，用于各种AST访问者的宏也依赖于TableGen生成的代码；请参见第3.3.2节，访问者实现。
 
 \mySubsubsection{4.5.2.}{LLVM测试框架}
 
@@ -120,10 +120,10 @@ GTest用于单元测试，针对代码库的特定组件，主要是实用库和
 这些测试对于保持Clang项目的质量和稳定性至关重要。
 
 \begin{myNotic}{重要提示}
-我们将不深入探讨GTest，因为该测试框架在LLVM之外广泛使用，并不属于LLVM本身。有关GTest的更多信息，请访问其官方页面：\url{https://github.com/google/googletest}
+不深入探讨GTest，因为该测试框架在LLVM之外广泛使用，并不属于LLVM本身。有关GTest的更多信息，请访问其官方页面：\url{https://github.com/google/googletest}
 \end{myNotic}
 
-我们的重点将是LIT。LIT是LLVM自己的测试框架，在LLVM中的各种工具和库（包括Clang编译器）的测试中被广泛使用。LIT被设计为轻量级，并针对编译器测试的需求进行了定制。它通常用于运行实际上是shell脚本的测试，经常检查输出中的特定模式。典型的LIT测试可能包括源代码文件以及一组“RUN”命令，指定如何编译、链接或处理文件，以及预期的输出。
+我们的重点是LIT。LIT是LLVM自己的测试框架，在LLVM中的各种工具和库（包括Clang编译器）的测试中广泛使用。LIT为轻量级设计，并针对编译器测试的需求进行了定制。它通常用于运行实际上是shell脚本的测试，经常检查输出中的特定模式。典型的LIT测试可能包括源代码文件以及一组"RUN"命令，指定如何编译、链接或处理文件，以及预期的输出。
 
 RUN命令经常使用LLVM项目中的另一个工具FileCheck来检查输出是否符合预期模式。在Clang中，LIT测试通常用于测试前端功能，如解析、语义分析、代码生成和诊断。这些测试通常看起来像源代码文件，其中嵌入注释以指示如何运行测试以及期望的结果。
 
@@ -140,9 +140,7 @@ void z(void) __attribute__((bogusattr)); // expected-warning {{unknown attribute
 图4.29：LIT测试用于Clang警告未知属性
 \end{center}
 
-这个例子是一个典型的C源文件，可以被Clang处理。LIT的行为由源文本中的注释控制。第1行的注释（Line 1）指定了如何执行测试。如指示，应该使用一些额外的参数启动clang：-fsyntax-only和-verify。还有以'\%'符号开头的替换。最重要的这些是'\%s'，它会被源文件名替换。LIT还会检查以expected-
-
-warning开头的注释，并确保Clang的输出产生的警告与预期值匹配。
+这个例子是一个典型的C源文件，可以使用Clang处理。LIT的行为由源文本中的注释控制。第1行的注释（Line 1）指定了如何执行测试。如指示，应该使用一些参数启动clang：-fsyntax-only和-verify。还有以'\%'符号开头的替换。最重要的这些是'\%s'，会用源文件名替换。LIT还会检查以expected-warning开头的注释，并确保Clang的输出产生的警告与预期值匹配。
 
 测试可以按以下方式运行：
 
@@ -156,12 +154,11 @@ Testing Time: 0.06s
 Passed: 1
 \end{shell}
 
-
 \begin{center}
 图4.30：LIT测试运行
 \end{center}
 
-我们从构建文件夹运行llvm-lit，因为该工具不包括在安装过程中。一旦我们创建了测试Clang插件项目并配置了LIT测试，我们就可以获得更多关于LIT设置和调用方式的细节。
+我们从构建文件夹运行llvm-lit，因为该工具不包括在安装过程中。当创建了测试Clang插件项目并配置了LIT测试，就可以获得更多关于LIT设置和调用方式的信息。
 
 
 

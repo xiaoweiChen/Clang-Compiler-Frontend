@@ -1,17 +1,16 @@
-我们将创建一个Clang工具来帮助我们为用于单元测试的类重命名方法。首先，我们会描述一下 clang::Rewriter 类——这是用于代码修改的基本类。
-
+我们将创建一个Clang工具来帮助我们为用于单元测试的类重命名方法。首先，描述一下 clang::Rewriter 类——这是用于代码修改的基本类。
 
 \mySubsubsection{7.2.1.}{Clang中的代码修改支持}
 
-clang::Rewriter 是Clang库中的一个类，它为在一个编译单元内的源代码提供重写操作的支持。它提供了在源代码的抽象语法树（AST）中插入、删除和替换代码的方法。开发人员可以使用 clang::Rewriter 进行复杂的代码修改，例如重构或生成新的代码结构。它可以应用于代码生成和代码重构任务，因此对于各种代码转换目的都非常有用。
+clang::Rewriter 是Clang库中的一个类，为在一个编译单元内的源代码提供重写操作的支持。提供了在源代码的抽象语法树（AST）中插入、删除和替换代码的方法。开发人员可以使用 clang::Rewriter 进行复杂的代码修改，例如重构或生成新的代码结构。可以应用于代码生成和代码重构任务，对于各种代码转换目的都非常有用。
 
-该类有几个文本插入的方法；例如，clang::Rewriter::InsertText 在指定的源位置插入文本，并且 clang::SourceLocation 用来指定缓冲区中的确切位置，具体参见第4.4.1节《源管理器与源位置》。除了文本插入外，你还可以使用 clang::Rewriter::RemoveText 删除文本，或者使用 clang::Rewriter::ReplaceText 替换文本。后两种方法使用源范围（clang::SourceRange）来指定要删除或替换的文本的位置。
+该类有几个文本插入的方法；例如，clang::Rewriter::InsertText 在指定的源位置插入文本，并且 clang::SourceLocation 用来指定缓冲区中的确切位置，具体参见第4.4.1节《源管理器与源位置》。除了文本插入外，还可以使用 clang::Rewriter::RemoveText 删除文本，或者使用 clang::Rewriter::ReplaceText 替换文本。后两种方法使用源范围（clang::SourceRange）来指定要删除或替换的文本的位置。
 
-clang::Rewriter 使用 clang::SourceManager 访问需要修改的源代码，这在第4.4.1节《源管理器与源位置》中有详细说明。让我们来看看 Rewriter 如何在实际项目中使用。
+clang::Rewriter 使用 clang::SourceManager 访问需要修改的源代码，这在第4.4.1节《源管理器与源位置》中有详细说明。来看看 Rewriter 如何在实际项目中使用。
 
 \mySubsubsection{7.2.2.}{测试类}
 
-假设我们有一个用于测试的类。类名以 "Test" 开头（例如 TestClass），但该类的公共方法没有使用 'test\_' 前缀。例如，该类有一个名为 pos 的公共方法（TestClass::pos），而不是 test\_pos（TestClass::test\_pos()）。我们想要创建一个工具来为这些类的方法添加这样的前缀。
+假设有一个用于测试的类。类名以 "Test" 开头（例如 TestClass），但该类的公共方法没有使用 'test\_' 前缀。例如，该类有一个名为 pos 的公共方法（TestClass::pos），而不是 test\_pos（TestClass::test\_pos()）。我们想要创建一个工具，为这些类的方法添加这样的前缀。
 
 \begin{cpp}
 class TestClass {
@@ -46,7 +45,7 @@ private:
 
 因此，我们希望将方法 TestClass::pos（参见图 7.1）替换为 TestClass::test\_pos 在类声明中。
 
-如果我们有一个调用该方法的代码，应该进行以下替换：
+如果有一个调用该方法的代码，应该进行以下替换：
 
 \begin{cpp}
 TestClass test;
@@ -62,14 +61,13 @@ test.test_pos();
 
 修改后的代码
 
-
 \begin{center}
 图 7.2: 对 TestClass 方法调用的代码转换
 \end{center}
 
-该工具还应忽略所有已经应用了所需修改的公共方法，无论是手动还是自动完成的。换句话说，如果一个方法已经有了所需的 'test\_' 前缀，那么工具就不应该对其进行修改。
+该工具还应忽略所有已经应用了所需修改的公共方法，无论是手动还是自动完成的。换句话说，如果一个方法已经有了所需的 'test\_' 前缀，则工具就不应该对其进行修改。
 
-我们将创建一个名为 methodrename 的Clang工具，执行所有必需的代码修改。这个工具将利用第3.4节《递归AST访问者》中讨论的递归AST访问者。最重要的部分是实现 Visitor 类。让我们详细探讨它。
+我们将创建一个名为 methodrename 的Clang工具，执行所有必需的代码修改。这个工具将利用第3.4节《递归AST访问者》中讨论的递归AST访问者。最重要的部分是实现 Visitor 类。
 
 \mySubsubsection{7.2.3.}{Visitor 类实现}
 
@@ -77,7 +75,7 @@ test.test_pos();
 
 clang::CXXRecordDecl：这涉及处理名称以 "Test" 开头的 C++ 类定义。对于这类类，所有用户定义的公共方法都应加上 "test\_" 前缀。
 
-clang::CXXMemberCallExpr：此外，我们需要识别所有使用修改后方法的地方，并根据类定义中的方法重命名进行相应的更改。
+clang::CXXMemberCallExpr：此外，需要识别所有使用修改后方法的地方，并根据类定义中的方法重命名进行相应的更改。
 
 对于 clang::CXXRecordDecl 节点的处理如下：
 
@@ -102,11 +100,11 @@ bool VisitCXXRecordDecl(clang::CXXRecordDecl *Class) {
 图 7.3: CXXRecordDecl 访问者的实现
 \end{center}
 
-图 7.3 中的第 11 至 16 行代表了对所检查节点的要求。例如，相应的类名应该以 "Test" 开头（参见图 7.3 中的第 15 至 16 行），这里我们使用了 llvm::StringRef 类的 starts\_with() 方法。
+图 7.3 中的第 11 至 16 行代表了对所检查节点的要求。相应的类名应该以 "Test" 开头（参见图 7.3 中的第 15 至 16 行），这里使用了 llvm::StringRef 类的 starts\_with() 方法。
 
-验证这些条件后，我们继续检查找到的类中的方法。
+验证这些条件后，继续检查找到的类中的方法。
 
-验证过程实现在 Visitor::processMethod 方法中，其实现如下所示：
+验证过程实现在 Visitor::processMethod 方法中：
 
 \begin{cpp}
 bool processMethod(const clang::CXXMethodDecl *Method,
@@ -134,25 +132,25 @@ bool processMethod(const clang::CXXMethodDecl *Method,
 图 7.4: processMethod 实现
 \end{center}
 
-图 7.4 中的第 46 至 51 行包含了所需条件的检查。例如，在第 46 至 47 行，我们验证该方法是否为公共方法。第 48 至 49 行用于排除构造函数的处理，而第 50 至 51 行则用于排除已有所需前缀的方法。
+图 7.4 中的第 46 至 51 行包含了所需条件的检查。在第 46 至 47 行，验证该方法是否为公共方法。第 48 至 49 行用于排除构造函数的处理，而第 50 至 51 行则用于排除已有所需前缀的方法。
 
-主要的替换逻辑实现在第 53 至 58 行。特别是，在第 56 至 57 行，我们创建了一个特殊的 clang::tooling::Replacement 对象，它作为所需代码修改的包装器。该对象的参数如下：
+主要的替换逻辑实现在第 53 至 58 行。第 56 至 57 行，创建了一个特殊的 clang::tooling::Replacement 对象，作为所需代码修改的包装器。该对象的参数如下：
 
 \begin{enumerate}
 \item
-clang::SourceManager：我们在第 55 行从 clang::ASTContext 获取源管理器。
+clang::SourceManager：第 55 行从 clang::ASTContext 获取源管理器。
 
 \item
-clang::SourceLocation：源位置指定了替换的起始位置。该位置作为我们 processMethod 方法的第二个参数传递，如第 45 行所示。
+clang::SourceLocation：源位置指定了替换的起始位置。该位置作为 processMethod 方法的第二个参数传递，如第 45 行所示。
 
 \item
-unsigned: 被替换文本的长度。
+unsigned: 替换文本的长度。
 
 \item
-clang::StringRef: 替换文本，我们在第 54 行创建它。
+clang::StringRef: 替换文本，第 54 行创建。
 \end{enumerate}
 
-我们在Visitor类中存储替换操作，这是一个私有成员：
+Visitor类中存储替换操作，这是一个私有成员：
 
 \begin{cpp}
 private:
@@ -164,7 +162,7 @@ There is a special getter to access the object outside the Visitor class:
 }
 \end{cpp}
 
-我们在第59-60行记录操作，使用LogMessage作为日志消息的前缀。不同的AST节点使用不同的日志消息；例如，对于clang::CXXRecordDecl，我们使用"Renamed method"（见图7.3，第19行）。
+第59-60行记录操作，使用LogMessage作为日志消息的前缀。不同的AST节点使用不同的日志消息；对于clang::CXXRecordDecl，使用"Renamed method"（见图7.3，第19行）。
 
 对于方法调用，日志消息将有所不同。相应的处理如下所示：
 
@@ -185,13 +183,11 @@ bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr *Call) {
 图7.5：CXXMemberCallExpr访问者实现
 \end{center}
 
-我们在第27-29行验证持有测试方法的类名是否以'Test'前缀开头。在第30行获取替换的源位置。在第31行，我们调用我们的processMethod函数来处理找到的方法，将"Renamed method call"作为日志消息传递给调用。
-
-Consumer类初始化Visitor并在HandleTranslationUnit方法中开始AST遍历。该类可以编写如下：
+第27-29行验证持有测试方法的类名是否以'Test'前缀开头。在第30行获取替换的源位置。在第31行，调用processMethod函数来处理找到的方法，将"Renamed method call"作为日志消息传递给调用。
 
 \mySubsubsection{7.2.4.}{Consumer类实现}
 
-Consumer类初始化Visitor，并在HandleTranslationUnit方法中开始AST遍历。类可以这样编写:
+Consumer类初始化Visitor，并在HandleTranslationUnit方法中开始AST遍历:
 
 \begin{cpp}
 class Consumer : public clang::ASTConsumer {
@@ -222,9 +218,9 @@ public:
 图7.6：Consumer类实现
 \end{center}
 
-我们初始化Visitor并在第9-10行开始遍历（见图7.6）。在第13行创建Rewriter，并在第14-19行应用替换。最后，在第22-24行将结果存储在原始文件中。
+初始化Visitor并在第9-10行开始遍历（见图7.6）。第13行创建Rewriter，并在第14-19行应用替换。最后，第22-24行将结果存储在原始文件中。
 
-Visitor和Consumer类被包装在clangbook::methodrename命名空间中。Consumer实例在FrontendAction类中创建。这个类的实现与图3.8中详细描述的RecursiveVisitor和DeclVisitor相似。唯一的区别是在新工具中使用clangbook::methodrename命名空间。
+Visitor和Consumer类被包装在clangbook::methodrename命名空间中。Consumer实例在FrontendAction类中创建。这个类的实现与图3.8中详细描述的RecursiveVisitor和DeclVisitor相似，唯一的区别是在新工具中使用clangbook::methodrename命名空间。
 
 \mySubsubsection{7.2.5.}{构建配置和主函数}
 
@@ -250,9 +246,9 @@ int main(int argc, const char **argv) {
 图7.7：'methodrename'测试工具的主函数
 \end{center}
 
-如您所见，我们只在第23行更改了自定义前端动作的命名空间名称。
+只在第23行更改了自定义前端动作的命名空间名称。
 
-构建配置如下指定：
+构建配置如下：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -288,13 +284,13 @@ endif()
 图7.8:构建'methodrename'测试工具的配置
 \end{center}
 
-相比于图3.20中的代码，最显著的变化是在第23和24行，我们添加了两个新的库来支持代码修改：clangToolingCore和clangRewrite。其他变化包括工具的新名称（第2行）以及包含主函数的源文件（第14行）。
+相比于图3.20中的代码，最显著的变化是在第23和24行，添加了两个新的库来支持代码修改：clangToolingCore和clangRewrite。其他变化包括工具的新名称（第2行）以及包含主函数的源文件（第14行）。
 
-我们完成了代码，就该构建并运行我们的工具了。
+完成了代码，就该构建并运行我们的工具了。
 
 \mySubsubsection{7.2.6.}{运行代码修改工具}
 
-程序可以使用我们在第3.3节AST遍历中使用的相同命令序列进行编译，见图3.11：
+程序可以使用第3.3节AST遍历中使用的相同命令序列进行编译，见图3.11：
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -308,7 +304,7 @@ ninja
 图7.9：'methodrename'工具的配置和构建命令
 \end{center}
 
-我们可以对以下测试文件（TestClass.cpp）运行创建的工具：
+可以对以下测试文件（TestClass.cpp）运行创建的工具：
 
 \begin{cpp}
 class TestClass {
@@ -329,7 +325,7 @@ int main() {
 图7.10：原始的TestClass.cpp
 \end{center}
 
-我们可以按以下方式运行工具：
+可以按以下方式运行工具：
 
 \begin{shell}
 $ ./methodrename TestClass.cpp -- -std=c++17
@@ -337,12 +333,11 @@ Renamed method: pos to test_pos
 Renamed method call: pos to test_pos
 \end{shell}
 
-
 \begin{center}
 图7.11：在TestClass.cpp上运行methodrename Clang工具
 \end{center}
 
-我们可以看到，方法TestClass::pos重命名为TestClass::test\_pos。方法调用也得到了更新，如下所示：
+方法TestClass::pos重命名为TestClass::test\_pos，方法调用也有更新：
 
 \begin{cpp}
 class TestClass {
@@ -362,7 +357,7 @@ int main() {
 图7.12：修改后的TestClass.cpp
 \end{center}
 
-提供的示例演示了Clang如何协助创建重构工具。创建的Clang工具使用递归访问者来设置所需的代码转换。另一个可能的选项是使用我们在第5章Clang-Tidy检查框架中研究过的Clang-Tidy。让我们更详细地探讨这个选项。
+提供的示例演示了Clang如何协助创建重构工具。创建的Clang工具使用递归访问者来设置所需的代码转换。另一个可能的选项是，使用第5章Clang-Tidy检查框架中研究过的Clang-Tidy。
 
 
 

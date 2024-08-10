@@ -1,4 +1,4 @@
-编译数据库（CDB）是一个JSON文件，它指定了代码库中每个源文件应该如何编译。这个JSON文件通常命名为compile\_commands.json，位于项目的根目录中。它提供了构建过程中所有编译器调用的机器可读记录，通常被各种工具用于更准确的分析、重构等。这个JSON文件中的每个条目通常包含以下字段：
+编译数据库（CDB）是一个JSON文件，指定了代码库中每个源文件应该如何编译。这个JSON文件通常命名为compile\_commands.json，位于项目的根目录中。提供了构建过程中所有编译器调用的机器可读记录，通常用于各种工具用于更准确的分析、重构等。这个JSON文件中的每个条目通常包含以下字段：
 
 \begin{itemize}
 \item
@@ -8,7 +8,7 @@ directory: 编译的工作目录。
 command: 实际的编译命令，包括编译器选项。
 
 \item
-arguments: 另一个可以用来指定编译参数的字段。它包含参数列表。
+arguments: 另一个可以用来指定编译参数的字段，包含参数列表。
 
 \item
 file: 正在编译的源文件的路径。
@@ -17,7 +17,7 @@ file: 正在编译的源文件的路径。
 output: 此编译步骤创建的输出的路径。
 \end{itemize}
 
-从字段描述中我们可以看到，有两种方法可以指定编译标志：使用command字段或arguments字段。让我们看一个具体的例子。假设我们的C++文件ProjectLib.cpp位于/home/user/project/src/lib文件夹，并且可以使用以下调用命令用Clang进行编译（命令仅作为示例，你可以忽略其参数的含义）：
+从字段描述中我们可以看到，有两种方法可以指定编译标志：使用command字段或arguments字段。来看一个具体的例子，假设C++文件ProjectLib.cpp位于/home/user/project/src/lib文件夹，并且可以使用以下调用命令用Clang进行编译（命令仅作为示例，可以忽略其参数的含义）：
 
 \begin{shell}
 $ cd /home/user/project/src/lib
@@ -65,6 +65,8 @@ $ clang -Wall -I../headers ProjectLib.cpp -o ProjectLib.o
 图 9.2：ProjectLib.cpp 的CDB
 \end{center}
 
-图 9.2 中的CDB表示与图 9.1 中相同的编译配方，但它使用参数列表（arguments字段）而不是图 9.1 中使用的调用命令（command字段）。需要注意的是，参数列表也包含了可执行文件clang作为其第一个参数。CDB处理工具可以使用这个参数来决定在存在不同编译器的环境中应该使用哪个编译器进行编译，比如GCC与Clang。
+图 9.2 中的CDB表示与图 9.1 中相同的编译配置，但它使用参数列表（arguments字段）而不是图 9.1 中使用的调用命令（command字段）。参数列表也包含了可执行文件clang作为其第一个参数，CDB处理工具可以使用这个参数，来决定在存在不同编译器的环境中，应该使用哪个编译器进行编译，比如GCC与Clang。
 
-提供的CDB示例仅包含一个文件的一条记录。一个真实的项目可能包含数千条记录。LLVM就是一个很好的例子，如果你查看我们用于LLVM构建的构建文件夹（见第1.3.1节，使用CMake的配置），你可能会注意到它包含一个compile\_commands.json文件，其中包含了我们选择构建的项目的CDB。值得注意的是，LLVM默认创建CDB，但你的项目可能需要一些特殊操作来创建它。让我们详细看看如何创建CDB。
+提供的CDB示例仅包含一个文件的一条记录，一个真实的项目可能包含数千条记录。LLVM就是一个很好的例子，如果查看用于LLVM构建的构建文件夹（见第1.3.1节，使用CMake的配置），可能会注意到它包含一个compile\_commands.json文件，其中包含了我们选择构建的项目的CDB。值得注意的是，LLVM默认创建CDB，但我们自己的项目可能需要一些特殊操作来创建它。
+
+让我们看看如何创建CDB。

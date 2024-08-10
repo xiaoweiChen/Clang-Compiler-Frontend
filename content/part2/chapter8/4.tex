@@ -1,18 +1,18 @@
-在这个简短的LSP演示中，我们将展示Clangd如何打开一个文件并查找一个符号的定义。Clangd拥有一个全面的日志子系统，提供了深入了解其与IDE交互的宝贵信息。我们将使用日志子系统来获取必要的信息。
+这个简短的LSP演示中，我们将展示Clangd如何打开一个文件并查找一个符号的定义。Clangd拥有一个全面的日志子系统，提供了深入了解其与IDE交互的宝贵信息，将使用日志子系统来获取必要的信息。
 
 \mySubsubsection{8.4.1.}{演示描述}
 
-在我们的例子中，我们打开一个如以下屏幕截图所示的测试文件，并检索doPrivateWork标记的定义：
+例子中，我们打开一个如以下屏幕截图所示的测试文件，并检索doPrivateWork标记的定义：
 
 \myGraphic{0.7}{content/part2/chapter8/images/6.png}{图8.6：跳转到doPrivateWork标记的定义和悬停}
 
-VS Code通过标准输入/输出与Clangd通信，我们将使用Clangd日志来捕获交互。
+VS Code通过标准输入/输出与Clangd通信，使用Clangd日志来捕获信息。
 
 这可以通过在VS Code设置中创建一个包装shell脚本，而不是使用实际的clangd二进制文件来实现：
 
 \myGraphic{0.7}{content/part2/chapter8/images/7.png}{图8.7：在VS Code中设置包装shell脚本}
 
-我们可以使用以下脚本，clangd.sh：
+可以使用以下脚本，clangd.sh：
 
 \begin{shell}
 #!/bin/sh
@@ -23,23 +23,23 @@ $HOME/clangbook/llvm-project/install/bin/clangd -log verbose -pretty 2> /tmp/cla
 图8.8：用于clangd的包装shell脚本
 \end{center}
 
-在图8.8中，我们使用了两个日志选项：
+图8.8中，使用了两个日志选项：
 
 \begin{itemize}
 \item
 第一个，-log verbose，激活详细日志记录，以确保实际来自Clangd的LSP消息将被记录。
 
 \item
-第二个选项，-pretty，用于提供格式化的JSON消息。我们还将标准错误输出重定向到日志文件，在我们的例子中是/tmp/clangd.log。
+第二个选项，-pretty，用于提供格式化的JSON消息。还将标准错误输出重定向到日志文件，在我们的例子中是/tmp/clangd.log。
 \end{itemize}
 
-结果，文件将包含我们示例会话的日志。我们可以使用以下命令查看这些日志：
+结果，文件将包含示例演示的日志。可以使用以下命令查看这些日志：
 
 \begin{shell}
 $ cat /tmp/clangd.log
 \end{shell}
 
-在日志中，我们可以找到由VS Code发送的"textDocument/definition"：
+日志中，可以找到由VS Code发送的"textDocument/definition"：
 
 \begin{shell}
 V[16:24:39.336] <<< {
@@ -106,19 +106,19 @@ V[16:24:39.336] >>> {
 图8.11：来自Clangd的"textDocument/definition"回复
 \end{center}
 
-日志将是我们调查LSP内部的主要工具。让我们深入到更复杂的例子。
+日志将是我们调查LSP内部的主要工具。
 
-\mySubsubsection{8.4.2.}{LSP会话}
+\mySubsubsection{8.4.2.}{LSP演示}
 
-LSP会话包括与Clangd服务器的多个请求和响应。会话从“initialize”请求开始。然后，我们打开一个文档，VS Code发送一个"textDocument/didOpen"通知。在此请求之后，当打开的文件状态发生变化时，Clangd将定期响应"textDocument/publishDiagnostics"通知。例如，这种情况发生在编译完成并准备好处理导航请求时。接下来，我们为某个标记发起一个转到定义的请求，Clangd响应找到的定义的位置信息。我们还研究了Clangd如何处理客户端通过"textDocument/didChange"通知的文件修改。当我们关闭打开的文件时，我们通过"textDocument/didClose"请求结束会话。下面是一张描述交互的图表：
+LSP演示包括与Clangd服务器的多个请求和响应。演示从"initialize"请求开始。然后，我们打开一个文档，VS Code发送一个"textDocument/didOpen"通知。在此请求之后，当打开的文件状态发生变化时，Clangd将定期响应"textDocument/publishDiagnostics"通知。例如，这种情况发生在编译完成并准备好处理导航请求时。接下来，为某个标记发起一个转到定义的请求，Clangd响应找到的定义的位置信息。我们还研究了Clangd如何处理客户端通过"textDocument/didChange"通知的文件修改。当我们关闭打开的文件时，我们通过"textDocument/didClose"请求结束演示。下面是一张描述图表：
 
-\myGraphic{0.5}{content/part2/chapter8/images/8.png}{图8.12：LSP会话示例}
+\myGraphic{0.6}{content/part2/chapter8/images/8.png}{图8.12：LSP演示示例}
 
-让我们详细看看这个例子。我们将从“initialize”请求开始。
+让我们详细看看这个例子。我们将从"initialize"请求开始。
 
 \mySamllsection{初始化}
 
-为了建立通信，客户端（代码编辑器或IDE）和语言服务器交换JSON-RPC消息。初始化过程从客户端向语言服务器发送一个“initialize”请求开始，指定它支持的功能。VS Code实际发送的请求相当大，下面是一个简化版本，其中请求的部分内容用“…”代替：
+为了建立通信，客户端（代码编辑器或IDE）和语言服务器交换JSON-RPC消息。初始化过程从客户端向语言服务器发送一个"initialize"请求开始，指定它支持的功能。VS Code实际发送的请求相当大，下面是一个简化版本，其中请求的部分内容用"…"代替：
 
 \begin{shell}
 {
@@ -150,7 +150,7 @@ LSP会话包括与Clangd服务器的多个请求和响应。会话从“initiali
 图8.13：VS Code到Clangd（初始化请求）
 \end{center}
 
-在请求中，客户端（VS Code）告诉服务器（Clangd）客户端支持哪些功能；例如，在图8.13的第10-13行，客户端表示它支持用于转到定义请求的"textDocument/definition"请求类型。
+请求中，客户端（VS Code）告诉服务器（Clangd）客户端支持哪些功能；例如，图8.13的第10-13行，客户端表示它支持用于转到定义请求的"textDocument/definition"请求类型。
 
 语言服务器用包含服务器支持的功能的响应来回复请求：
 
@@ -176,9 +176,9 @@ LSP会话包括与Clangd服务器的多个请求和响应。会话从“initiali
 图8.14：Clangd到VS Code（初始化回复）
 \end{center}
 
-我们可以看到，相同的id用于将请求与其回复连接起来。Clangd回复称它支持图8.14第7行中指定的转到定义请求。因此，我们的客户端（VS Code）可以向服务器发送导航请求，我们将在后面的图8.19（转到定义）中探讨。
+相同的id用于将请求与其回复连接起来，Clangd回复称它支持图8.14第7行中指定的转到定义请求。因此，客户端（VS Code）可以向服务器发送导航请求，将在后面的图8.19（转到定义）中探讨。
 
-VS Code通过发送一个“initialized”通知来确认初始化：
+VS Code通过发送一个"initialized"通知来确认初始化：
 
 \begin{shell}
 {
@@ -187,7 +187,7 @@ VS Code通过发送一个“initialized”通知来确认初始化：
 }
 \end{shell}
 
-与“initialize”请求相反，这是一个通知，它不期望服务器有任何响应。因此，它没有“id”字段。"initialized"通知只能发送一次，并且应该在客户端发送任何其他请求或通知之前收到。初始化后，我们准备好打开一个文档并发送相应的"textDocument/didOpen"通知。
+与"initialize"请求相反，这是一个通知，它不期望服务器有任何响应。因此，没有"id"字段。"initialized"通知只能发送一次，并且应该在客户端发送其他请求或通知之前收到。初始化后，准备好打开一个文档并发送相应的"textDocument/didOpen"通知。
 
 \mySamllsection{打开文档}
 
@@ -213,9 +213,9 @@ VS Code通过发送一个“initialized”通知来确认初始化：
 图8.15：VS Code到Clangd (didOpen通知)
 \end{center}
 
-如我们所见，VS Code发送通知，其中包含在"params/ textDocument"字段中的参数。这些参数包括在"uri"字段中的文件名和在"text"字段中的源文件文本。
+VS Code发送通知，其中包含在"params/ textDocument"字段中的参数。这些参数包括在"uri"字段中的文件名和在"text"字段中的源文件文本。
 
-Clangd在接收到'didOpen'通知后开始编译文件。它构建了一个抽象语法树（AST）并从中提取有关不同标记的语义信息。服务器使用此信息来区分具有相同名称的不同标记。例如，我们可以使用一个名为'foo'的标记，它可能作为类成员或局部变量，具体取决于其使用的范围，如下面的代码片段所示：
+Clangd在接收到'didOpen'通知后开始编译文件，构建了一个抽象语法树（AST）并从中提取有关不同标记的语义信息。服务器使用此信息来区分具有相同名称的不同标记。例如，可以使用一个名为'foo'的标记，可能作为类成员或局部变量，具体取决于其使用的范围，如下面的代码所示：
 
 \begin{cpp}
 class TestClass {
@@ -236,9 +236,9 @@ int main() {
 
 如第8行所示，我们在两个地方使用了'foo'标记：作为函数调用和局部变量定义。
 
-转到定义请求将在编译过程完成后延迟。值得注意的是，大多数请求被放入队列中，等待编译过程完成。该规则有一些例外，一些请求可以在不具有AST的情况下执行，并提供有限的提供功能。其中一个例子是代码格式化请求。代码格式化不需要AST，因此格式化功能可以在构建AST之前提供。
+转到定义请求将在编译过程完成后延迟。值得注意的是，大多数请求被放入队列中，等待编译过程完成。该规则有一些例外，一些请求可以在不具有AST的情况下执行，并提供有限的提供功能，其中一个例子是代码格式化请求。代码格式化不需要AST，因此格式化功能可以在构建AST之前提供。
 
-如果文件的状态发生变化，Clangd将使用"textDocument/publishDiagnostics"通知通知VS Code。例如，当编译过程完成后，Clangd将向VS Code发送通知：
+如果文件的状态发生变化，Clangd将使用"textDocument/publishDiagnostics"通知通知VS Code。当编译过程完成后，Clangd将向VS Code发送通知：
 
 \begin{shell}
 {
@@ -252,12 +252,11 @@ int main() {
 }
 \end{shell}
 
-
 \begin{center}
 图8.17：Clangd到VS Code (publishDiagnostics通知)
 \end{center}
 
-如我们所见，没有编译错误；params/diagnostics为空。如果我们的代码包含编译错误或警告，它将包含错误或警告描述，如图8.18所示。
+没有编译错误；params/diagnostics为空。如果代码包含编译错误或警告，它将包含错误或警告描述，如图8.18所示。
 
 \begin{shell}
 {
@@ -293,15 +292,15 @@ int main() {
 图8.18：Clangd到VS Code (带有编译错误的publishDiagnostics)
 \end{center}
 
-VS Code处理诊断并显示它，如下面的截图所示:
+VS Code处理诊断并显示，如下面的截图所示:
 
 \myGraphic{0.7}{content/part2/chapter8/images/9.png}{图8.19:helper.hpp中的编译错误}
 
-在编译完成后，我们收到了"textDocument/publishDiagnostics"，Clangd准备好处理导航请求，例如"textDocument/definition"（转到定义）。
+编译完成后，我们收到了"textDocument/publishDiagnostics"，Clangd准备好处理导航请求，例如"textDocument/definition"（转到定义）。
 
 \mySamllsection{转到定义}
 
-为了在C++文件中找到符号的定义，客户端向语言服务器发送一个"textDocument/definition"请求：
+为了在C++文件中找到符号的定义，客户端向语言服务器发送一个"textDocument/\\definition"请求：
 
 \begin{shell}
 {
@@ -324,7 +323,7 @@ VS Code处理诊断并显示它，如下面的截图所示:
 图8.20：VS Code到Clangd (textDocument/definition请求)
 \end{center}
 
-在编辑器中，行位置被指定为7而不是实际的8行，如图8.6所示。这是因为行编号从0开始。
+编辑器中，行位置被指定为7而不是实际的8行，如图8.6所示。这是因为行编号从0开始。
 
 语言服务器响应C++代码中的定义位置：
 
@@ -354,16 +353,15 @@ VS Code处理诊断并显示它，如下面的截图所示:
 图8.21：Clangd到VS Code (textDocument/definition响应)
 \end{center}
 
-如我们所见，服务器响应了实际的定义位置。IDE中的另一个常见操作是文档修改。此功能由"textDocument/didChange"通知提供。让我们看看它。
-
+服务器响应了实际的定义位置。IDE中的另一个常见操作是文档修改。此功能由"textDocument/didChange"通知提供。
 
 \mySamllsection{修改文档}
 
-作为文档修改的一部分，让我们在第6行插入一个注释，// 构造函数，如图8.22所示。
+作为文档修改的一部分，在第6行插入一个注释，// 构造函数，如图8.22所示。
 
 \myGraphic{0.7}{content/part2/chapter8/images/10.png}{图 8.22: 修改文档}
 
-VS Code将检测到文档已被修改，并通过以下通知通知LSP服务器（Clangd）：
+VS Code将检测到文档已修改，并通过以下通知通知LSP服务器（Clangd）：
 
 \begin{shell}
 {
@@ -398,9 +396,9 @@ VS Code将检测到文档已被修改，并通过以下通知通知LSP服务器�
 图8.23：VS Code到Clangd (didChange通知)
 \end{center}
 
-如我们所见，通知包含要替换文档中指定范围的文本和范围。通知的一个重要部分是"version"字段，它指定了文档的版本。
+通知包含要替换文档中指定范围的文本和范围，通知的一个重要部分是"version"字段，指定了文档的版本。
 
-我们可以观察到版本从1（用于文档打开，如图8.15所示的第9行）更改为2（用于文档修改，如图8.23所示的第23行）。
+可以观察到版本从1（用于文档打开，如图8.15所示的第9行）更改为2（用于文档修改，如图8.23所示的第23行）。
 
 Clangd开始编译文档，因为文档修改可能导致结果AST发生重大变化，这用于导航请求。一旦编译完成，服务器将相应地响应"textDocument/publishDiagnostics"通知，如图8.24所示。
 
@@ -420,13 +418,13 @@ Clangd开始编译文档，因为文档修改可能导致结果AST发生重大�
 图8.24：Clangd到VS Code (publishDiagnostics通知)
 \end{center}
 
-如我们所见，修改后的文档发送了诊断，因为它包含指向版本2的版本字段，这与修改后的文档对应，如图8.24所示的第7行。
+修改后的文档发送了诊断，它包含指向版本2的版本字段，这与修改后的文档对应，如图8.24所示的第7行。
 
-我们的最后一个操作是关闭文档。让我们更详细地看看它。
+我们的最后一个操作是关闭文档。
 
 \mySamllsection{关闭文档}
 
-当完成对文档的工作并关闭它时，VS Code向语言服务器发送一个"textDocument/didClose"通知：
+当完成对文档的工作并关闭它时，VS Code向语言服务器发送一个"textDocument/\\didClose"通知：
 
 \begin{shell}
 {
@@ -444,7 +442,7 @@ Clangd开始编译文档，因为文档修改可能导致结果AST发生重大�
 图8.25：VS Code到Clangd (textDocument/didClose请求)
 \end{center}
 
-收到请求后，Clangd将从其内部结构中移除文档。Clangd将不再发送文档的任何更新，因此它将通过发送最终的空"textDocument/publishDiagnostics"消息来清空客户端（例如，VS Code中的问题窗格）显示的诊断列表，如图8.26所示。
+收到请求后，Clangd将从其内部结构中移除文档。Clangd将不再发送文档的更新，因此将通过发送最终的空"textDocument/publishDiagnostics"消息来清空客户端（例如，VS Code中的问题窗格）显示的诊断列表，如图8.26所示。
 
 \begin{shell}
 {
@@ -461,7 +459,7 @@ Clangd开始编译文档，因为文档修改可能导致结果AST发生重大�
 图8.26：Clangd到VS Code (textDocument/didClose请求)
 \end{center}
 
-所展示的例子演示了Clangd和VS Code之间的典型交互。提供的例子利用了Clang前端的功能，即基本Clang功能。另一方面，Clangd与Clang的其他工具（如Clang-Format和Clang-Tidy）有着紧密的联系，并可以重用这些工具提供的功能。让我们更详细地看看这一点。
+所展示的例子演示了Clangd和VS Code之间的典型交互，提供的例子利用了Clang前端的功能，即基本Clang功能。另一方面，Clangd与Clang的其他工具（如Clang-Format和Clang-Tidy）有着紧密的联系，并可以重用这些工具提供的功能。
 
 
 

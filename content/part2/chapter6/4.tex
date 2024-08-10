@@ -1,9 +1,10 @@
-我们将使用在第5.4节中获得的知识来创建一个自定义的CFG检查。如前所述，该检查将使用Clang的CFG来计算循环复杂度。检查将在计算出的复杂度超过阈值时发出警告。这个阈值将作为一个配置参数设置，以便在测试期间进行更改。让我们从创建项目框架开始。
+我们将使用在第5.4节中获得的知识来创建一个自定义的CFG检查，该检查将使用Clang的CFG来计算循环复杂度。检查将在计算出的复杂度超过阈值时发出警告。这个阈值将作为一个配置参数设置，以便在测试期间进行更改。
 
+让我们从创建项目框架开始。
 
 \mySubsubsection{6.4.1.}{创建项目框架}
 
-我们将使用cyclomaticcomplexity作为我们的检查名称，项目框架可以按照以下方式创建：
+使用cyclomaticcomplexity作为检查的名称，项目框架可以按照以下方式创建：
 
 \begin{shell}
 $ ./clang-tools-extra/clang-tidy/add_new_check.py misc cyclomaticcomplexity
@@ -13,21 +14,21 @@ $ ./clang-tools-extra/clang-tidy/add_new_check.py misc cyclomaticcomplexity
 图6.3：为misc-cyclomaticcomplexity检查创建框架
 \end{center}
 
-运行结果，我们将得到一些修改和新的文件。对我们最重要的文件位于clang-tools-extra/clang-tidy/misc/文件夹中的两个文件：
+运行结果，得到一些修改和新的文件。最重要的文件位于clang-tools-extra/clang-tidy/misc/文件夹中的两个文件：
 
 \begin{itemize}
 \item
-misc/CyclomaticcomplexityCheck.h : 这是我们的检查头文件
+misc/CyclomaticcomplexityCheck.h : 检查头文件
 
 \item
-misc/CyclomaticcomplexityCheck.cpp : 这个文件将包含我们检查的实现
+misc/CyclomaticcomplexityCheck.cpp : 检查的实现
 \end{itemize}
 
 这些文件需要修改以实现检查所需的功能。
 
 \mySubsubsection{6.4.2.}{检查实现}
 
-对于头文件，我们旨在添加一个私有函数来计算循环复杂度。具体来说，需要插入以下代码：
+对于头文件，添加一个私有函数来计算循环复杂度，需要插入以下代码：
 
 \begin{cpp}
 private:
@@ -38,7 +39,7 @@ private:
 图6.4：对CyclomaticcomplexityCheck.h的修改
 \end{center}
 
-在.cpp文件中，需要进行更大量的修改。我们将从实现registerMatchers方法开始，如下所示：
+.cpp文件中，需要进行更大量的修改。我们将从实现registerMatchers方法开始：
 
 \begin{cpp}
 void CyclomaticcomplexityCheck::registerMatchers(MatchFinder *Finder) {
@@ -50,9 +51,9 @@ void CyclomaticcomplexityCheck::registerMatchers(MatchFinder *Finder) {
 图6.5：对CyclomaticcomplexityCheck.cpp的修改：registerMatchers实现
 \end{center}
 
-根据代码，我们的检查将仅应用于函数声明，即clang::FunctionDecl。代码还可以扩展以支持其他C++构造。
+检查将仅应用于函数声明，即clang::FunctionDecl。代码还可以扩展以支持其他C++构造。
 
-检查方法的实现如图6.6所示。在第22-23行，我们对匹配的AST节点（在我们的情况下是clang::FunctionDecl）执行基本的检查。在第25-26行，我们使用CFG::buildCFG方法创建CFG对象。前两个参数指定了声明（clang::Decl）和声明的语句（clang::Stmt）。在第30行，我们使用阈值计算循环复杂度，该阈值可以通过我们检查的"Threshold"选项获得。这为测试不同的输入程序提供了灵活性。第31-34行包含检查结果打印的实现。
+检查方法的实现如图6.6所示。第22-23行，对匹配的AST节点（clang::FunctionDecl）执行基本的检查。第25-26行，使用CFG::buildCFG方法创建CFG对象。前两个参数指定了声明（clang::Decl）和声明的语句（clang::Stmt）。第30行，使用阈值计算循环复杂度，该阈值可以通过我们检查的"Threshold"选项获得，这为测试不同的输入程序提供了灵活性。第31-34行包含检查结果打印的实现。
 
 \begin{cpp}
 void CyclomaticcomplexityCheck::check(const MatchFinder::MatchResult &Result) {
@@ -75,7 +76,7 @@ void CyclomaticcomplexityCheck::check(const MatchFinder::MatchResult &Result) {
 图6.6：对CyclomaticcomplexityCheck.cpp的修改：检查实现
 \end{center}
 
-calculateCyclomaticComplexity方法用于计算循环复杂度。它将创建的clang::CFG对象作为输入参数。实现如下所示：
+calculateCyclomaticComplexity方法用于计算循环复杂度，将创建的clang::CFG对象作为输入参数：
 
 \begin{cpp}
 unsigned CyclomaticcomplexityCheck::calculateCyclomaticComplexity(
@@ -93,16 +94,16 @@ unsigned CyclomaticcomplexityCheck::calculateCyclomaticComplexity(
 \end{cpp}
 
 \begin{center}
- 图6.7：对CyclomaticcomplexityCheck.cpp的修改：calculateCyclomaticComplexity实现
+图6.7：对CyclomaticcomplexityCheck.cpp的修改：calculateCyclomaticComplexity实现
 \end{center}
 
-我们在第42-45行遍历所有CFG块。块的数量对应于图6.2中的节点数，表示为N。我们计算每个块的后续数量以计算边数，表示为E。我们假设连接组件的数量，表示为P，在我们的简化示例中等于一。
+第42-45行遍历所有CFG块。块的数量对应于图6.2中的节点数，表示为N。计算每个块的后续数量以计算边数，表示为E。假设连接组件的数量，表示为P，在简化的示例中等于1。
 
-在实现检查之后，是时候构建并运行我们新的检查了；见图6.1。
+实现检查之后，需要构建并运行我们新的检查了；见图6.1。
 
 \mySubsubsection{6.4.3.}{构建和测试循环复杂度检查}
 
-我们将使用图1.4中指定的基本构建配置来构建Clang-Tidy，使用图5.2中显示的标准命令：
+使用图1.4中指定的基本构建配置来构建Clang-Tidy，使用图5.2中显示的标准命令：
 
 \begin{shell}
 $ ninja install-clang-tidy
@@ -110,11 +111,11 @@ $ ninja install-clang-tidy
 
 假设使用图1.4中的构建配置，此命令将在<…>/llvm-project/install/bin文件夹中安装Clang-Tidy二进制文件。
 
-\begin{myNotic}{重要说明}
-如果您使用带有共享库的构建配置（其中BUILD\_SHARED\_LIBS标志设置为ON，如图1.12所示），那么您可能需要使用ninja install命令来安装和构建所有工件。
+\begin{myNotic}{重要提示}
+如果使用带有动态库的构建配置（其中BUILD\_SHARED\_LIBS标志设置为ON，如图1.12所示），可能需要使用ninja install命令来安装和构建所有工件。
 \end{myNotic}
 
-我们将对我们的示例程序进行测试，该程序如图6.1所示。正如我们之前计算的，test的循环复杂度为2，低于我们在检查方法实现中的默认值5，如图6.6所示，第29行。因此，我们需要覆盖默认值以1，以便在我们的测试程序中看到警告。这可以通过使用我们之前用于classchecker检查测试的-config选项来完成，如图5.20所示。测试命令如下：
+对我们的示例程序进行测试，该程序如图6.1所示。正如之前计算的，test的循环复杂度为2，低于在检查方法实现中的默认值5，如图6.6所示，第29行。因此，需要覆盖默认值以1，以便在我们的测试程序中看到警告。这可以通过使用我们之前用于classchecker检查测试的-config选项来完成，如图5.20所示。测试命令如下：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang-tidy                         \
@@ -129,9 +130,9 @@ $ <...>/llvm-project/install/bin/clang-tidy                         \
 图6.8：在max.cpp示例上测试循环复杂度
 \end{center}
 
-图6.8的第2行表示我们只想运行一个Clang-Tidy检查：misc-cyclomaticcomplexity。在第3-4行，我们设置了所需的阈值。第5行指定了要测试的文件名（在我们的例子中是max.cpp），最后一行，第6行，包含我们程序的一些编译标志。
+图6.8的第2行表示我们只想运行一个Clang-Tidy检查：misc-cyclomaticcomplexity。第3-4行，我们设置了所需的阈值。第5行指定了要测试的文件名（max.cpp），最后一行，第6行，包含程序的一些编译标志。
 
-如果我们运行图6.8中的命令，我们将得到以下输出：
+如果运行图6.8中的命令，将得到以下输出：
 
 \begin{shell}
 max.cpp:1:5: warning: function 'max' has high cyclomatic complexity (2) ...

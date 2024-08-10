@@ -1,9 +1,8 @@
 测试项目的目标是创建一个Clang插件，用于估算类的复杂性。具体来说，如果一个类的方法数量超过某个阈值，那么这个类就被认为是复杂的。我们将利用到目前为止所获得的所有知识来完成这个项目。这包括使用递归访问者和Clang诊断。此外，我们还将为我们的项目创建一个LIT测试。开发插件将需要一个独特的LLVM构建配置，这将是我们首先要做的事情。
 
-
 \mySubsubsection{4.6.1.}{环境设置}
 
-插件将作为一个共享对象创建，我们的LLVM安装应该支持共享库（见第1.3.1节，使用CMake配置）：
+插件将作为一个共享对象创建，LLVM安装应该支持动态库（见第1.3.1节，使用CMake配置）：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
@@ -13,21 +12,19 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM
 图4.31：用于Clang插件项目的CMake配置
 \end{center}
 
-如图所示，我们使用了第1.4节中的构建配置，如图1.12所示。在配置中，我们为安装工件设置了一个文件夹 ../install，将构建目标限制为X86平台，并只启用clang项目。此外，我们启用了调试符号的大小优化，并使用共享库而不是静态链接。
+使用了第1.4节中的构建配置，如图1.12所示。在配置中，为安装工件设置了一个文件夹 ../install，将构建目标限制为X86平台，并只启用clang项目。此外，启用了调试符号的大小优化，并使用动态库而不是静态链接。
 
-接下来，我们需要构建和安装clang。这可以通过以下命令完成：
+接下来，需要构建和安装clang：
 
 \begin{shell}
 $ ninja install
 \end{shell}
 
-一旦我们完成了clang的构建和安装，我们就可以继续编写我们的项目CMakeLists.txt文件。
+完成了clang的构建和安装，就可以继续编写项目的CMakeLists.txt文件。
 
 \mySubsubsection{4.6.2.}{插件的CMake构建配置}
 
-我们将使用图3.20作为我们的插件构建配置的基础。我们将更改项目名称为classchecker，而ClassComplexityChecker.cpp将作为我们的主要源文件。文件的主要部分如图4.32所示。如图所示，我们将构建一个共享库（第18-20行），而不是之前的测试项目中的可执行文件。另一个修改是在第12行，我们设置了一个配置参数来定位LLVM构建文件夹。这个参数是必要的，以便找到LIT可执行文件，正如之前在第4.5.2节，LLVM测试框架中提到的，LIT可执行文件不包括在标准安装过程中。为了支持LIT测试的调用，我们还需要进行一些额外的修改，但我们会稍后在图4.44中讨论这些细节。
-
-
+使用图3.20作为我们的插件构建配置的基础，更改项目名称为classchecker，而ClassComplexityChecker.cpp将作为主要源文件。文件的主要部分如图4.32所示。如图所示，将构建一个动态库（第18-20行），而不是之前的测试项目中的可执行文件。另一个修改是在第12行，设置了一个配置参数来定位LLVM构建文件夹。这个参数是必要的，以便找到LIT可执行文件，正如之前在第4.5.2节，LLVM测试框架中提到的，LIT可执行文件不包括在标准安装过程中。为了支持LIT测试的调用，还需要进行一些修改，但会稍后在图4.44中讨论这些。
 
 \begin{cmake}
 message(STATUS "$LLVM_HOME found: $ENV{LLVM_HOME}")
@@ -57,11 +54,11 @@ target_link_libraries(classchecker
 图4.32：class complexity插件的CMakeLists.txt文件
 \end{center}
 
-完成构建配置后，我们可以开始编写插件的主要代码。我们将创建的第一个组件是一个递归访问者类，名为ClassVisitor。
+完成构建配置后，可以开始编写插件的主要代码。将创建的第一个组件是一个递归访问者类，名为ClassVisitor。
 
 \mySubsubsection{4.6.3.}{递归访问者类}
 
-我们的访问者类位于ClassVisitor.hpp文件中（见图4.33）。这是一个递归访问者，处理clang::CXXRecordDecl，这是C++类声明的AST节点。我们在第13-16行计算方法的数量，并在超过阈值时在第19-25行发出诊断。
+访问者类位于ClassVisitor.hpp文件中（见图4.33），这是一个递归访问者，处理clang::CXXRecordDecl，这是C++类声明的AST节点。第13-16行计算方法的数量，并在超过阈值时在第19-25行发出诊断信息。
 
 \begin{cpp}
 #include "clang/AST/ASTContext.h"
@@ -101,15 +98,14 @@ private:
 } // namespace clangbook
 \end{cpp}
 
-
 \begin{center}
 图4.33：ClassVisitor.hpp的源代码
 \end{center}
 
-值得注意的诊断调用。诊断消息在行20-22中构建。我们的诊断消息接受两个参数：类名和类的函数数量。这些参数在第22行以'\%1'和'\%2'占位符编码。这些参数的实际值在第25行传递，在那里使用DiagBuild对象构建诊断消息。这个对象是clang::DiagnosticBuilder类的实例，它实现了资源获取即初始化（RAII）模式。当对象超出作用域时，它会自动调用其析构函数，并在此时发出实际的诊断信息。
+诊断消息在行20-22中构建，诊断消息接受两个参数：类名和类的函数数量。这些参数在第22行以'\%1'和'\%2'占位符编码。这些参数的实际值在第25行传递，使用DiagBuild对象构建诊断消息。这个对象是clang::DiagnosticBuilder类的实例，实现了资源获取即初始化（RAII）模式。当对象超出作用域时，会自动调用其析构函数，并在此时发出实际的诊断信息。
 
 \begin{myNotic}{重要提示}
-在C++中，RAII原则是一种常见的习惯用法，用于通过将资源与对象的生存期联系起来来管理资源生命周期。当对象超出作用域时，其析构函数会自动被调用，这为释放对象持有的资源提供了机会。
+C++中，RAII原则是一种常见的习惯用法，用于通过将资源与对象的生存期联系起来来管理资源生命周期。当对象超出作用域时，其析构函数会自动调用，这为释放对象持有的资源提供了机会。
 \end{myNotic}
 
 ClassVisitor是在AST消费者类中创建的，这是我们的下一个主题。
@@ -145,17 +141,17 @@ private:
 
 \mySubsubsection{4.6.5.}{插件AST动作类}
 
-插件AST动作的代码如图4.35所示。我们可以观察到几个重要的部分：
+插件AST动作的代码如图4.35所示：
 
 \begin{itemize}
 \item
-第7行：我们从clang::PluginASTAction派生我们的ClassAction。
+第7行：从clang::PluginASTAction派生ClassAction。
 
 \item
-第10-13行：我们实例化ClassConsumer并利用MethodCountThreshold，这是从可选插件参数派生的。
+第10-13行：实例化ClassConsumer并利用MethodCountThreshold，这是从可选插件参数派生的。
 
 \item
-第15-25行：我们处理插件的可选阈值参数
+第15-25行：处理插件的可选阈值参数
 \end{itemize}
 
 \begin{cpp}
@@ -193,11 +189,11 @@ private:
 图4.35：ClassAction.hpp的源代码
 \end{center}
 
-我们几乎完成了，并准备初始化我们的插件。
+我们几乎完成了，并准备初始化插件。
 
 \mySubsubsection{4.6.6.}{插件代码}
 
-我们的插件注册在ClassChecker.cpp文件中，如图4.36所示。
+插件注册在ClassChecker.cpp文件中，如图4.36所示。
 
 \begin{cpp}
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -208,18 +204,17 @@ static clang::FrontendPluginRegistry::Add<clangbook::classchecker::ClassAction>
 X("classchecker", "Checks the complexity of C++ classes");
 \end{cpp}
 
-
 \begin{center}
 图4.36：ClassChecker.cpp的源代码
 \end{center}
 
-如我们所观察到的，大多数初始化都隐藏在辅助类中，我们只需要将我们的实现传递给lang::FrontendPluginRegistry::Add。
+大多数初始化都隐藏在辅助类中，只需要将实现传递给lang::FrontendPluginRegistry::Add。
 
-现在我们准备构建和测试我们的Clang插件。
+现在准备构建和测试我们的Clang插件。
 
 \mySubsubsection{4.6.7.}{构建和运行插件代码}
 
-我们需要指定LLVM项目的安装文件夹的路径。其余的步骤是我们之前使用过的标准步骤，见图3.11：
+需要指定LLVM项目的安装文件夹的路径。其余的步骤是之前使用过的标准步骤，见图3.11：
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -233,7 +228,7 @@ ninja classchecker
 图4.37：为Clang插件配置和构建命令
 \end{center}
 
-构建工件将位于build文件夹中。然后，我们可以像以下这样在测试文件上运行我们的插件，其中是要编译的文件路径：
+构建工件将位于build文件夹中。然后，可以像以下这样在测试文件上运行插件，其中是要编译的文件路径：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only \
@@ -245,7 +240,7 @@ $ <...>/llvm-project/install/bin/clang -fsyntax-only \
 图4.38：如何在测试文件上运行Clang插件
 \end{center}
 
-例如，如果我们使用一个定义了具有三个方法的类的测试文件test.cpp（见图4.39），我们将不会收到任何警告。
+如果使用一个定义了具有三个方法的类的测试文件test.cpp（见图4.39），将不会收到任何警告。
 
 \begin{cpp}
 class Simple {
@@ -260,7 +255,7 @@ public:
 图4.39：Clang插件的测试：test.cpp
 \end{center}
 
-然而，如果我们指定一个更小的阈值，我们将为该文件收到警告：
+然而，如果指定一个更小的阈值，将为该文件收到警告：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -fsyntax-only \
@@ -273,7 +268,6 @@ test.cpp:1:7: warning: class Simple is too complex: method count = 3
 1  warning generated.
 \end{shell}
 
-
 \begin{center}
 图4.40:Clang插件在test.cpp上运行
 \end{center}
@@ -282,11 +276,11 @@ test.cpp:1:7: warning: class Simple is too complex: method count = 3
 
 \mySubsubsection{4.6.8.}{LIT测试用于Clang插件}
 
-我们将从一个项目组织描述开始。我们将采用Clang源代码中常用的模式，并将我们的测试放在test文件夹中。这个文件夹将包含以下文件：
+从一个项目组织描述开始。我们将采用Clang源代码中常用的模式，并将测试放在test文件夹中。这个文件夹将包含以下文件：
 
 \begin{itemize}
 \item
-lit.site.cfg.py.in : 这是主要的配置文件，一个CMake配置文件。它将标记为'@…@'的模式替换为在CMake配置中定义的相应值。此外，这个文件还加载了lit.cfg.py。
+lit.site.cfg.py.in : 这是主要的配置文件，一个CMake配置文件。标记为'@…@'的模式替换为在CMake配置中定义的相应值，这个文件还加载了lit.cfg.py。
 
 \item
 lit.cfg.py : 这是LIT测试的主要配置文件。
@@ -295,7 +289,7 @@ lit.cfg.py : 这是LIT测试的主要配置文件。
 simple\_test.cpp : 这是我们的LIT测试文件。
 \end{itemize}
 
-基本工作流程如下：CMake将lit.site.cfg.py.in作为模板，并在build/test文件夹中生成相应的lit.site.cfg.py。这个文件然后被LIT测试用作执行测试的种子。
+基本工作流程如下：CMake将lit.site.cfg.py.in作为模板，并在build/test文件夹中生成相应的lit.site.cfg.py。这个文件然后在IT测试用作执行测试的种子。
 
 \mySamllsection{LIT配置文件}
 
@@ -315,7 +309,7 @@ lit_config.load_config(
 图4.41：lit.site.cfg.py.in文件
 \end{center}
 
-这个文件是一个CMake模板，将被转换成Python脚本。最关键的部分是第6-7行，其中主要LIT配置被加载。它来自主源树，并且不会被复制到build文件夹。
+这个文件是一个CMake模板，将转换成Python脚本。最关键的部分是第6-7行，其中主要LIT配置加载。来自主源树，并且不会复制到build文件夹。
 
 随后的配置在图4.42中显示。这是一个Python脚本，包含LIT测试的主要配置。
 
@@ -337,9 +331,9 @@ config.substitutions.append(('%file-check-binary', config.FileCheck))
 图4.42：lit.cfg.py文件
 \end{center}
 
-第4-7行定义了基本配置；例如，第6行决定了哪些文件应该用于测试。测试文件夹中的所有以'.cpp'扩展名的文件都将被用作LIT测试。
+第4-7行定义了基本配置；例如，第6行决定了哪些文件应该用于测试。测试文件夹中的所有以'.cpp'扩展名的文件都将用作LIT测试。
 
-第9-11行详细说明了LIT测试中将使用的替换。这些包括clang二进制文件的路径（第9行）、包含插件的共享库的路径（第10行）以及FileCheck实用程序的路径（第11行）。
+第9-11行详细说明了LIT测试中将使用的替换。这些包括clang二进制文件的路径（第9行）、包含插件的动态库的路径（第10行）以及FileCheck实用程序的路径（第11行）。
 
 我们只定义了一个基本的LIT测试，simple\_test.cpp，如图4.43所示。
 
@@ -368,7 +362,7 @@ public:
 图 4.43: simple\_test.cpp 文件
 \end{center}
 
-在这个文件中，我们可以观察到第1行中使用的替换。路径指向clang二进制文件、插件共享库和FileCheck实用程序。在第9行中使用了特殊模式，这些模式被工具识别。
+可以观察到第1行中使用的替换。路径指向clang二进制文件、插件动态库和FileCheck实用程序。在第9行中使用了特殊模式，这些模式工具可以识别。
 
 最后一块拼图是CMake配置。这将设置lit.site.cfg.py.in中所需的变量，以便进行替换，并且定义了一个自定义目标来运行LIT测试。
 
@@ -405,13 +399,13 @@ endif()
 图4.44：在CMakeLists.txt中的LIT测试配置
 \end{center}
 
-在第31行和第32行，我们搜索必要的实用程序，llvm-lit和FileCheck。值得注意的是，它们依赖于\$LLVM\_BUILD环境变量，我们在配置文件（见图4.32的第12行）中也验证了这个变量。第41-43行是生成lit.site.cfg.py的关键步骤，该文件来自提供的模板文件lit.site.cfg.py.in。最后，在第46-49行，我们建立了一个自定义目标来执行LIT测试。
+第31行和第32行，搜索必要的实用程序，llvm-lit和FileCheck。它们依赖于\$LLVM\_BUILD环境变量，在配置文件（见图4.32的第12行）中也验证了这个变量。第41-43行是生成lit.site.cfg.py的关键步骤，该文件来自提供的模板文件lit.site.cfg.py.in。最后，在第46-49行，建立了一个自定义目标来执行LIT测试。
 
 现在我们准备开始LIT测试。
 
 \mySamllsection{运行LIT测试}
 
-要启动LIT测试，我们必须设置一个环境变量，该变量指向构建文件夹，编译项目，然后执行自定义目标check-classchecker。以下是执行这些操作的方法：
+要启动LIT测试，必须设置一个环境变量，该变量指向构建文件夹，编译项目，然后执行自定义目标check-classchecker。以下是执行这些操作的方法：
 
 \begin{shell}
 xport LLVM_BUILD=<...>/llvm-project/build
@@ -426,7 +420,7 @@ ninja check-classchecker
 图4.45：Clang插件的配置、构建和检查命令
 \end{center}
 
-执行这些命令后，您可能会看到以下输出：
+执行这些命令后，可能会看到以下输出：
 
 \begin{shell}
 ...
@@ -443,7 +437,7 @@ Passed: 1
 图4.46：LIT测试执行
 \end{center}
 
-通过这个，我们完成了我们的第一个综合项目，它包含了一个实用的Clang插件，可以通过补充插件参数进行定制。此外，它还包括相应的测试，可以执行以验证其功能。
+我们完成了我们的第一个综合项目，包含了一个实用的Clang插件，可以通过补充插件参数进行定制。此外，还包括相应的测试，可以执行以验证其功能。
 
 
 

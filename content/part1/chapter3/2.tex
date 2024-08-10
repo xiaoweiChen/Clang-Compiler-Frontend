@@ -1,43 +1,43 @@
-AST通常被表示为一棵树，其叶节点对应于各种对象，例如函数声明和循环体。通常，AST代表了语法分析的结果，即解析。Clang的AST节点被设计为不可变。这种设计要求Clang AST存储语义分析的结果，这意味着Clang AST代表了语法和语义分析的结果。
+AST通常表示为一棵树，其叶节点对应于各种对象，例如函数声明和循环体。通常，AST代表了语法分析的结果，即解析。Clang的AST节点设计为不可变。这种设计要求Clang AST存储语义分析的结果，所以Clang AST代表了语法和语义分析的结果。
 
 \begin{myNotic}{重要提示}
-虽然Clang也使用AST，但值得注意的是，Clang AST并不是真正的树。由于存在反向边，因此“图”更适合用来描述Clang的AST
+虽然Clang也使用AST，但Clang AST并不是真正的树。由于存在反向边，因此"图"更适合用来描述Clang的AST
 \end{myNotic}
 
-在C++中实现的典型树结构将所有节点从基类派生。Clang采用了不同的方法。它将不同的C++构造划分为不同的组，并为每个组提供基本类：
+C++中实现的典型树结构将所有节点从基类派生。Clang采用了不同的方法，将不同的C++构造划分为不同的组，并为每个组提供基本类：
 
 \begin{itemize}
 \item
-语句：clang::Stmt是所有语句的基本类。这包括普通语句，如if语句（clang::IfStmt类），以及表达式和其他C++构造。
+语句：clang::Stmt是所有语句的基本类。包括普通语句，如if语句（clang::IfStmt类），以及表达式和其他C++构造。
 
 \item
-声明：clang::Decl是声明的基本类。这包括变量、typedef、函数、结构体等。还有一个单独的基类用于具有上下文的声明，即可能包含其他声明的声明。该类称为clang::DeclContext。clang::DeclContext中包含的声明可以通过clang::DeclContext::decls方法访问。翻译单元（clang::TranslationUnitDecl类）和命名空间（clang::NamespaceDecl类）是具有上下文的声明的典型示例。
+声明：clang::Decl是声明的基本类。这包括变量、typedef、函数、结构体等。还有单独的基类用于具有上下文的声明，即可能包含其他声明的声明。该类称为clang::DeclContext。clang::DeclContext中包含的声明可以通过clang::DeclContext::decls方法访问。翻译单元（clang::TranslationUnitDecl类）和命名空间（clang::NamespaceDecl类）是具有上下文的声明的典型示例。
 
 \item
-类型：C++有一个丰富的类型系统。它包括基本类型，如整数int，以及自定义定义的类型和通过typedef或using重定义的类型。C++的类型可以具有const等修饰符，并可以表示不同的内存寻址模式，即指针、引用等。Clang使用clang::Type作为AST中类型表示的基本类。
+类型：C++有一个丰富的类型系统。包括基本类型，如整数int，以及自定义定义的类型和通过typedef或using重定义的类型。C++的类型可以具有const等修饰符，可以表示不同的内存寻址模式，即指针、引用等。Clang使用clang::Type作为AST中类型表示的基本类。
 \end{itemize}
 
-值得注意的是，这些组之间还有其他关系。例如，继承自clang::Stmt的clang::DeclStmt类具有检索相应声明的方法。此外，表达式（由clang::Expr类表示），它继承自clang::Stmt，具有与类型一起工作的方法。让我们详细看看所有这些组。
+这些组之间还有其他关系。例如，继承自clang::Stmt的clang::DeclStmt类具有检索相应声明的方法。表达式（由clang::Expr类表示），继承自clang::Stmt，具有与类型一起工作的方法。
 
 \mySubsubsection{3.2.1.}{语句}
 
-Stmt是所有语句的基本类。语句可以分为两组（见图3.1）。第一组包含有值的语句，而相反的组包含无值的语句。
+Stmt是所有语句的基本类，语句可以分为两组（见图3.1）。第一组包含有值的语句，而相反的组包含无值的语句。
 
 \myGraphic{1.0}{content/part1/chapter3/images/1.png}{图3.1：Clang AST：语句}
 
 无值语句组包含各种C++构造，如if语句（clang::IfStmt类）或复合语句（clang::CompoundStmt类）。大多数语句都属于这个组。
 
-有值语句组包含一个基类clang::ValueStmt，它有几个子类，如clang::LabelStmt（用于标签表示）或clang::ExprStmt（用于表达式表示），见图3.2。
+有值语句组包含一个基类clang::ValueStmt，有几个子类，如clang::LabelStmt（用于标签表示）或clang::ExprStmt（用于表达式表示），见图3.2。
 
 \myGraphic{1.0}{content/part1/chapter3/images/2.png}{图3.2：Clang AST：有值的语句}
 
 \mySubsubsection{3.2.2.}{声明}
 
-声明也可以分为两大类：带上下文的声明和不带上下文的声明。带上下文的声明可以被视为其他声明的占位符。例如，一个C++命名空间、翻译单元或函数声明可能包含其他声明。一个朋友实体声明（clang::DeclFriend）可以被视为一个不带上下文的声明的例子。
+声明也可以分为两大类：带上下文的声明和不带上下文的声明。带上下文的声明可以被视为其他声明的占位符。例如，一个C++命名空间、翻译单元或函数声明可能包含其他声明。一个朋友实体声明（clang::DeclFriend）可以视为一个不带上下文的声明的例子。
 
-需要注意的是，继承自DeclContext的类也有clang::Decl作为它们的顶级父类。
+需要注意的是，继承自DeclContext的类也有clang::Decl作为其顶层父类。
 
-一些声明可以被重新声明，例如：
+一些声明可以重新声明：
 
 \begin{cpp}
 extern int a;
@@ -48,19 +48,19 @@ int a = 1;
 图3.3：声明示例：redeclaration.cpp
 \end{center}
 
-这样的声明有一个额外的父类，通过clang::Redeclarable<…>模板实现。
+这样的声明有一个父类，通过clang::Redeclarable<…>模板实现。
 
 \mySubsubsection{3.2.3.}{类型}
 
-C++是一种静态类型语言，这意味着变量的类型必须在编译时声明。类型允许编译器对程序的含义做出合理的推断，这是语义分析的重要组成部分。clang::Type是Clang中类型的基本类。
+C++是一种静态类型语言，所以变量的类型必须在编译时声明。类型允许编译器对程序的含义做出合理的推断，这是语义分析的重要组成部分。clang::Type是Clang中类型的基本类。
 
-C/C++的类型可能有修饰符，称为CV修饰符，如标准[\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}.}, basic.type.qualifier]所规定。CV在这里代表两个关键字const和volatile，它们可以作为类型的修饰符。
+C/C++的类型可能有修饰符，称为CV修饰符，如标准\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}}, basic.type.qualifier]所规定。CV在这里代表两个关键字const和volatile，可以作为类型的修饰符。
 
 \begin{myNotic}{重要提示}
-C99标准有一个额外的类型修饰符，restrict，Clang也支持[\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}.}, 6.7.3]。这个类型修饰符指示编译器，在指针的生命周期内，不会使用其他指针来访问它指向的对象。这使得编译器可以执行无法 otherwise的优化，如向量化。restrict有助于限制指针别名效应，即当多个指针引用同一内存位置时发生的情况，从而有助于优化。然而，如果程序员的意图没有被遵循，并且对象被一个独立的指针访问，这会导致未定义的行为。
+C99标准有一个类型修饰符——restrict，Clang也支持[\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}}, 6.7.3]。这个类型修饰符指示编译器，在指针的生命周期内，不会使用其他指针来访问指向的对象。这使得编译器可以执行无法优化，如向量化。restrict有助于限制指针别名效应，即当多个指针引用同一内存位置时发生的情况，从而有助于优化。如果程序员的意图没有遵循，并且对象使用一个独立的指针访问，这会导致未定义的行为。
 \end{myNotic}
 
-Clang有一个特殊的类来支持带有修饰符的类型，clang::QualType，它是一个指向clang::Type的指针和包含类型修饰符信息的位掩码的组合。这个类有一个方法来获取指向clang::Type的指针并检查不同的修饰符。以下代码（LLVM 18.x, clang/lib/AST/ExprConstant.cpp, 第3918行）展示了如何检查类型是否有const修饰符：
+Clang有一个特殊的类来支持带有修饰符的类型，clang::QualType，是一个指向clang::Type的指针和包含类型修饰符信息的位掩码的组合。这个类有一个方法来获取指向clang::Type的指针并检查不同的修饰符。以下代码（LLVM 18.x, clang/lib/AST/ExprConstant.cpp, 第3918行）展示了如何检查类型是否有const修饰符：
 
 \begin{cpp}
 bool checkConst(QualType QT) {
@@ -77,7 +77,7 @@ bool checkConst(QualType QT) {
 图3.4：clang/lib/AST/ExprConstant.cpp中的checkConst实现
 \end{center}
 
-值得注意的是，clang::QualType实现了operator->()和operator*()，也就是说，它可以被视为指向clang::Type类的智能指针。
+clang::QualType实现了operator->()和operator*()，可以视为指向clang::Type类的智能指针。
 
 除了修饰符之外，类型还可以有其他信息，表示不同的内存地址模型。例如，可以有一个指向对象的指针或引用。clang::Type有如下辅助方法来检查不同的地址模型：
 
@@ -100,9 +100,9 @@ typedef int bar;
 图3.5：类型别名声明
 \end{center}
 
-原始类型，在我们的例子中是int，被称为规范类型。你可以使用clang::QualType::isCanonical()方法来测试类型是否是规范类型。clang::QualType还提供了一个方法来从别名获取规范类型：clang::QualType::getCanonicalType()。
+原始类型，在例子中是int，称为规范类型。可以使用clang::QualType::isCanonical()方法来测试类型是否是规范类型。clang::QualType还提供了一个方法来从别名获取规范类型：clang::QualType::getCanonicalType()。
 
-在了解了Clang中用于AST的基本块之后，现在是时候研究这些块如何用于AST遍历。这是编译器和编译工具的基本操作，我们将在本书中广泛使用。
+了解了Clang中用于AST的基本块之后，现在是时候研究这些块如何用于AST遍历，这是编译器和编译工具的基本操作。
 
 
 

@@ -1,6 +1,6 @@
-AST匹配器\footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}.} 为定位特定的AST节点提供了另一种方法。它们在搜索不适当的模式使用或识别需要修改的AST节点的linters和重构工具中特别有用。
+AST匹配器\footnote{LLVM Community. AST Matcher Reference. 2024. URL \url{https://clang.llvm.org/docs/LibASTMatchersReference.html}} 为定位特定的AST节点提供了另一种方法。在搜索不适当的模式，使用或识别需要修改的AST节点的检查器和重构工具。
 
-我们将创建一个简单的程序来测试AST匹配。该程序将识别具有名称max的函数定义。我们将使用从前面的示例中稍作修改的CMakeLists.txt文件，以包含支持AST匹配所需的库：
+我们将创建一个简单的程序来测试AST匹配。该程序将识别具有名称max的函数定义，使用从前面的示例中稍作修改的CMakeLists.txt文件，以包含支持AST匹配所需的库：
 
 \begin{cmake}
 cmake_minimum_required(VERSION 3.16)
@@ -36,7 +36,7 @@ endif()
 图3.24: AST匹配器测试工具的CMakeLists.txt文件
 \end{center}
 
-我们添加了两个额外的库：LLVMFrontendOpenMP和clangASTMatchers（见图3.24中的第18行和第21行）。我们工具的主函数看起来像这样：
+添加了两个库：LLVMFrontendOpenMP和clangASTMatchers（见图3.24中的第18行和第21行）。工具的主函数看起来像这样：
 
 \begin{cpp}
 #include "clang/Tooling/CommonOptionsParser.h"
@@ -70,7 +70,7 @@ int main(int argc, const char **argv) {
 图3.25: AST匹配器测试工具的主函数
 \end{center}
 
-正如你所观察到的（第21-23行），我们使用了MatchFinder类，并定义了一个自定义回调（通过第4行的头文件包含），该回调描述了我们打算匹配的特定AST节点。回调的实现如下：
+第21-23行使用了MatchFinder类，并定义了一个自定义回调（通过第4行的头文件包含），该回调描述了我们打算匹配的特定AST节点。回调的实现如下：
 
 \begin{cpp}
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -106,18 +106,18 @@ public:
 图3.26: AST匹配器测试工具的匹配回调
 \end{center}
 
-代码中最重要的部分位于第7-9行。每个匹配器都由一个ID标识，在我们的情况下是'match-id'。匹配器本身在第8-9行定义：
+代码中最重要的部分位于第7-9行。每个匹配器都由一个ID标识，在我们的示例中是'match-id'。匹配器本身在第8-9行定义：
 
 \begin{cpp}
 clang::ast_matchers::DeclarationMatcher M =
   functionDecl(decl().bind(MatchID), matchesName("max"));
 \end{cpp}
 
-这个匹配器寻找具有特定名称的函数声明，使用functionDecl()，正如我们在matchesName()中看到的那样。我们使用了一个专门的领域特定语言（DSL）来指定匹配器。DSL使用C++宏实现。我们还可以创建自己的匹配器，这将在第7.3.3节，检查实现中展示。值得注意的是，递归AST访问者在匹配器实现中的AST遍历中起着核心作用。
+这个匹配器寻找具有特定名称的函数声明，使用functionDecl()，正如在matchesName()中看到的那样。使用了一个专门的领域特定语言（DSL）来指定匹配器，DSL使用C++宏实现。还可以创建自己的匹配器，检查实现中展示。值得注意的是，递归AST访问者在匹配器实现中的AST遍历中起着核心作用。
 
-程序可以使用我们之前使用的相同的命令序列进行编译。见图3.11。
+程序可以使用之前使用的相同的命令序列进行编译。见图3.11。
 
-我们将使用图2.5中示例的一个稍微修改版本，其中添加了一个额外的函数：
+使用图2.5中示例的一个修改版本，添加了一个函数：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -135,7 +135,7 @@ int min(int a, int b) {
 图3.27: AST匹配器的测试程序minmax.cpp
 \end{center}
 
-当我们运行我们的测试工具时，我们将获得以下输出：
+运行测试工具时，将获得以下输出：
 
 \begin{shell}
 ./matchvisitor minmax.cpp -- -std=c++17
@@ -147,11 +147,9 @@ Found the 'max' function at minmax.cpp:1:5
 图3.28: 在测试文件上运行matchvisitor实用程序的结果
 \end{center}
 
-As we can see, it has located only one function declaration with the name specified for the matcher.
+它只找到了与匹配器指定的名称匹配的一个函数声明。
 
-如我们所见，它只找到了与匹配器指定的名称匹配的一个函数声明。
-
-匹配器的DSL通常在自定义Clang工具中使用，但它也可以作为独立工具使用。一个专门的程序名为clang-query，它可以执行不同的匹配查询，用于在分析的C++代码中搜索特定的AST节点。让我们看看这个工具是如何工作的。
+匹配器的DSL通常在自定义Clang工具中使用，也可以作为独立工具使用。一个专门的程序名为clang-query，可以执行不同的匹配查询，用于在分析的C++代码中搜索特定的AST节点。让我们看看这个工具是如何工作的。
 
 
 

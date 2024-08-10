@@ -1,4 +1,4 @@
-为了我们的第一个测试项目，我们将创建一个简单的Clang工具，该工具运行编译器并检查提供的源文件的语法。我们将创建一个所谓的树外LLVM项目，即一个将使用LLVM但位于主LLVM源树外的项目。
+为了第一个测试项目，创建一个简单的Clang工具，该工具运行编译器，并检查提供的源文件的语法。先创建一个所谓的树外LLVM项目，即一个将使用LLVM但位于主LLVM源树外的项目。
 
 创建项目需要执行以下几项操作：
 
@@ -13,7 +13,7 @@
 使用LLVM的源代码必须创建
 \end{itemize}
 
-从第一步开始，并安装Clang支持库和头文件。我们将使用以下CMake配置命令：
+从第一步开始，安装Clang支持库和头文件。使用以下CMake配置命令：
 
 \begin{shell}
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_USE_LINKER=gold -DLLVM_USE_SPLIT_DWARF=ON -DBUILD_SHARED_LIBS=ON ../llvm
@@ -23,13 +23,13 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM
 图 1.12: LLVM CMake配置，用于简单的语法检查Clang工具
 \end{center}
 
-如您所注意到的，我们只启用了一个项目：clang。所有其他选项都是我们调试构建的标准配置。该命令必须从LLVM源树中创建的构建文件夹中运行，如在第1.3.1节"使用CMake进行配置"中建议的那样。
+这里只启用了一个项目：clang。所有其他选项都是我们调试构建的标准配置。该命令必须从LLVM源树中创建的构建文件夹中运行。
 
 \begin{myNotic}{重要提示}
 图1.12中指定的配置将在整本书中作为默认构建配置使用。
 \end{myNotic}
 
-使用共享库的配置，除了减少大小外，还有简化依赖项指定的优点。您只需要指定您的项目直接依赖的共享库，动态链接器将处理其余部分。
+使用动态库的配置，除了减少大小外，还有简化依赖项指定的优点。只需要指定项目直接依赖的动态库，动态链接器将处理其余部分。
 
 所需的库和头文件可以通过以下命令安装：
 
@@ -37,9 +37,9 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../install -DLLVM
 $ ninja install
 \end{shell}
 
-库和头文件将被安装到通过CMAKE\_INSTALL\_PREFIX选项指定的安装文件夹中。
+库和头文件将安装到通过CMAKE\_INSTALL\_PREFIX选项指定的文件夹中。
 
-我们需要为我们的项目创建两个文件：
+再为项目创建两个文件：
 
 \begin{itemize}
 \item
@@ -82,32 +82,30 @@ endif()
 图 1.13: 用于简单语法检查Clang工具的CMake文件
 \end{center}
 
-文件中最重要的部分如下：
-
 \begin{itemize}
 \item
-第2行：我们指定了项目名称（syntax-check）。这同时也是我们可执行文件的名称。
+第2行：指定了项目名称（syntax-check）。这也是可执行文件的名称。
 
 \item
 第4-7行：测试LLVM\_HOME环境变量。
 
 \item
-第10行：我们设置了LLVM CMake帮助器的路径。
+第10行：设置了LLVM CMake帮助器的路径。
 
 \item
-第11行：我们从第10行指定的路径加载LLVM CMake包。
+第11行：从第10行指定的路径加载LLVM CMake包。
 
 \item
-第14行：我们指定了我们应该编译的源文件。
+第14行：指定了编译的源文件。
 
 \item
-第16行：我们设置了额外的编译标志：-fno-rtti。当LLVM没有构建RTTI时，这个标志是必需的。这是为了减少代码和可执行文件大小而进行的努力 \footnote{LLVM社区. LLVM编码标准. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}。}。
+第16行：设置了相应的编译标志：-fno-rtti。当LLVM没有构建RTTI时，为了减少代码和可执行文件大小 \footnote{LLVM社区. LLVM编码标准. 2023. URL \url{https://llvm.org/docs/CodingStandards.html}}，这个标志是必需的。
 
 \item
-第18-22行：我们指定要链接到我们程序的必需库
+第18-22行：指定要链接到我们程序的必需库
 \end{itemize}
 
-我们的工具源代码如下：
+工具源码如下：
 
 \begin{cpp}
 #include "clang/Frontend/FrontendActions.h" // clang::SyntaxOnlyAction
@@ -140,23 +138,21 @@ int main(int argc, const char **argv) {
 图 1.14: SyntaxCheck.cpp
 \end{center}
 
-文件中最重要的部分如下：
-
 \begin{itemize}
 \item
-第7-9行：大多数编译器工具都有一套相同的命令行参数。LLVM命令行库 \footnote{LLVM社区. CommandLine 2.0库手册. 2023. URL \url{https://llvm.org/docs/CommandLine.html}。} 提供了一些API来处理编译器命令选项。我们在第7行设置了该库。我们在第8-10行设置了额外的帮助信息。
+第7-9行：大多数编译器工具都有一套相同的命令行参数。LLVM命令行库 \footnote{LLVM社区. CommandLine 2.0库手册. 2023. URL \url{https://llvm.org/docs/CommandLine.html}} 提供了一些API来处理编译器命令选项。第7行设置了该库，在第8-10行设置了相应的帮助信息。
 
 \item
-第13-18行：我们解析命令行参数。
+第13-18行：解析命令行参数。
 
 \item
-第19-24行：我们创建并运行我们的Clang工具。
+第19-24行：创建并运行Clang工具。
 
 \item
-第22-23行：我们使用clang::SyntaxOnlyAction前端动作，它将在输入文件上运行语法和语义检查。
+第22-23行：使用clang::SyntaxOnlyAction前端动作，将在输入文件上运行语法和语义检查。
 \end{itemize}
 
-我们必须指定LLVM安装文件夹的路径来构建我们的工具。如之前所述，路径必须通过LLVM\_HOME环境变量指定。我们的配置命令（见图1.12）将路径指定为LLVM项目源树中的安装文件夹。因此，我们可以按照以下方式构建我们的工具：
+必须指定LLVM安装文件夹的路径来构建工具。如之前所述，路径必须通过LLVM\_HOME环境变量指定。配置命令（见图1.12）将路径指定为LLVM项目源树中的安装文件夹，所以可以按照以下方式构建工具：
 
 \begin{shell}
 export LLVM_HOME=<...>/llvm-project/install
@@ -170,7 +166,7 @@ ninja
 图 1.15: syntax-check构建命令
 \end{center}
 
-我们可以按照以下方式运行工具：
+可以按照以下方式运行工具：
 
 \begin{shell}
 $ cd build
@@ -180,10 +176,10 @@ USAGE: syntax-check [options] <source0> [... <sourceN>]
 \end{shell}
 
 \begin{center}
-图 1.16: The syntax-check –help 输出
+图 1.16: syntax-check –help 的输出
 \end{center}
 
-如果我们在一个有效的C++源文件上运行程序，它将依次退出；但如果在一个有语法错误的C++文件上运行，它会产生一个错误消息：
+如果在一个C++源文件上运行程序，它将直接退出；但在一个有语法错误的C++文件上运行，会产生错误消息：
 
 \begin{shell}
 $ ./syntax-check mainbroken.cpp -- -std=c++17
@@ -199,9 +195,9 @@ Error while processing mainbroken.cpp.
 图 1.17: 在语法错误文件上运行syntax-check
 \end{center}
 
-我们在图1.17中使用'-{}-'将附加参数传递给编译器，具体指定我们想要使用C++17，选项'-std=c++17'。
+图1.17中使用'-{}-'将附加参数传递给编译器，具体指定C++17，选项'-std=c++17'。
 
-我们还可以使用LLDB调试器运行我们的工具：
+还可以使用LLDB调试器运行工具：
 
 \begin{shell}
 $  <...>/llvm-project/install/bin/lldb \
@@ -212,12 +208,12 @@ $  <...>/llvm-project/install/bin/lldb \
 \end{shell}
 
 \begin{center}
-图 1.18: 在调试器下运行syntax-check
+图 1.18: 调试器下运行syntax-check
 \end{center}
 
-我们以syntax-check为主程序，将main.cpp源文件作为工具的参数（图1.18）。我们还向syntax-check可执行文件传递了附加的编译标志(-std=c++17)。
+以syntax-check为主程序，将main.cpp源文件作为工具的参数（图1.18）。还可以向syntax-check可执行文件传递编译标志(-std=c++17)。
 
-我们可以设置断点并按照以下方式运行程序：
+可以设置断点，并按照以下方式运行程序：
 
 \begin{shell}
 1  (lldb) b clang::ParseAST
@@ -242,13 +238,12 @@ $  <...>/llvm-project/install/bin/lldb \
 \end{shell}
 
 \begin{center}
-图 1.19: LLDB交互会话，用于Clang工具测试项目
+图 1.19: LLDB的交互演示，用于Clang工具测试项目
 \end{center}
 
+在clang::ParseAST函数中设置了一个断点（图1.19，第1行）。该函数是源代码解析的主要入口点。第3行运行程序，并在第16行继续执行断点后的程序。
 
-我们在clang::ParseAST函数中设置了一个断点（图1.19，第1行）。该函数是源代码解析的主要入口点。我们在第3行运行程序，并在第16行继续执行断点后的程序。
-
-在本书的后续章节中，我们将使用相同的调试技术来调查Clang的源代码。
+本书的后续章节中，将使用相同的调试技术来研究Clang的源码。
 
 
 

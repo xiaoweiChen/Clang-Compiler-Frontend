@@ -1,4 +1,4 @@
-控制流图（CFG）是编译器设计和静态程序分析中的一个基本数据结构，它表示程序在执行过程中可能遍历的所有路径。
+控制流图（CFG）是编译器设计和静态程序分析中的基本数据结构，表示程序在执行过程中可能遍历的所有路径。
 
 CFG包含以下关键组件：
 
@@ -10,10 +10,10 @@ CFG包含以下关键组件：
 边：代表从一个块到另一个块的控制流，包括条件分支和无条件分支。
 
 \item
-开始和结束节点：每个CFG都有一个唯一的入口节点和一个或多个出口节点。
+开始和结束节点：每个CFG都有唯一的入口节点和一个或多个出口节点。
 \end{itemize}
 
-例如，考虑我们之前用作示例的计算两个整数中最大值的函数；见图2.5：
+例如，之前用作示例的计算两个整数中最大值的函数；见图2.5：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -29,35 +29,34 @@ int max(int a, int b) {
 
 相应的CFG可以表示如下：
 
-\myGraphic{0.5}{content/part2/chapter6/images/2.png}{图6.2：max.cpp的CFG示例}
+\myGraphic{0.3}{content/part2/chapter6/images/2.png}{图6.2：max.cpp的CFG示例}
 
 图6.2中显示的图表以视觉方式表示了max函数（来自图6.1）的CFG，由一系列连接的节点和有向边组成：
-
 
 \begin{itemize}
 \item
 入口节点：顶部有一个"entry"节点，代表函数执行的起始点。
 
 \item
-条件节点：在入口节点下方，有一个标记为"a > b"的节点。这个节点代表函数中的条件语句，其中a和b进行比较。
+条件节点：入口节点下方，有一个标记为"a > b"的节点。这个节点代表函数中的条件语句，其中a和b进行比较。
 
 \item
 真和假条件的分支：
 \begin{itemize}
 \item
-在真分支（左侧），有一个标记为"Return a"的节点，通过一条从"a > b"节点连接的边。这条边标记为"true"，表示如果a大于b，则流程进入此节点。
+真分支（左侧），有一个标记为"Return a"的节点，通过一条从"a > b"节点连接的边。这条边标记为"true"，表示如果a大于b，则流程进入此节点。
 
 \item
-在假分支（右侧），有一个标记为"Return b"的节点，通过一条从"a > b"节点连接的边。这条边标记为"false"，表示如果a不大于b，则流程进入此节点。
+假分支（右侧），有一个标记为"Return b"的节点，通过一条从"a > b"节点连接的边。这条边标记为"false"，表示如果a不大于b，则流程进入此节点。
 \end{itemize}
 
 \item
 出口节点：在"Return a"和"Return b"节点下方，汇聚于一点，有一个"exit"节点。这代表函数的终止点，即在返回a或b后控制流退出函数的点。
 \end{itemize}
 
-这个CFG有效地展示了max函数如何处理输入并根据比较做出决定返回哪个值。
+这个CFG有效地展示了max函数，如何处理输入并根据比较做出决定返回哪个值。
 
-CFG表示还可以用于估计函数的复杂性。简而言之，更复杂的图对应于更复杂的系统。我们将使用一个精确的复杂度定义，称为循环复杂度（或M\footnote{Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.}），可以按照以下方式计算:
+CFG表示还可以用于估计函数的复杂性。简而言之，更复杂的图对应于更复杂的系统。我们将使用一个精确的复杂度定义，称为循环复杂度$M$\footnote{Thomas J. McCabe. A complexity measure. IEEE Transactions on Software Engineering, SE-2(4):308–320, 1976. ISSN 0098-5589. doi: 10.1109/TSE.1976.233837.}，可以按照以下方式计算:
 
 $M = E - N + 2P$
 
@@ -65,35 +64,35 @@ $M = E - N + 2P$
 
 \begin{itemize}
 \item
-E是图中的边数
+$E$是图中的边数
 
 \item
-N是图中的节点数
+$N$是图中的节点数
 
 \item
-P是连接组件数（对于单个CFG，P通常为1）
+$P$是连接组件数（对于单个CFG，P通常为1）
 \end{itemize}
 
 对于前面讨论的max函数，CFG可以分析如下：
 
 \begin{itemize}
 \item
-节点（N）：有五个节点（Entry，a > b，Return a，b，Exit）
+节点（$N$）：有五个节点（Entry，a > b，Return a，b，Exit）
 
 \item
-边（E）：有五条边（从Entry到a > b，从a > b到Return a，从a > b到Return b，从Return a到Exit，以及从Return b到Exit）
+边（$E$）：有五条边（从Entry到a > b，从a > b到Return a，从a > b到Return b，从Return a到Exit，以及从Return b到Exit）
 
 \item
-连接组件（P）：因为它是单个函数，P = 1
+连接组件（$P$）：因为它是单个函数，$P$ = 1
 \end{itemize}
 
-将这些值代入公式，我们得到以下结果：
+将这些值代入公式，得到以下结果：
 
 $ M = 5 − 5 + 2 × 1 = 2$
 
-因此，根据给定的CFG，max函数的循环复杂度为2。这表明代码中有两条线性独立的路径，对应于if语句的两个分支。
+根据给定的CFG，max函数的循环复杂度为2。这表明代码中有两条线性独立的路径，对应于if语句的两个分支。
 
-我们的下一步将是创建一个使用CFG计算循环复杂度的Clang-Tidy检查。
+我们的下一步是，创建一个使用CFG计算循环复杂度的Clang-Tidy检查。
 
 
 

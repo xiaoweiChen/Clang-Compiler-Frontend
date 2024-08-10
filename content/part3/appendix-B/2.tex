@@ -1,6 +1,6 @@
-预编译头文件（PCH）是Clang的一个特性，旨在提高Clang前端性能。其基本思想是为头文件创建一个AST（抽象语法树）并在编译包含该头文件的源文件时重用这个AST。
+预编译头文件（PCH）是Clang的一个特性，旨在提高Clang前端性能。其基本思想是为头文件创建一个AST（抽象语法树），并在编译包含该头文件的源文件时重用这个AST。
 
-生成预编译头文件很简单[5]。假设您有以下头文件，header.h：
+生成预编译头文件很简单\footnote{LLVM Community. Clang Compiler User’s Manual. 2022. URL \url{https://clang.llvm.org/docs/UsersManual.html}}。假设有以下头文件，header.h：
 
 \begin{cpp}
 #pragma once
@@ -13,7 +13,7 @@ void foo() {
 图 10.1：要编译为PCH的头文件
 \end{center}
 
-您可以使用以下命令为其生成PCH：
+可以使用以下命令为其生成PCH：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-pch        \
@@ -21,9 +21,9 @@ $ <...>/llvm-project/install/bin/clang -cc1 -emit-pch        \
                                       -o header.pch
 \end{shell}
 
-在这里，我们使用-x c+±header选项来指定头文件应该被视为C++头文件。输出文件将被命名为header.pch。
+使用-x c++-header选项来指定头文件应该视为C++头文件。输出文件将被命名为header.pch。
 
-仅仅生成预编译头文件是不够的；您需要开始使用它们。一个典型的包含该头的C++源文件可能如下所示：
+仅仅生成预编译头文件是不够的；需要使用它们。一个典型的包含该头的C++源文件可能如下所示：
 
 \begin{cpp}
 #include "header.h"
@@ -38,7 +38,7 @@ int main() {
 图 10.2：包含header.h的源文件
 \end{center}
 
-如您所见，头文件是以下方式包含的：
+头文件是用以下方式包含的：
 
 \begin{cpp}
 #include "header.h"
@@ -48,7 +48,7 @@ int main() {
 图 10.3：头文件header.h的包含
 \end{center}
 
-默认情况下，Clang不会使用PCH，并且您需要通过以下命令明确指定它：
+默认情况下，Clang不会使用PCH，并且需要通过以下命令明确指定：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj        \
@@ -56,9 +56,9 @@ $ <...>/llvm-project/install/bin/clang -cc1 -emit-obj        \
                                      main.cpp -o main.o
 \end{shell}
 
-在这里，我们使用-include-pch来指定包含的预编译头文件：header.pch。
+这里，使用-include-pch来指定包含的预编译头文件：header.pch。
 
-您可以使用调试器检查这个命令，它将给出以下输出：
+可以使用调试器检查这个命令，将有以下输出：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj -include-pch header.pch main.cpp -o main.o
@@ -79,9 +79,9 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj -include-pch heade
 图 10.4：在clang::ASTReader::ReadAST处加载预编译头文件
 \end{center}
 
-从这个例子中，您可以看到Clang从预编译头文件中读取AST。重要的是要注意，预编译头文件是在解析之前读取的，这使得Clang能够在解析主源文件之前从头文件中获得所有符号。这使得显式头文件包含变得不必要。因此，您可以删除源文件中的\#include "header.h"指令并成功编译。
+可以看到Clang从预编译头文件中读取AST。重要的是要注意，预编译头文件是在解析之前读取的，这使得Clang能够在解析主源文件之前从头文件中获得所有符号。这使得显式头文件包含变得不必要，所以可以删除源文件中的\#include "header.h"指令并成功编译。
 
-如果没有预编译头文件，这是不可能的，您会遇到以下编译错误：
+如果没有预编译头文件，这无法完成，会遇到以下编译错误：
 
 \begin{shell}
 main.cpp:4:3: error: use of undeclared identifier 'foo'
@@ -94,8 +94,8 @@ main.cpp:4:3: error: use of undeclared identifier 'foo'
 图 10.5：由于缺少包含而产生的编译错误
 \end{center}
 
-值得注意的是，只有一个–include-pch选项会被处理；所有其他选项都会被忽略。这反映了一个事实，即一个翻译单元只能有一个预编译头文件。另一方面，一个预编译头文件可以包含另一个预编译头文件。这种功能称为链式预编译头文件\footnote{LLVM Community. Precompiled Header and Modules Internals. URL \url{https://clang.llvm.org/docs/PCHInternals.html}}，因为它创建了一个依赖链，其中一个预编译头文件依赖于另一个预编译头文件。
+只有一个–include-pch选项会处理，其他选项都会忽略。这反映了，即一个翻译单元只能有一个预编译头文件。另一方面，一个预编译头文件可以包含另一个预编译头文件。这种功能称为链式预编译头文件\footnote{LLVM Community. Precompiled Header and Modules Internals. URL \url{https://clang.llvm.org/docs/PCHInternals.html}}，因为它创建了一个依赖链，其中一个预编译头文件依赖于另一个预编译头文件。
 
-预编译头文件的使用不仅限于常规编译。正如我们在图8.38中看到的，Clangd中的AST构建，预编译头文件被积极用于性能优化，作为包含头文件的预编译部分的高速缓存占位符。
+预编译头文件的使用不仅限于常规编译。正如在图8.38中看到的，Clangd中的AST构建，预编译头文件可用于性能优化，作为包含头文件的预编译部分的高速缓存占位符。
 
-预编译头文件是一种长期使用的技术，但它们有一些局限性。最重要的限制之一是只能有一个预编译头文件，这在实际项目中大大限制了PCH的使用。模块解决了一些与预编译头文件相关的问题。让我们来探讨它们。
+预编译头文件是一种长期使用的技术，但它们有一些局限性。最重要的限制之一是只能有一个预编译头文件，这在实际项目中大大限制了PCH的使用。模块解决了一些与预编译头文件相关的问题。

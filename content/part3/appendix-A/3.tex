@@ -1,8 +1,8 @@
-CDB的概念不仅限于Clang，但基于Clang的工具广泛使用它。例如，Clang编译器本身可以使用编译数据库来了解如何编译项目中的文件。像Clang-Tidy和Clangd（用于IDE中的语言支持）这样的工具也可以使用它来确保它们理解构建时的代码，使它们的分析和转换更加精确。
+CDB的概念不仅限于Clang，但基于Clang的工具广泛使用它。例如，Clang编译器本身可以使用编译数据库，来了解如何编译项目中的文件。像Clang-Tidy和Clangd（用于IDE中的语言支持）这样的工具，也可以使用它来确保它们理解构建时的代码，使它们的分析和转换更加精确。
 
 \mySamllsection{针对大型项目的Clang-Tidy配置}
 
-要使用带有CDB的clang-tidy，通常不需要任何额外的配置。Clang-tidy可以自动检测并使用项目根目录中的compile\_commands.json文件。
+要使用带有CDB的clang-tidy，通常不需要任何配置。Clang-tidy可以自动检测并使用项目根目录中的compile\_commands.json文件。
 
 另一方面，Clang工具提供了一个特殊选项，-p，定义如下：
 
@@ -10,7 +10,7 @@ CDB的概念不仅限于Clang，但基于Clang的工具广泛使用它。例如�
 -p <build-path> is used to read a compile command database
 \end{shell}
 
-您可以使用这个选项在Clang源代码中的一个文件上运行Clang-Tidy。例如，如果您在克隆源代码的llvm-project文件夹中运行它，它看起来会像这样：
+可以使用这个选项在Clang源代码中的一个文件上运行Clang-Tidy。如果克隆源代码的llvm-project文件夹中运行，看起来会像这样：
 
 \begin{shell}
 $ ./install/bin/clang-tidy clang/lib/Parse/Parser.cpp -p ./build/
@@ -20,9 +20,9 @@ $ ./install/bin/clang-tidy clang/lib/Parse/Parser.cpp -p ./build/
 图 9.5：在LLVM代码库上运行Clang-Tidy
 \end{center}
 
-在这种情况下，我们正在安装它的文件夹中运行Clang-Tidy，如第5.2.1节“构建和测试Clang-Tidy”中所述。我们还指定了包含CDB的构建文件夹作为项目根文件夹。
+在安装它的文件夹中运行Clang-Tidy，如第5.2.1节"构建和测试Clang-Tidy"中所述。我们还指定了包含CDB的构建文件夹作为项目根文件夹。
 
-Clang-Tidy是积极使用CDB在大型项目上执行的工具之一。另一个工具是Clangd，我们也将探讨它。
+Clang-Tidy是积极使用CDB在大型项目上执行的工具，另一个工具是Clangd。
 
 \mySamllsection{针对大型项目的Clangd设置}
 
@@ -38,14 +38,14 @@ in the current directory and parent paths of each source file.
 \end{shell}
 
 \begin{center}
- 图 9.6：来自'clangd –help'输出的'–compile-commands-dir'选项的描述
+图 9.6：来自'clangd –help'输出的'–compile-commands-dir'选项的描述
 \end{center}
 
-您可以在Visual Studio Code的设置面板中指定这个选项，如下面所示：
+可以在Visual Studio Code的设置面板中指定这个选项，如下所示：
 
 \myGraphic{0.7}{content/part3/appendix-A/images/7.png}{图 9.7：为clangd配置CDB路径}
 
-因此，如果您打开Clang源代码中的一个文件，您将能够访问Clangd提供的导航支持，如下面所示：
+如果打开Clang源代码中的一个文件，将能够访问Clangd提供的导航支持，如下所示：
 
 \myGraphic{0.7}{content/part3/appendix-A/images/8.png}{图 9.8：Clangd在clang/lib/Parse/Parser.cpp中为Parser::Parser方法提供悬停提示}
 

@@ -1,6 +1,8 @@
-LLVM是用C++语言编写的，截至2022年7月，它使用C++标准的C++17版本\footnote{LLVM Community. [LLVM] Update C++ standard to 17. 2022. URL \url{https://reviews.llvm.org/D130689}}。LLVM积极利用标准模板库（STL）提供的功能。另一方面，LLVM包含了许多基本容器的内部实现 \footnote{ LLVM Community. LLVM Programmer's Manual. 2023. URL \url{https://llvm.org/docs/ProgrammersManual.html}}，主要是为了优化性能。例如，llvm::SmallVector具有与std::vector类似接口，但内部实现进行了优化。因此，对于希望使用LLVM和Clang的人来说，熟悉这些扩展是至关重要的。
+LLVM是用C++语言编写的，截至2022年7月，它使用C++标准的C++17版本\footnote{LLVM Community. [LLVM] Update C++ standard to 17. 2022. URL \url{https://reviews.llvm.org/D130689}}。LLVM积极利用标准模板库（STL）提供的功能。另一方面，LLVM包含了许多基本容器的内部实现 \footnote{LLVM Community. LLVM Programmer's Manual. 2023. URL \url{https://llvm.org/docs/ProgrammersManual.html}}，主要是为了优化性能。例如，llvm::SmallVector具有与std::vector类似接口，但内部实现进行了优化。对于希望使用LLVM和Clang的人来说，熟悉这些扩展至关重要。
 
-此外，LLVM还引入了其他开发工具，如TableGen，这是一种用于结构化数据处理的领域特定语言（DSL），以及LIT（LLVM集成测试器），即LLVM的测试框架。本章稍后将讨论这些工具的更多细节。我们将在这章中讨论以下主题：
+此外，LLVM还引入了其他开发工具，如TableGen，这是一种用于结构化数据处理的领域特定语言（DSL），以及LIT（LLVM集成测试器），即LLVM的测试框架。本章稍后将讨论这些工具的更多细节。
+
+本章将包含以下内容：
 
 \begin{itemize}
 \item
@@ -19,4 +21,4 @@ LLVM支持工具
 Clang插件项目
 \end{itemize}
 
-我们计划使用一个简单的示例项目来演示这些工具。这个项目将是一个Clang插件，用于估算C++类的复杂性。如果一个类的方法数量超过了作为参数指定的阈值，那么这个类就被认为是复杂的。虽然这种复杂性的定义可能被认为是微不足道的，但我们将在第6章“高级代码分析”中探索更高级的复杂性定义。
+我们计划使用一个简单的示例项目来演示这些工具。这个项目将是一个Clang插件，用于估算C++类的复杂性。如果一个类的方法数量超过了作为参数指定的阈值，那么这个类就被认为是复杂的。虽然这种复杂性的定义可能微不足道，但我们将在第6章"高级代码分析"中探索更高级的复杂性定义。

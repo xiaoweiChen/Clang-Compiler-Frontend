@@ -1,14 +1,14 @@
-模块（或预编译模块，PCMs）可以被视为预编译头文件进化的下一步。它们也代表了一种以二进制形式存在的解析过的 AST（抽象语法树），但形成了一种 DAG（有向无环图），意味着一个模块可以包含多个其他模块。
+模块（或预编译模块，PCM）可以视为预编译头文件进化的下一步，也代表了一种以二进制形式存在的解析过的 AST（抽象语法树），但形成了一种 DAG（有向无环图），意味着一个模块可以包含多个其他模块。
 
-与预编译头文件相比，这是一个重大的改进，因为在每个编译单元中只能引入一个预编译头文件。
+与预编译头文件相比，这是一个重大的改进，在每个编译单元中只能引入一个预编译头文件。
 
-C++20 标准引入了与模块相关的两个概念。第一个是普通模块，描述在 \footnote{国际标准化组织. 国际标准 ISO/IEC 14882:2020(E) – 编程语言 – C++. 国际标准化组织，2020. URL \url{https://www.iso.org/standard/73560.html}} 的第 10 节中。另一个是所谓的头单元，主要描述在第 15.5 节中。头单元可以被视为普通头文件和模块之间的中间步骤，并允许使用导入指令来导入普通头文件。
+C++20 标准引入了与模块相关的两个概念。第一个是普通模块，描述在 \footnote{国际标准化组织. 国际标准 ISO/IEC 14882:2020(E) – 编程语言 – C++. 国际标准化组织，2020. URL \url{https://www.iso.org/standard/73560.html}} 的第 10 节中。另一个是所谓的头单元，主要描述在第 15.5 节中。头单元可以视为普通头文件和模块之间的中间步骤，并允许使用导入指令来导入普通头文件。
 
-我们将关注 Clang 模块，这可以被视为 C++ 标准中头单元的实现。使用 Clang 模块有兩種不同的选项：显式模块和隐式模块。我们将探索这两种情况，但将从描述我们想要使用的模块的测试项目开始。
+我们将关注 Clang 模块，这可以视为 C++ 标准中头单元的实现。使用 Clang 模块有兩種不同的选项：显式模块和隐式模块。我们将探索这两种情况，但会从描述我们想要使用模块的测试项目开始。
 
 \mySamllsection{测试项目描述}
 
-为了进行模块实验，我们将考虑一个包含两个头文件的示例：header1.h 和 header2.h，分别定义了 void foo1() 和 void foo2() 函数，如下所示：
+为了进行模块实验，我们将考虑一个包含两个头文件的示例：header1.h 和 header2.h，分别定义了 void foo1() 和 void foo2() 函数：
 
 \begin{cpp}
 #pragma once
@@ -30,7 +30,6 @@ void foo2() {}
 图10.6:测试使用的头文件
 \end{center}
 
-
 这些头文件将用于以下源文件：
 
 \begin{cpp}
@@ -48,11 +47,13 @@ int main() {
 图10.7:源文件:main.cpp
 \end{center}
 
-我们打算将这些头文件组织成模块。Clang 使用一个特殊文件来描述逻辑结构，这被称为模块映射文件。让我们看看我们的测试项目的模块映射文件是什么样的。
+将这些头文件组织成模块。Clang 使用一个特殊文件来描述逻辑结构，这称为模块映射文件。
 
-\mySamllsection{Modulemap 文件}
+来看看我们的测试项目的模块映射文件是什么样的。
 
-我们的项目的模块映射文件将命名为 module.modulemap 并具有以下内容：
+\mySamllsection{Modulemap -- 模块映射文件}
+
+项目的模块映射文件将命名为 module.modulemap 并具有以下内容：
 
 \begin{cpp}
 module header1 {
@@ -69,15 +70,17 @@ module header2 {
 图10.8:模块映射文件:module.modulemap
 \end{center}
 
-如图 10.8 所示，我们定义了两个模块，header1 和 header2。
+如图 10.8 所示，定义了两个模块，header1 和 header2。
 
 每个模块都只包含一个头文件，并且导出了该头文件中的所有符号。
 
-现在我们已经收集了所有必要的部分，我们准备构建和使用模块。模块可以显式或隐式地构建。让我们从显式构建开始。
+现在已经收集了所有必要的部分，准备构建和使用模块。模块可以显式或隐式地构建。
+
+让我们从显式构建开始。
 
 \mySamllsection{显式模块}
 
-模块的结构由模块映射文件描述，如图 10.8 所示。我们每个模块只有一个头文件，但实际的模块可能包含多个头文件。因此，要构建一个模块，我们需要指定模块的结构（模块映射文件）和我们想要构建的模块名称。例如，对于 header1 模块，我们可以使用以下构建命令：
+模块的结构由模块映射文件描述，如图 10.8 所示。每个模块只有一个头文件，但实际的模块可能包含多个头文件。要构建一个模块，需要指定模块的结构（模块映射文件）和我们想要构建的模块名称。例如，对于 header1 模块，可以使用以下构建命令：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1            \
@@ -86,7 +89,7 @@ $ <...>/llvm-project/install/bin/clang -cc1            \
         -x c++-header -fno-implicit-modules
 \end{shell}
 
-在编译命令中有几个重要的方面。第一个是-cc1选项，它表示我们只调用编译器前端。有关更多信息，请参阅第2.3节，“Clang驱动程序概览”。此外，我们通过使用以下选项：-emit-module -o header1.pcm，指定我们想要创建一个名为header1.pcm的构建工件（模块）。模块的逻辑结构和需要构建的模块在module.modulemap文件中指定，该文件必须作为编译参数与-fmodule-name=header1选项一起指定。启用模块功能是通过使用-fmodules标志完成的，我们还通过-x c++header选项指定我们的头文件是C++头文件。为了显式禁用隐式模块，我们在命令中包含了-fno-implicit-modules，因为隐式模块（我们将在稍后的图10.9“隐式模块”中进行研究）默认是启用的，但我们此刻不想使用它们。
+编译命令中有几个重要的方面。第一个是-cc1选项，表示只调用编译器前端。有关更多信息，请参阅第2.3节，"Clang驱动程序概览"。此外，可以通过使用以下选项：-emit-module -o header1.pcm，指定想要创建一个名为header1.pcm的构建工件（模块）。模块的逻辑结构和需要构建的模块在module.modulemap文件中指定，该文件必须作为编译参数与-fmodule-name=header1选项一起指定。启用模块功能是通过使用-fmodules标志完成的，还可以通过-x c++header选项指定我们的头文件是C++头文件。为了显式禁用隐式模块，在命令中包含了-fno-implicit-modules，因为隐式模块（将在稍后的图10.9"隐式模块"中进行研究）默认是启用的，但此刻暂时不使用它们。
 
 第二个模块（header2）有类似的编译命令：
 
@@ -97,7 +100,7 @@ $ <...>/llvm-project/install/bin/clang -cc1            \
         -x c++-header -fno-implicit-modules
 \end{shell}
 
-下一步是使用生成的模块编译main.cpp，步骤如下:
+下一步是使用生成的模块编译main.cpp:
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1       \
@@ -108,7 +111,7 @@ $ <...>/llvm-project/install/bin/clang -cc1       \
        -o main.o -fno-implicit-modules
 \end{shell}
 
-正如我们所看到的，模块名称和构建工件（PCM文件）都是使用-fmodule-file编译选项指定的。使用的格式，如header1=header1.pcm，表明header1.pcm对应于header1模块。我们还使用-fmodule-map-file选项指定modulemap文件。值得注意的是，我们创建了两个构建工件：header1.pcm和header2.pcm，并将它们一起用于编译。这在预编译头文件的情况下是不可能的，因为如第10.2节“预编译头文件”所述，只允许使用一个预编译头文件。
+模块名称和构建工件（PCM文件）都是使用-fmodule-file编译选项指定的。使用的格式，如header1=header1.pcm，表明header1.pcm对应于header1模块。可以使用-fmodule-map-file选项指定modulemap文件。这里，创建了两个构建工件：header1.pcm和header2.pcm，并将它们一起用于编译。这在预编译头文件的情况下是不可能的，因为只允许使用一个预编译头文件。
 
 我们生成了一个对象文件main.o作为编译命令的结果。对象文件可以按以下方式链接：
 
@@ -116,7 +119,7 @@ $ <...>/llvm-project/install/bin/clang -cc1       \
 $ <...>/llvm-project/install/bin/clang main.o -o main -lstdc++
 \end{shell}
 
-让我们验证在编译期间是否加载了模块。这可以用LLDB完成，如下所示:
+验证在编译期间是否加载了模块。这可以用LLDB完成:
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj main.cpp -fmodules -fmodule-map-file=module.modulemap -fmodule-file=header1=header1.pcm -fmodule-file=header2=header2.pcm -o main.o -fno-implicit-modules
@@ -143,13 +146,13 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 -emit-obj main.cpp -fmodules
 图 10.9：显式模块加载
 \end{center}
 
-我们在clang::CompilerInstance::findOrCompileModuleAndReadAST处设置了断点，如图10.9中的第3行所示。我们命中了两次断点：第一次是在第9行，针对名为header1的模块；然后是在第14行，针对名为header2的模块。
+在clang::CompilerInstance::findOrCompileModuleAndReadAST处设置了断点，如图10.9中的第3行所示。命中了两次断点：第一次是在第9行，针对名为header1的模块；然后是在第14行，针对名为header2的模块。
 
-在使用显式模块时，您必须在所有编译命令中明确定义构建工件并指定它们将存储的路径，正如我们刚刚发现的。然而，所有必需的信息都存储在modulemap文件中（参见图10.8）。编译器可以利用这些信息自动创建所有必要的构建工件。对于这个问题，答案是肯定的，这个功能由隐式模块提供。让我们来探讨它。
+使用显式模块时，必须在所有编译命令中明确定义构建文件，并指定它们将存储的路径。然而，所有必需的信息都存储在modulemap文件中（参见图10.8）。编译器可以利用这些信息自动创建所有必要的构建文件。对于这个问题，答案是肯定的，这个功能由隐式模块提供。
 
 \mySamllsection{隐式模块}
 
-如前所述，modulemap文件包含了构建所有模块（header1和header2）并用于依赖文件（main.cpp）构建所需的所有信息。因此，我们必须指定modulemap文件的路径以及构建工件将存储的文件夹。这可以按以下方式完成：
+modulemap文件包含了构建所有模块（header1和header2）并用于依赖文件（main.cpp）构建所需的所有信息。因此，必须指定modulemap文件的路径，以及构建文件将存储的文件夹。这可以按以下方式完成：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 \
@@ -160,7 +163,7 @@ $ <...>/llvm-project/install/bin/clang -cc1 \
       -o main.o
 \end{shell}
 
-如我们所见，我们没有指定-fno-implicit-modules，我们还使用-fmodules-cache-path=./cache指定了构建工件的路径。如果我们检查该路径，我们将能够看到创建的模块：
+没有指定-fno-implicit-modules，还使用-fmodules-cache-path=./cache指定了构建工件的路径。如果检查该路径，就能够看到创建的模块：
 
 \begin{shell}
 $ tree ./cache
@@ -176,11 +179,11 @@ $ tree ./cache
 图 10.10：Clang为隐式模块生成的缓存
 \end{center}
 
-Clang将监视缓存文件夹（在我们的例子中是./cache）并删除长时间未使用的构建工件。如果它们的依赖项（例如，包含的头文件）发生了变化，它还将重新构建模块。
+Clang将监视缓存文件夹（在我们的例子中是./cache），并删除长时间未使用的构建工件。如果依赖项（例如，包含的头文件）发生了变化，它还将重新构建模块。
 
 模块是一个非常强大的工具，但像所有强大的工具一样，它们可能会引入一些复杂的问题。让我们探讨由模块引起的一个最有趣的问题。
 
-与模块相关的一些问题 使用模块的代码可能会在您的程序中引入一些复杂的行为。考虑一个由两个头文件组成的项目，如下所示：
+与模块相关的一些问题，使用模块的代码可能会在程序中引入一些复杂的行为。考虑一个由两个头文件组成的项目，如下所示：
 
 \begin{cpp}
 #pragma once
@@ -231,7 +234,7 @@ main.cpp:4:16: error: use of undeclared identifier 'h2'
 图 10.13：由于缺少头文件而产生的编译错误
 \end{center}
 
-错误很明显，因为我们没有包含包含h2变量定义的第二个头文件。
+错误很明显，因为没有包含包含h2变量定义的第二个头文件。
 
 如果使用隐式模块，情况将有所不同。考虑以下module.modulemap文件：
 
@@ -250,7 +253,7 @@ module h1 {
 图 10.14：引入隐式依赖的modulemap文件
 \end{center}
 
-这个文件创建了两个模块，h1和h2。第二个模块被包含在第一个模块中。
+这个文件创建了两个模块，h1和h2。第二个模块包含在第一个模块中。
 
 如果我们按以下方式编译，编译将成功：
 
@@ -268,9 +271,9 @@ $ <...>/llvm-project/install/bin/clang main.o -o main -lstdc++
 图 10.15：对于缺少头文件的文件，但在启用隐式模块的情况下成功编译
 \end{center}
 
-编译完成且没有错误，因为modulemap文件隐式地将header2.h添加到了使用的模块（h1）中。我们还使用了export *指令导出了所有符号。因此，当Clang遇到\#include "header1.h"时，它会加载相应的h1模块，因此隐式地加载了在h2模块和header2.h头文件中定义的符号。
+编译完成且没有错误，因为modulemap文件隐式地将header2.h添加到了使用的模块（h1）中。我们还使用了export *指令导出了所有符号，当Clang遇到\#include "header1.h"时，它会加载相应的h1模块，因此隐式地加载了在h2模块和header2.h头文件中定义的符号。
 
-这个例子说明了当项目中使用模块时，可见性范围可能会泄露。这可能会导致项目构建时出现意外行为，尤其是当项目启用和禁用模块时。当模块启用时，由于隐式依赖关系，可能会导致原本不应该直接可见的符号变得可见，这可能会隐藏真正的依赖关系问题。而当模块禁用时，由于缺少显式的头文件包含，可能会导致编译错误。因此，在使用模块时，需要仔细管理模块间的关系和符号的导出，以确保项目的一致性和可预测性。
+这个例子说明了当项目中使用模块时，可见性范围可能会泄露。这可能会导致项目构建时出现意外行为，尤其是当项目启用和禁用模块时。当模块启用时，由于隐式依赖关系，可能会导致原本不应该直接可见的符号变得可见，这可能会隐藏真正的依赖关系问题。而当模块禁用时，由于缺少显式的头文件包含，可能会导致编译错误。使用模块时，需要仔细管理模块间的关系和符号的导出，以确保项目的一致性和可预测性。
 
 
 

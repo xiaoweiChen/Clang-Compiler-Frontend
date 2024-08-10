@@ -1,6 +1,6 @@
-生成 compile\_commands.json 文件有多种方式。例如，构建系统 CMake 内置了对生成编译数据库的支持。一些工具还可以从 Makefile 或其他构建系统中生成这个文件。甚至还有像 Bear 和 intercept-build 这样的工具，可以通过截取实际运行的编译命令来生成 CDB。
+生成 compile\_commands.json 文件有多种方式，构建系统 CMake 内置了对生成编译数据库的支持。一些工具还可以从 Makefile 或其他构建系统中生成这个文件。甚至还有像 Bear 和 intercept-build 这样的工具，可以通过截取实际运行的编译命令来生成 CDB。
 
-尽管这个术语通常与 Clang 和基于 LLVM 的工具相关联，但这个概念本身更为通用，理论上可以被任何需要理解一组源文件编译设置的工具使用。我们将从使用 CMake 这款最受欢迎的构建系统之一来生成 CDB 开始。
+尽管这个术语通常与 Clang 和基于 LLVM 的工具相关联，但这个概念本身更为通用，理论上可以理解成一组源文件编译设置的工具使用。我们将从使用 CMake ，来生成 CDB。
 
 \mySamllsection{使用 CMake 生成 CDB}
 
@@ -33,7 +33,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 \mySamllsection{使用 Ninja 生成 CDB}
 
-Ninja 也可以用来生成 CDB。我们可以使用 Ninja 的一个子工具 “compdb” 将 CDB 输出到标准输出。要运行这个子工具，我们在 Ninja 中使用 -t <subtool> 命令行选项。因此，我们将使用以下命令通过 Ninja 生成 CDB：
+Ninja 也可以用来生成 CDB。我们可以使用 Ninja 的一个子工具 "compdb" 将 CDB 输出到标准输出。要运行这个子工具，我们在 Ninja 中使用 -t <subtool> 命令行选项，使用以下命令通过 Ninja 生成 CDB：
 
 \begin{shell}
 $ ninja -t compdb > compile_commands.json
@@ -45,7 +45,7 @@ $ ninja -t compdb > compile_commands.json
 
 这个命令指示 Ninja 生成 CDB 信息，并将其保存在 compile\_commands.json 文件中。
 
-生成的编译数据库可以与我们在本书中描述的不同 Clang 工具一起使用。让我们看看两个最有价值的示例，包括 Clang-Tidy 和 Clangd。
+生成的编译数据库可以与我们在本书中描述的不同 Clang 工具一起使用。来看看两个最有价值的示例，包括 Clang-Tidy 和 Clangd。
 
 
 

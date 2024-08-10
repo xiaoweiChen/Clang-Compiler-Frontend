@@ -1,19 +1,19 @@
-显然，Clang编译器工具链遵循各种编译器书籍中广泛描述的模式【1, 18】。然而，Clang的前端部分与典型的编译器前端有很大的不同。这种区别的主要原因是C++语言的复杂性。一些特性，如宏，可以修改源代码本身，而其他特性，如typedef，可以影响token的类型。Clang还可以生成多种格式的输出。例如，以下命令会生成图2.5所示程序的悦目的HTML视图：
+Clang编译器工具链遵循各种编译器书籍中广泛描述的模式\footnote{Alfred V. Aho, Monica S. Lam, Ravi Sethi, and Jeffrey D. Ullman. Compilers: Principles, Techniques, and Tools. Addison-Wesley, 2 edition, 2006. ISBN 978-0-321-48681-3}\footnote{Keith Cooper and Linda Torczon. Engineering A Compiler. Elsevier Inc., 2nd edition, 2012. ISBN 978-0-12-088478-0.}，而Clang的前端部分与典型的编译器前端有很大的不同。这种区别的主要原因是C++语言的复杂性。一些特性，如宏，可以修改源代码本身，而其他特性，如typedef，可以影响token的类型。Clang还可以生成多种格式的输出。例如，以下命令会生成图2.5所示程序的悦目的HTML视图：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -emit-html max.cpp
 \end{shell}
 
-请注意，我们通过-cc1选项向Clang前端传递了生成源程序HTML形式的参数。或者，你也可以通过-Xclang选项向前端传递一个选项，这需要一个额外的参数来表示该选项本身，例如：
+通过-cc1选项向Clang前端传递了生成源程序HTML形式的参数，也可以通过-Xclang选项向前端传递一个选项，这需要一个额外的参数来表示该选项本身：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -Xclang -emit-html max.cpp \
                                        -fsyntax-only
 \end{shell}
 
-你可能注意到，在上述命令中，我们使用了-fsyntax-only选项，指示Clang只执行预处理器、解析器和语义分析阶段。
+上述命令中，使用了-fsyntax-only选项，指示Clang只执行预处理器、解析器和语义分析阶段。
 
-因此，我们可以根据提供的编译选项，指导Clang前端执行不同的操作并产生不同类型的输出。这些操作的基础类称为\textbf{前端操作}(FrontendAction)。
+可以根据提供的编译选项，指导Clang前端执行不同的操作并产生不同类型的输出。这些操作的基础类称为\textbf{前端操作}(FrontendAction)。
 
 \mySubsubsection{2.4.1.}{前端操作}
 
@@ -34,7 +34,7 @@ EmitBCAction            & -emit-llvm-bc            & 编译成LLVM字节码     
 EmitLLVMAction          & -emit-llvm               & 编译成LLVM可读形式          \\ \hline
 ASTPrintAction          & -ast-print               & 构建AST，然后美观地打印它们。 \\ \hline
 HTMLPrintAction         & -emit-html               & 以HTML形式打印程序源代码 \\ \hline
-DumpTokensAction        & -dump-tokens             & 打印预处理器令牌             \\ \hline
+DumpTokensAction        & -dump-tokens             & 打印预处理器token             \\ \hline
 \end{longtable}
 
 \begin{center}
@@ -43,15 +43,15 @@ DumpTokensAction        & -dump-tokens             & 打印预处理器令牌   
 
 \myGraphic{0.8}{content/part1/chapter2/images/28.png}{图2.28: Clang前端组件}
 
-图2.28所示的图描绘了基本的前端架构，与图2.4所示的架构类似。然而，Clang特定的差异是显而易见的。
+图2.28所示的图描绘了基本的前端架构，与图2.4所示的架构类似。Clang特定的差异是显而易见的。
 
-一个显著的变化是对词法分析器的命名。在Clang中，词法分析器被称为预处理器。这种命名约定反映了词法分析器实现被封装在Preprocessor类中的事实。这种改变受到了C/C++语言独特特性的启发，这些特性包括需要特殊预处理的特殊类型的token（宏）。
+一个显著的变化是对词法分析器的命名。在Clang中，词法分析器称为预处理器。这种命名约定表明了，词法分析器实现封装在Preprocessor类中。这种改变受到了C/C++语言独特特性的启发，这些特性包括需要特殊预处理(特殊类型)token（宏）。
 
-另一个值得注意的偏离是在解析器组件中。虽然传统的编译器通常在解析器中同时执行语法和语义分析，但Clang将这些任务分布在不同的组件中。Parser组件专注于语法分析，而Sema组件处理语义分析。
+虽然传统的编译器通常在解析器中同时执行语法和语义分析，但Clang将这些任务分布在不同的组件中。Parser组件专注于语法分析，而Sema组件处理语义分析。
 
 此外，Clang提供了生成不同形式或格式的输出的能力。例如，CodeGenAction类作为各种代码生成操作的基础类，如EmitObjAction或EmitLLVMAction。
 
-我们将使用图2.5中的max函数的代码来探索Clang前端内部的更多细节：
+使用图2.5中的max函数的代码来探索Clang前端内部的细节：
 
 \begin{cpp}
 int max(int a, int b) {
@@ -65,17 +65,17 @@ int max(int a, int b) {
 图2.29: max函数的源代码：max.cpp
 \end{center}
 
-通过使用-cc1选项，我们可以直接调用Clang前端，绕过驱动程序。这种方法使我们能够更详细地检查和分析Clang前端的工作原理。
+通过使用-cc1选项，可以直接调用Clang前端，绕过驱动程序。这种方法能够更详细地检查和分析Clang前端的工作原理。
 
 \mySubsubsection{2.4.2.}{预处理器}
 
-第一部分是词法分析器，在Clang中被称为预处理器。它的主要目标是将输入程序转换为token流。你可以使用-dump-tokens选项打印token流，如下所示：
+第一部分是词法分析器，在Clang中称为预处理器。主要目标是将输入程序转换为token流，可以使用-dump-tokens选项打印token流：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -dump-tokens max.cpp
 \end{shell}
 
-命令的输出如下：
+输出如下：
 
 \begin{shell}
 int 'int'        [StartOfLine]  Loc=<max.cpp:1:1>
@@ -108,11 +108,11 @@ eof ''          Loc=<max.cpp:5:2>
 图2.30: Clang打印token输出
 \end{center}
 
-正如我们所看到的，有不同的token类型，如语言关键字（例如，int、return）、标识符（例如，max、a、b等）和特殊符号（例如，分号、逗号等）。我们这个小程序的token被称为正常token，它们由词法分析器返回。
+有不同的token类型，如语言关键字（例如，int、return）、标识符（例如，max、a、b等）和特殊符号（例如，分号、逗号等）。这个小程序的token称为正常token，它们由词法分析器返回。
 
-除了正常token外，Clang还有一种额外的token类型，称为注释token。主要区别在于，这些token还存储额外的语义信息。例如，一系列正常token可以被解析器替换为一个包含关于类型或C++作用域信息的单个注释token。使用此类token的主要原因是为了性能，因为它允许在解析器需要回退时防止重新解析。
+除了正常token外，Clang还有一种token类型，称为注释token。主要区别在于，这些token还存储额外的语义信息。例如，正常token可以解析器替换为一个包含关于类型或C++作用域信息的单个注释token。使用此类token的主要原因是为了性能，允许在解析器需要回退时防止重新解析。
 
-由于注释token用于解析器的内部实现，考虑一个使用LLDB的注释token示例是有益的。假设我们有以下C++代码：
+由于注释token用于解析器的内部实现，假设使用LLDB的注释token示例：
 
 \begin{cpp}
 namespace clangbook {
@@ -125,7 +125,7 @@ clangbook::A<int> a;
 图2.31: 使用注释token的源代码，annotation.cpp
 \end{center}
 
-代码的最后一行声明了变量a，其类型为： clangbook::A。该类型以注释token的形式表示，如下面的LLDB会话所示：
+代码的最后一行声明了变量a，其类型为： clangbook::A。该类型以注释token的形式表示，如下面的LLDB演示所示：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 annotation.cpp
@@ -146,12 +146,10 @@ clangbook::A<int> a;
 \end{shell}
 
 \begin{center}
-图2.32: annotation.cpp的LLDB交互界面
+图2.32: annotation.cpp的LLDB交互
 \end{center}
 
-正如我们所看到的，Clang从图2.31中示例程序的第4行消耗了一个注释token。该token位于列1和列7之间。请见图2.32。这对应于以下作为token使用的文本：clangbook::A。该token由其他token组成，例如'clangbook'、'::'等。将所有token组合成一个将大大简化解析并提高整体的解析性能。
-
-\myGraphic{0.8}{content/part1/chapter2/images/33.png}{图2.33: 预处理器（Clang词法分析器）类内部}
+Clang从图2.31中示例程序的第4行消耗了一个注释token。该token位于列1和列7之间。这对应于以下作为token使用的文本：clangbook::A。该token由其他token组成，例如'clangbook'、'::'等。将所有token组合成一个简化解析，并提高整体的解析性能。
 
 C/C++语言有一些特定之处，影响了Preprocessor类的内部实现。首先是宏。Preprocessor类有两个不同的辅助类来检索token：
 
@@ -163,19 +161,21 @@ Lexer类用于将文本缓冲区转换为token流。
 TokenLexer类用于从宏扩展中检索token。
 \end{itemize}
 
-需要注意的是，这些辅助类中只能有一个同时激活。
+这些辅助类中只能有一个同时激活。
 
-C/C++的另一个特定之处是\#include指令（也适用于import指令）。在这种情况下，我们需要维护一个包含的栈，其中每个包含都可以有自己的TokenLexer或Lexer，取决于其中是否包含宏扩展。因此，Preprocessor类为每个\#include指令保持了一个包含的lexer栈（IncludeMacroStack类），如图2.33所示。
+C/C++的另一个特定之处是\#include指令（也适用于import指令），需要维护一个包含的栈，其中每个包含都可以有自己的TokenLexer或Lexer，取决于其中是否包含宏扩展。Preprocessor类为每个\#include指令保持了一个包含的lexer栈（IncludeMacroStack类），如图2.33所示。
+
+\myGraphic{0.8}{content/part1/chapter2/images/33.png}{图2.33: 预处理器（Clang词法分析器）类内部}
 
 \mySubsubsection{2.4.2.}{解析器与语义分析器}
 
-解析器和语义分析器是Clang编译器前端的关键组件。它们处理源代码的语法和语义分析，产生AST作为输出。对于我们的测试程序，可以使用以下命令可视化这个树：
+解析器和语义分析器是Clang编译器前端的关键组件，处理源代码的语法和语义分析，产生AST作为输出。对于测试程序，可以使用以下命令可视化这个树：
 
 \begin{shell}
 $ <...>/llvm-project/install/bin/clang -cc1 -ast-dump max.cpp
 \end{shell}
 
-这个命令的输出如下：
+输出如下：
 
 \begin{shell}
 TranslationUnitDecl 0xa9cb38 <<invalid sloc>> <invalid sloc>
@@ -210,11 +210,12 @@ implicit __int128_t '__int128'
 图2.34: Clang AST dump的输出
 \end{center}
 
-Clang使用了一个手工编写的递归下降解析器 \footnote{LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}。}。 这个解析器可以被认为是简单的，这也是它被选中的一个关键原因。此外，C/C++语言的复杂规则需要一个易于适应的临时解析器。
+Clang使用了一个手工编写的递归下降解析器\footnote{LLVM Community. Clang features. 2023. URL \url{https://clang.llvm.org/features.html}}。这个解析器很简单，这也是选中它的一个关键原因。此外，C/C++语言的复杂规则需要一个易于适应的解析器。
 
-让我们通过我们的示例来探索它是如何工作的。解析从代表单个翻译单元的顶级声明开始，称为TranslationUnitDecl。C++标准将翻译单元定义为\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}:
+通过示例来探索它是如何工作的。解析从代表单个翻译单元的顶级声明开始，称为TranslationUnitDecl。
 
-一个源文件及其通过预处理指令\#include包含的所有头文件（16.5.1.2）和源文件，减去任何通过任何条件包含预处理指令（15.2）跳过的源行，称为翻译单元。
+一个源文件及其通过预处理指令\#include包含的所有头文件（16.5.1.2）和源文件，减去通过条件包含预处理指令（15.2）跳过的源行，称为翻译单元。
+
 解析器首先识别出源代码的初始token对应于函数定义，如C++标准所定义\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
 
 \begin{shell}
@@ -239,7 +240,7 @@ int max(...) {
 图2.36: 对应于C++标准中函数定义的部分示例代码
 \end{center}
 
-函数定义需要一个声明器和函数体。我们首先从声明器开始，它被C++标准定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.decl.general}:
+函数定义需要一个声明器和函数体。首先从声明器开始:
 
 \begin{shell}
 declarator:
@@ -260,7 +261,7 @@ parameter-declaration-list:
 图2.37: C++标准中的声明器定义
 \end{center}
 
-换句话说，声明器在一个括号内指定参数声明列表。源代码中的相应部分如下：
+声明器在一个括号内指定参数声明列表，源码中的相应部分如下所示：
 
 \begin{cpp}
 ... (int a, int b)
@@ -271,7 +272,7 @@ parameter-declaration-list:
 图2.38: 对应于C++标准中声明器的部分示例代码
 \end{center}
 
-函数定义，如上述所述，还需要一个函数体。C++标准将函数体定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.fct.def.general}:
+函数定义，还需要一个函数体。C++标准将函数体定义为:
 
 \begin{shell}
 function-body:
@@ -283,7 +284,7 @@ function-body:
 图2.39: C++标准中的函数体定义
 \end{center}
 
-因此，函数体由一个复合语句组成，它被C++标准定义为\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.block}:
+函数体由一个复合语句组成，C++标准定义为:
 
 \begin{shell}
 compound-statement:
@@ -297,9 +298,9 @@ statement-seq:
 图2.40: C++标准中的复合语句定义
 \end{center}
 
-因此，它描述了一组语句，这些语句被括在大括号内(\{... ).
+其描述了一组语句，这些语句都括在大括号内(\{... ).
 
-我们的程序有两种类型的语句：条件（if）语句和返回语句。这些在C++语法定义中如下所示 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.pre}:
+我们的程序有两种类型的语句：条件（if）语句和返回语句。这些在C++语法定义中如下所示:
 
 \begin{shell}
 statement:
@@ -314,9 +315,9 @@ statement:
 图2.41: C++标准中的语句定义
 \end{center}
 
-在这个上下文中，选择语句对应于我们程序中的if条件，而跳转语句对应于返回运算符。
+选择语句对应于我们程序中的if条件，而跳转语句对应于返回运算符。
 
-让我们更详细地检查跳转语句 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, stmt.jump.general}:
+更详细地检查跳转语句:
 
 \begin{shell}
 jump-statement:
@@ -326,10 +327,10 @@ jump-statement:
 \end{shell}
 
 \begin{center}
-图2.42: C++标准中的跳转语句定义图2.42: C++标准中的跳转语句定义
+图2.42: C++标准中的跳转语句定义
 \end{center}
 
-其中expr-or-braced-init-list被定义为 \footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, dcl.init.general}:
+其中expr-or-braced-init-list定义为:
 
 \begin{shell}
 expr-or-braced-init-list:
@@ -341,15 +342,15 @@ expr-or-braced-init-list:
 图2.43: C++标准中的返回表达式定义
 \end{center}
 
-在这个上下文中，return关键字后面跟着一个表达式和一个分号。在我们的情况下，有一个隐式转换表达式，它自动将变量转换为所需的类型（int）。
+return关键字后面跟着一个表达式和一个分号，其中有一个隐式转换表达式，自动将变量转换为所需的类型（int）。
 
-通过LLDB调试器检查解析器的操作可能会很有启发性：
+通过LLDB调试器检查解析器的操作可能会很有启发：
 
 \begin{shell}
 $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 \end{shell}
 
-调试器会话输出在图2.44中。如你所见，在第1行，我们为返回语句的解析设置了断点。我们的程序有两个返回语句。我们跳过了第一个调用（第4行）并在第二个方法调用（第9行）处暂停。调用栈（从第13行的'bt'命令）显示了解析过程的调用栈。这个栈反映了我们之前描述的解析块，遵循了C++语法详细说明\footnote{International Organization for Standardization. International Standard ISO/IEC 14882:2020(E) – Programming Languages – C++. International Organization for Standardization, 2020. URL \url{https://www.iso.org/standard/73560.html}, lex.separate}。
+调试器演示输出在图2.44中。在第1行，为返回语句的解析设置了断点。程序有两个返回语句。跳过了第一个调用（第4行），并在第二个方法调用（第9行）处暂停。调用栈（从第13行的'bt'命令）显示了解析过程的调用栈。这个栈反映了之前描述的解析块，遵循了C++语法详细说明。
 
 \begin{shell}
 1  (lldb) b clang::Parser::ParseReturnStatement
@@ -378,7 +379,7 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 图2.44: 在max.cpp示例程序中解析第二个返回语句
 \end{center}
 
-解析的结果是生成AST。我们也可以使用调试器检查AST的创建过程。为此，我们需要在clang::ReturnStmt::Create方法上设置相应的断点：
+解析的结果是生成AST，也可以使用调试器检查AST的创建过程。为此，需要在clang::ReturnStmt::Create上设置断点：
 
 \begin{shell}
 1  $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
@@ -411,9 +412,9 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 图2.45: 在clang::ReturnStmt::Create处的断点
 \end{center}
 
-如所见，返回语句的AST节点是由Sema组件创建的。
+返回语句的AST节点由Sema组件创建。
 
-返回语句解析的开始可以在帧4找到：
+返回语句解析的开始可以在frame \#4找到：
 
 \begin{shell}
 1  (lldb) f 4
@@ -432,17 +433,17 @@ $ lldb <...>/llvm-project/install/bin/clang -- -cc1 max.cpp
 图2.46: 调试器中的返回语句解析
 \end{center}
 
-正如我们所观察到的，有对C99标准\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}。} 的引用，该标准为相应的语句提供了详细的描述。
+这里，有对C99标准\footnote{International Organization for Standardization (ISO). ISO/IEC 9899:1999 - Programming languages - C. International Organization for Standardization (ISO), 1999. URL \url{https://www.iso.org/standard/23482.html}。} 的引用，该标准为相应的语句提供了详细的描述。
 
-代码假设当前token的类型为tok::kw\_return，在这种情况下，解析器调用相应的clang::Parser::ParseReturnStatement方法。
+代码假设当前token的类型为tok::kw\_return，解析器调用clang::Parser::ParseReturnStatement方法。
 
-尽管不同C++构造的AST节点创建过程可能会有所不同，但一般来说，它遵循图2.47所示的模式。
+不同C++构造的AST节点创建过程可能会有所不同，但一般来说，都会遵循图2.47所示的模式。
 
 \myGraphic{0.8}{content/part1/chapter2/images/47.png}{图2.47: Clang前端中的C++解析}
 
-在图2.47中，方框代表相应的类，函数调用用带有调用函数的边缘表示。如所见，解析器调用Preprocessor::Lex方法从词法分析器获取一个token，然后调用与token对应的函数，例如Parser::ParseXXX对于token XXX。然后该方法调用Sema::ActOnXXX，使用XXX::Create创建相应的对象。这个过程然后用新的token重复。
+图2.47中，方框代表相应的类，函数调用用带有调用函数的边缘表示。解析器调用Preprocessor::Lex方法从词法分析器获取一个token，然后调用与token对应的函数，例如Parser::ParseXXX对于token XXX。然后该方法调用Sema::ActOnXXX，使用XXX::Create创建相应的对象。这个过程后，用新的token重复。
 
-通过以上内容，我们现在已经全面探索了Clang中典型的编译器前端流程的实现。我们可以看到，词法分析器组件（预处理器）与解析器（包括解析器和语义分析器）协同工作，生成了未来代码生成的主要数据结构：抽象语法树（AST）。AST不仅对于代码生成至关重要，对于代码分析和修改也非常重要。Clang提供了对AST的便捷访问，从而使得开发各种编译器工具成为可能。
+现在已经全面探索了Clang中，典型的编译器前端流程的实现。词法分析器组件（预处理器）与解析器（包括解析器和语义分析器）协同工作，生成了未来代码生成的主要数据结构：抽象语法树（AST）。AST不仅对于代码生成至关重要，对于代码分析和修改也非常重要。Clang提供了对AST的便捷访问，从而使得开发各种编译器工具成为可能。
 
 
 
